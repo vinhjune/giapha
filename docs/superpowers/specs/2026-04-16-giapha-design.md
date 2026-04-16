@@ -183,8 +183,8 @@ Form hiện dạng **modal overlay** (không chuyển trang).
 ## 9. Google Drive Integration
 
 ### OAuth Scopes
-- **Admin:** `https://www.googleapis.com/auth/drive` — tạo, đọc, ghi file.
-- **Editor / Viewer:** `https://www.googleapis.com/auth/drive.readonly` — chỉ đọc file được chia sẻ.
+- **Admin + Editor:** `https://www.googleapis.com/auth/drive` — đọc và ghi file được chia sẻ. Không có scope nào hẹp hơn cho phép ghi vào file cụ thể theo File ID mà không dùng Google Picker.
+- **Viewer:** `https://www.googleapis.com/auth/drive.readonly` — chỉ đọc file được chia sẻ.
 - **Chế độ public (chưa đăng nhập):** Không cần OAuth — đọc file qua API key (file phải được chia sẻ "Anyone with the link can view" trên Drive).
 
 ### File ID trong app config
