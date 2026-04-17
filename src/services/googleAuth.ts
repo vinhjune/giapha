@@ -15,13 +15,17 @@ export interface AuthToken {
 let tokenClient: any = null
 let currentToken: AuthToken | null = null
 
-export function khoiTaoAuth(clientId: string, scope: string, callback: (token: AuthToken | null) => void) {
+export function khoiTaoAuth(
+  clientId: string,
+  scope: string,
+  callback: (token: AuthToken | null, error?: string) => void
+) {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: clientId,
     scope,
     callback: (response: any) => {
       if (response.error) {
-        callback(null)
+        callback(null, response.error_description ?? response.error)
         return
       }
       currentToken = {
