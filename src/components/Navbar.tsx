@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import SearchBar from './SearchBar'
+import SettingsPanel from './SettingsPanel'
 import { ghiFile } from '../services/googleDrive'
 
 export default function Navbar() {
   const { data, fileId, isDirty, isSaving, currentRole, currentUserEmail, viewMode, setViewMode, setIsSaving, markSaved, setConflictDetected } = useGiaphaStore()
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   async function handleSave() {
     if (!data || !fileId) return
@@ -61,7 +64,17 @@ export default function Navbar() {
         {currentUserEmail && (
           <span className="text-sm text-gray-600">{currentUserEmail}</span>
         )}
+        {currentRole === 'admin' && (
+          <button
+            onClick={() => setSettingsOpen(v => !v)}
+            className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md"
+            title="Cài đặt"
+          >
+            ⚙️
+          </button>
+        )}
       </div>
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </nav>
   )
 }
