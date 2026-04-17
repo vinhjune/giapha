@@ -46,7 +46,7 @@ export default function PermissionManager() {
             <span className={`px-2 py-0.5 rounded text-xs font-medium
               ${u.role === 'admin' ? 'bg-red-100 text-red-700' :
                 u.role === 'editor' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
-              {u.role}
+              {u.role === 'admin' ? 'Chủ dòng họ' : u.role === 'editor' ? 'Quản lý' : 'Thành viên'}
             </span>
             {u.role !== 'admin' && (
               <button onClick={() => removeUser(u.email)} className="text-gray-400 hover:text-red-500">&times;</button>
@@ -59,8 +59,8 @@ export default function PermissionManager() {
           className="flex-1 px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
         <select value={newRole} onChange={e => setNewRole(e.target.value as Role)}
           className="px-2 py-1.5 text-sm border rounded">
-          <option value="viewer">Viewer</option>
-          <option value="editor">Editor</option>
+          <option value="viewer">Thành viên</option>
+          <option value="editor">Quản lý</option>
         </select>
         <button onClick={addUser} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Thêm</button>
       </div>
