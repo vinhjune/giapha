@@ -61,6 +61,17 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
     set(state => {
       if (!state.data) return {}
       const persons: Record<string, Person> = { ...state.data.persons, [id]: person }
+      // Sync spouse links (A -> B also means B -> A)
+      person.honNhan.forEach(h => {
+        const spouse = persons[h.voChongId]
+        if (!spouse) return
+        if (!spouse.honNhan.some(m => m.voChongId === id)) {
+          persons[h.voChongId] = {
+            ...spouse,
+            honNhan: [...spouse.honNhan, { voChongId: id }],
+          }
+        }
+      })
       // Sync conCaiIds for both parents
       if (personData.boId && persons[personData.boId]) {
         const bo = persons[personData.boId]
@@ -83,10 +94,39 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
       if (!state.data) return {}
       const existing = state.data.persons[id]
       if (!existing) return {}
+      const updated = { ...existing, ...updates }
+      const persons: Record<string, Person> = { ...state.data.persons, [id]: updated }
+
+      const oldSpouseIds = new Set(existing.honNhan.map(h => h.voChongId))
+      const newSpouseIds = new Set(updated.honNhan.map(h => h.voChongId))
+
+      // Remove reverse spouse links that were removed from this person
+      oldSpouseIds.forEach(spouseId => {
+        if (newSpouseIds.has(spouseId)) return
+        const spouse = persons[spouseId]
+        if (!spouse) return
+        persons[spouseId] = {
+          ...spouse,
+          honNhan: spouse.honNhan.filter(h => h.voChongId !== id),
+        }
+      })
+
+      // Ensure reverse spouse links exist for current spouses
+      newSpouseIds.forEach(spouseId => {
+        const spouse = persons[spouseId]
+        if (!spouse) return
+        if (!spouse.honNhan.some(h => h.voChongId === id)) {
+          persons[spouseId] = {
+            ...spouse,
+            honNhan: [...spouse.honNhan, { voChongId: id }],
+          }
+        }
+      })
+
       return {
         data: {
           ...state.data,
-          persons: { ...state.data.persons, [id]: { ...existing, ...updates } },
+          persons,
         },
         isDirty: true,
       }
