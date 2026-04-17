@@ -139,7 +139,7 @@ export default function AuthGate({ children }: Props) {
         return
       }
       khoiTaoAuth(clientId, SCOPE_DRIVE, async (token) => {
-        if (!token) { setLoading(false); return }
+        if (!token) return
 
         try {
           const email = await fetchUserEmail(token)
@@ -153,8 +153,9 @@ export default function AuthGate({ children }: Props) {
         } catch {
           // ignore load errors — show login page
         }
-        setLoading(false)
       })
+      // khoiTaoAuth only initialises the token client; callback fires on login
+      setLoading(false)
     }
 
     initWhenReady()
