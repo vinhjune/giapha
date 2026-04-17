@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonPicker from './PersonPicker'
 import { timVoChong } from '../utils/familyTree'
-import type { Person, GioiTinh } from '../types/giapha'
+import type { Person, GioiTinh, NgayThang } from '../types/giapha'
 
 interface Props {
   editPerson?: Person | null
@@ -13,8 +13,8 @@ interface Props {
 interface FormState {
   hoTen: string
   gioiTinh: GioiTinh
-  namSinh: string
-  namMat: string
+  ngaySinh: string
+  ngayMat: string
   queQuan: string
   tieuSu: string
   laThanhVienHo: boolean
@@ -24,8 +24,30 @@ interface FormState {
   voChongIds: string[]
 }
 
+// Convert NgayThang → "dd/mm/yyyy" | "mm/yyyy" | "yyyy" | ""
+function ngayToStr(d?: NgayThang): string {
+  if (!d) return ''
+  const parts: (string | number)[] = []
+  if (d.ngay)  parts.push(String(d.ngay).padStart(2, '0'))
+  if (d.thang) parts.push(String(d.thang).padStart(2, '0'))
+  if (d.nam)   parts.push(d.nam)
+  return parts.join('/')
+}
+
+// Parse "dd/mm/yyyy" | "mm/yyyy" | "yyyy" → NgayThang | undefined
+function strToNgay(s: string): NgayThang | undefined {
+  const trimmed = s.trim()
+  if (!trimmed) return undefined
+  const parts = trimmed.split('/').map(Number)
+  if (parts.some(isNaN)) return undefined
+  if (parts.length === 3) return { ngay: parts[0], thang: parts[1], nam: parts[2] }
+  if (parts.length === 2) return { thang: parts[0], nam: parts[1] }
+  if (parts.length === 1 && parts[0]) return { nam: parts[0] }
+  return undefined
+}
+
 const empty: FormState = {
-  hoTen: '', gioiTinh: 'nam', namSinh: '', namMat: '',
+  hoTen: '', gioiTinh: 'nam', ngaySinh: '', ngayMat: '',
   queQuan: '', tieuSu: '', laThanhVienHo: true, thuTuAnhChi: '',
   boId: '', meId: '', voChongIds: [],
 }
@@ -38,8 +60,8 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       return {
         hoTen: editPerson.hoTen,
         gioiTinh: editPerson.gioiTinh,
-        namSinh: editPerson.namSinh?.nam?.toString() || '',
-        namMat: editPerson.namMat?.nam?.toString() || '',
+        ngaySinh: ngayToStr(editPerson.namSinh),
+        ngayMat: ngayToStr(editPerson.namMat),
         queQuan: editPerson.queQuan || '',
         tieuSu: editPerson.tieuSu || '',
         laThanhVienHo: editPerson.laThanhVienHo,
@@ -92,8 +114,8 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     const personData: Omit<Person, 'id'> = {
       hoTen: form.hoTen.trim(),
       gioiTinh: form.gioiTinh,
-      namSinh: form.namSinh ? { nam: parseInt(form.namSinh) } : undefined,
-      namMat: form.namMat ? { nam: parseInt(form.namMat) } : undefined,
+      namSinh: strToNgay(form.ngaySinh),
+      namMat: strToNgay(form.ngayMat),
       queQuan: form.queQuan || undefined,
       tieuSu: form.tieuSu || undefined,
       laThanhVienHo: form.gioiTinh === 'nu' ? form.laThanhVienHo : true,
@@ -158,15 +180,15 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
 
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="text-sm font-medium text-gray-700">Năm sinh</label>
-                <input type="number" value={form.namSinh} min={1800} max={new Date().getFullYear()}
-                  onChange={e => setForm(f => ({ ...f, namSinh: e.target.value }))}
+                <label className="text-sm font-medium text-gray-700">Ngày sinh</label>
+                <input type="text" value={form.ngaySinh} placeholder="dd/mm/yyyy"
+                  onChange={e => setForm(f => ({ ...f, ngaySinh: e.target.value }))}
                   className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
               </div>
               <div className="flex-1">
-                <label className="text-sm font-medium text-gray-700">Năm mất</label>
-                <input type="number" value={form.namMat} min={1800} max={new Date().getFullYear()}
-                  onChange={e => setForm(f => ({ ...f, namMat: e.target.value }))}
+                <label className="text-sm font-medium text-gray-700">Ngày mất</label>
+                <input type="text" value={form.ngayMat} placeholder="dd/mm/yyyy"
+                  onChange={e => setForm(f => ({ ...f, ngayMat: e.target.value }))}
                   className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
               </div>
             </div>
