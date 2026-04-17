@@ -5,6 +5,7 @@ import { docFile } from '../services/googleDrive'
 import LoginPage from '../pages/LoginPage'
 import AdminSetup from './AdminSetup'
 import type { AuthToken } from '../services/googleAuth'
+import type { GiaphaData } from '../types/giapha'
 
 interface Props {
   children: React.ReactNode
@@ -17,6 +18,27 @@ async function fetchUserEmail(token: AuthToken): Promise<string> {
   if (!res.ok) return ''
   const data = await res.json()
   return data.email || ''
+}
+
+const DEMO_DATA: GiaphaData = {
+  metadata: {
+    tenDongHo: 'Họ Nguyễn (Demo)',
+    moTa: 'Dữ liệu mẫu để test giao diện',
+    ngayTao: new Date().toISOString(),
+    nguoiTao: 'demo@example.com',
+    phienBan: 1,
+    cheDoCong: true,
+    danhSachNguoiDung: [{ email: 'demo@example.com', role: 'admin' }],
+  },
+  persons: {
+    p1: { id: 'p1', hoTen: 'Nguyễn Văn Tổ', gioiTinh: 'nam', laThanhVienHo: true, namSinh: { nam: 1920 }, namMat: { nam: 1990 }, honNhan: [{ voChongId: 'p2' }], conCaiIds: ['p3', 'p4'], queQuan: 'Hà Nội' },
+    p2: { id: 'p2', hoTen: 'Trần Thị Bà', gioiTinh: 'nu', laThanhVienHo: false, namSinh: { nam: 1925 }, namMat: { nam: 1995 }, honNhan: [{ voChongId: 'p1' }], conCaiIds: ['p3', 'p4'] },
+    p3: { id: 'p3', hoTen: 'Nguyễn Văn Con Cả', gioiTinh: 'nam', laThanhVienHo: true, namSinh: { nam: 1950 }, boId: 'p1', meId: 'p2', honNhan: [{ voChongId: 'p5' }], conCaiIds: ['p6', 'p7'], thuTuAnhChi: 1 },
+    p4: { id: 'p4', hoTen: 'Nguyễn Thị Con Hai', gioiTinh: 'nu', laThanhVienHo: true, namSinh: { nam: 1953 }, boId: 'p1', meId: 'p2', honNhan: [], conCaiIds: [], thuTuAnhChi: 2 },
+    p5: { id: 'p5', hoTen: 'Lê Thị Dâu', gioiTinh: 'nu', laThanhVienHo: false, namSinh: { nam: 1952 }, honNhan: [{ voChongId: 'p3' }], conCaiIds: ['p6', 'p7'] },
+    p6: { id: 'p6', hoTen: 'Nguyễn Văn Cháu', gioiTinh: 'nam', laThanhVienHo: true, namSinh: { nam: 1978 }, boId: 'p3', meId: 'p5', honNhan: [], conCaiIds: [], thuTuAnhChi: 1 },
+    p7: { id: 'p7', hoTen: 'Nguyễn Thị Cháu', gioiTinh: 'nu', laThanhVienHo: true, namSinh: { nam: 1981 }, boId: 'p3', meId: 'p5', honNhan: [], conCaiIds: [], thuTuAnhChi: 2 },
+  },
 }
 
 export default function AuthGate({ children }: Props) {
@@ -69,10 +91,17 @@ export default function AuthGate({ children }: Props) {
   }
 
   if (!layToken() && !publicMode) {
+    function handleDemo() {
+      setData(DEMO_DATA)
+      setUser('demo@example.com', 'admin')
+      setPublicMode(true)
+    }
+
     return (
       <LoginPage
         publicModeAvailable={data?.metadata.cheDoCong ?? false}
         onPublicMode={() => { setPublicMode(true); setUser('', 'public') }}
+        onDemo={!clientId ? handleDemo : undefined}
       />
     )
   }
