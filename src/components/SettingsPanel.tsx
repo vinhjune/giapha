@@ -11,6 +11,7 @@ export default function SettingsPanel({ onClose }: Props) {
   const { data, fileId, currentRole, setData } = useGiaphaStore()
   const [toggling, setToggling] = useState(false)
   const [verifyError, setVerifyError] = useState<string | null>(null)
+  const [inheritedWarning, setInheritedWarning] = useState(false)
 
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY
 
@@ -22,9 +23,11 @@ export default function SettingsPanel({ onClose }: Props) {
     if (!data || !fileId) return
     setToggling(true)
     setVerifyError(null)
+    setInheritedWarning(false)
     try {
       if (isPublic) {
-        await xoaChiaSeCong(fileId)
+        const inherited = await xoaChiaSeCong(fileId)
+        if (inherited) setInheritedWarning(true)
       } else {
         await chiaSeCong(fileId)
 
@@ -88,8 +91,14 @@ export default function SettingsPanel({ onClose }: Props) {
               />
             </button>
           </div>
-          {isPublic && !verifyError && (
+          {isPublic && !verifyError && !inheritedWarning && (
             <p className="mt-2 text-xs text-green-600">✓ Bất kỳ ai có link đều có thể xem</p>
+          )}
+          {inheritedWarning && (
+            <p className="mt-2 text-xs text-amber-600">
+              ⚠️ Quyền công khai được thừa kế từ thư mục cha — không thể tắt qua API.
+              Hãy vào <a href="https://drive.google.com" target="_blank" rel="noreferrer" className="underline">Google Drive</a> và tắt chia sẻ cho thư mục <code>giapha</code> thủ công.
+            </p>
           )}
           {verifyError && (
             <p className="mt-2 text-xs text-red-600 whitespace-pre-wrap">{verifyError}</p>

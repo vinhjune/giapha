@@ -133,8 +133,8 @@ export async function chiaSeCong(fileId: string): Promise<void> {
   }
 }
 
-/** Remove public sharing */
-export async function xoaChiaSeCong(fileId: string): Promise<void> {
+/** Remove public sharing. Returns true if the permission was inherited (could not be deleted). */
+export async function xoaChiaSeCong(fileId: string): Promise<boolean> {
   const token = layAccessToken()
   if (!token) throw new Error('Chưa đăng nhập')
   const authHeader = { Authorization: `Bearer ${token}` }
@@ -157,7 +157,7 @@ export async function xoaChiaSeCong(fileId: string): Promise<void> {
 
   const { permissions } = await res.json()
   const anyonePerm = permissions?.find((p: any) => p.type === 'anyone')
-  if (!anyonePerm) return
+  if (!anyonePerm) return false
   if (!anyonePerm.id) throw new Error('Không tìm được ID của quyền công khai')
 
   const delRes = await fetch(
@@ -167,6 +167,12 @@ export async function xoaChiaSeCong(fileId: string): Promise<void> {
   if (!delRes.ok) {
     let detail = `${delRes.status}`
     try { const b = await delRes.json(); detail = b?.error?.message || b?.error?.status || detail } catch { /* ignore */ }
-    throw new Error(`Xóa quyền chia sẻ thất bại: ${detail} | permissionId="${anyonePerm.id}"`)
+    // Inherited permissions cannot be deleted via API — treat as soft warning
+    if (detail.toLowerCase().includes('inherited') || detail.toLowerCase().includes('cannot delete')) {
+      console.warn('xoaChiaSeCong: permission is inherited from parent folder, skipping delete')
+      return true
+    }
+    throw new Error(`Xóa quyền chia sẻ thất bại: ${detail}`)
   }
+  return false
 }
