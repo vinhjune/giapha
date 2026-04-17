@@ -32,13 +32,10 @@ const empty: FormState = {
 
 export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) {
   const { data, themNguoi, suaNguoi, acquireSoftLock, releaseSoftLock } = useGiaphaStore()
-  const [form, setForm] = useState<FormState>(empty)
-  const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong'>(null)
-  const [multipleWives, setMultipleWives] = useState<string[]>([])
-
-  useEffect(() => {
+  
+  const [form, setForm] = useState<FormState>(() => {
     if (editPerson) {
-      setForm({
+      return {
         hoTen: editPerson.hoTen,
         gioiTinh: editPerson.gioiTinh,
         namSinh: editPerson.namSinh?.nam?.toString() || '',
@@ -50,12 +47,20 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
         boId: editPerson.boId || '',
         meId: editPerson.meId || '',
         voChongIds: editPerson.honNhan.map(h => h.voChongId),
-      })
+      }
     } else if (defaultBoId) {
-      setForm(f => ({ ...f, boId: defaultBoId }))
+      return { ...empty, boId: defaultBoId }
     }
+    return empty
+  })
+  
+  const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong'>(null)
+  const [multipleWives, setMultipleWives] = useState<string[]>([])
+
+  useEffect(() => {
     acquireSoftLock()
     return () => releaseSoftLock()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function handleBoSelected(person: Person) {
