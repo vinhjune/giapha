@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import { khoiTaoAuth, layToken, SCOPE_DRIVE } from '../services/googleAuth'
-import { docFile } from '../services/googleDrive'
+import { docFile, docFileCong } from '../services/googleDrive'
 import LoginPage from '../pages/LoginPage'
 import AdminSetup from './AdminSetup'
 import type { AuthToken } from '../services/googleAuth'
@@ -120,11 +120,12 @@ const DEMO_DATA: GiaphaData = {
 }
 
 export default function AuthGate({ children }: Props) {
-  const { data, fileId, setData, setUser, setFileId } = useGiaphaStore()
+  const { fileId, setData, setUser, setFileId } = useGiaphaStore()
   const [loading, setLoading] = useState(true)
   const [publicMode, setPublicMode] = useState(false)
 
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY
 
   useEffect(() => {
     // GIS script loads with async defer — wait for it before initializing
@@ -173,6 +174,25 @@ export default function AuthGate({ children }: Props) {
   }
 
   if (!layToken() && !publicMode) {
+    async function handlePublicMode() {
+      if (!fileId) {
+        alert('Chưa cấu hình file gia phả để xem công khai')
+        return
+      }
+      if (!apiKey) {
+        alert('Thiếu VITE_GOOGLE_API_KEY để vào chế độ chỉ xem')
+        return
+      }
+      try {
+        const d = await docFileCong(fileId, apiKey)
+        setData(d)
+        setUser('', 'public')
+        setPublicMode(true)
+      } catch (e: unknown) {
+        alert('Không thể vào chế độ chỉ xem: ' + (e as Error).message)
+      }
+    }
+
     function handleDemo() {
       setData(DEMO_DATA)
       setUser('demo@example.com', 'admin')
@@ -182,8 +202,8 @@ export default function AuthGate({ children }: Props) {
 
     return (
       <LoginPage
-        publicModeAvailable={data?.metadata.cheDoCong ?? false}
-        onPublicMode={() => { setPublicMode(true); setUser('', 'public') }}
+        publicModeAvailable={Boolean(fileId && apiKey)}
+        onPublicMode={handlePublicMode}
         onDemo={!clientId ? handleDemo : undefined}
       />
     )
