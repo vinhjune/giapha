@@ -149,6 +149,9 @@ export default function AuthGate({ children }: Props) {
             const user = d.metadata.danhSachNguoiDung.find(u => u.email === email)
             const role = user?.role || (d.metadata.nguoiTao === email ? 'admin' : 'viewer')
             setUser(email, role)
+          } else {
+            // No file yet — mark user as admin so AdminSetup is shown
+            setUser(email, 'admin')
           }
         } catch {
           // ignore load errors — show login page
