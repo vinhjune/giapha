@@ -25,12 +25,12 @@ export interface Person {
   queQuan?: string             // Hometown
   tieuSu?: string              // Biography
   anhDaiDien?: string          // Avatar URL or base64
-  laThanhVienHo: boolean       // false for women who marry out
+  laThanhVienHo: boolean       // true = belongs to this clan; false = married in or left the lineage
   thuTuAnhChi?: number         // Sibling order (1-based)
   boId?: string                // Father ID
   meId?: string                // Mother ID
   honNhan: HonNhan[]           // Marriages (ordered)
-  conCaiIds: string[]          // Children IDs (for this person as parent)
+  conCaiIds: string[]          // Children IDs — MUST be kept in sync across both parents; see familyTree.ts
   ghiChu?: string
 }
 

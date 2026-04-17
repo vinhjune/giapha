@@ -1,3 +1,3 @@
-export function taoId(): string {
-  return `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`
+export function taoId(prefix = 'p'): string {
+  return `${prefix}_${Date.now().toString(36)}_${(Math.random() + 1).toString(36).slice(2, 7)}`
 }

@@ -7,7 +7,11 @@ describe('taoId', () => {
     expect(ids.size).toBe(100)
   })
 
-  it('starts with p_', () => {
-    expect(taoId()).toMatch(/^p_/)
+  it('has valid format p_<base36timestamp>_<5chars>', () => {
+    expect(taoId()).toMatch(/^p_[0-9a-z]+_[0-9a-z]{5}$/)
+  })
+
+  it('respects custom prefix', () => {
+    expect(taoId('x')).toMatch(/^x_/)
   })
 })
