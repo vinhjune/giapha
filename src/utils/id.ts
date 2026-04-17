@@ -1,5 +1,10 @@
 export function taoId(prefix = 'p'): string {
-  const max5Base36 = 36 ** 5
-  const rand = globalThis.crypto.getRandomValues(new Uint32Array(1))[0] % max5Base36
-  return `${prefix}_${Date.now().toString(36)}_${rand.toString(36).padStart(5, '0')}`
+  const chars = '0123456789abcdefghijklmnopqrstuvwxyz'
+  let suffix = ''
+  while (suffix.length < 5) {
+    const v = globalThis.crypto.getRandomValues(new Uint8Array(1))[0]
+    if (v >= 252) continue // reject to avoid modulo bias
+    suffix += chars[v % 36]
+  }
+  return `${prefix}_${Date.now().toString(36)}_${suffix}`
 }
