@@ -37,7 +37,7 @@ interface GiaphaState {
 
 export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   data: null,
-  fileId: import.meta.env.VITE_GIAPHA_FILE_ID || null,
+  fileId: import.meta.env.VITE_GIAPHA_FILE_ID || localStorage.getItem('giaphaFileId') || null,
   currentUserEmail: null,
   currentRole: 'public',
   viewMode: 'tree',
@@ -47,7 +47,10 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   conflictDetected: false,
 
   setData: (data) => set({ data, isDirty: false }),
-  setFileId: (id) => set({ fileId: id }),
+  setFileId: (id) => {
+    localStorage.setItem('giaphaFileId', id)
+    set({ fileId: id })
+  },
   setUser: (email, role) => set({ currentUserEmail: email, currentRole: role }),
   setViewMode: (mode) => set({ viewMode: mode }),
   selectPerson: (id) => set({ selectedPersonId: id }),

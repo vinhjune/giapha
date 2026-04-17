@@ -42,13 +42,15 @@ export async function ghiFile(fileId: string, data: GiaphaData): Promise<void> {
   }
 }
 
-/** Find or create the 'giapha' folder, then create giapha.json inside it. Returns file ID. */
-export async function khoiTaoFile(nguoiTao: string = ''): Promise<string> {
+/** Find or create the 'giapha' folder, then create giapha.json inside it.
+ *  If the file already exists, returns its ID without creating a new one.
+ *  Returns { id, data } so the caller can populate the store. */
+export async function khoiTaoFile(tenDongHo: string = 'Gia Phả', nguoiTao: string = ''): Promise<{ id: string; data: GiaphaData }> {
   const token = layAccessToken()
   if (!token) throw new Error('Chưa đăng nhập')
   const authHeader = { Authorization: `Bearer ${token}` }
 
-  // Find existing folder
+  // Find or create folder
   const folderSearch = await fetch(
     `${DRIVE_API}/files?q=name='${FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id)`,
     { headers: authHeader }
@@ -60,33 +62,41 @@ export async function khoiTaoFile(nguoiTao: string = ''): Promise<string> {
   if (folders && folders.length > 0) {
     folderId = folders[0].id
   } else {
-    // Create folder
     const createFolder = await fetch(`${DRIVE_API}/files`, {
       method: 'POST',
       headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' }),
     })
-    if (!createFolder.ok) {
-      const err = await createFolder.text()
-      throw new Error(`Tạo thư mục thất bại: ${err}`)
-    }
-    const folder = await createFolder.json()
-    folderId = folder.id
+    if (!createFolder.ok) throw new Error(`Tạo thư mục thất bại: ${(await createFolder.text())}`)
+    folderId = (await createFolder.json()).id
   }
 
-  // Create giapha.json in the folder
-  const meta = { name: FILE_NAME, parents: [folderId] }
+  // Check if giapha.json already exists in folder
+  const fileSearch = await fetch(
+    `${DRIVE_API}/files?q=name='${FILE_NAME}' and '${folderId}' in parents and trashed=false&fields=files(id)`,
+    { headers: authHeader }
+  )
+  if (!fileSearch.ok) throw new Error(`Không tìm được file: ${fileSearch.status}`)
+  const { files: existing } = await fileSearch.json()
+  if (existing && existing.length > 0) {
+    const id = existing[0].id
+    const data = await docFile(id)
+    return { id, data }
+  }
+
+  // Create new giapha.json
   const initData: GiaphaData = {
     metadata: {
-      tenDongHo: 'Gia Phả',
+      tenDongHo,
       ngayTao: new Date().toISOString(),
       nguoiTao,
       phienBan: 1,
       cheDoCong: false,
-      danhSachNguoiDung: [],
+      danhSachNguoiDung: [{ email: nguoiTao, role: 'admin' }],
     },
     persons: {},
   }
+  const meta = { name: FILE_NAME, parents: [folderId] }
   const form = new FormData()
   form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }))
   form.append('file', new Blob([JSON.stringify(initData)], { type: 'application/json' }))
@@ -96,12 +106,9 @@ export async function khoiTaoFile(nguoiTao: string = ''): Promise<string> {
     headers: authHeader,
     body: form,
   })
-  if (!createRes.ok) {
-    const err = await createRes.text()
-    throw new Error(`Tạo file thất bại: ${err}`)
-  }
+  if (!createRes.ok) throw new Error(`Tạo file thất bại: ${(await createRes.text())}`)
   const { id } = await createRes.json()
-  return id
+  return { id, data: initData }
 }
 
 /** Share file publicly (anyone with link can view) */
