@@ -21,6 +21,7 @@ export default function PersonDetail({ onEdit }: Props) {
   if (!person) return null
 
   const canEdit = currentRole === 'admin' || currentRole === 'editor'
+  const personId = selectedPersonId // capture non-null value for closure
 
   const bo = person.boId ? data.persons[person.boId] : null
   const me = person.meId ? data.persons[person.meId] : null
@@ -29,7 +30,7 @@ export default function PersonDetail({ onEdit }: Props) {
 
   function handleDelete() {
     if (!confirm(`Xóa ${person.hoTen}?`)) return
-    xoaNguoi(selectedPersonId)
+    xoaNguoi(personId)
     selectPerson(null)
   }
 
