@@ -169,3 +169,4 @@ export async function xoaChiaSeCong(fileId: string): Promise<void> {
     try { const b = await delRes.json(); detail = b?.error?.message || b?.error?.status || detail } catch { /* ignore */ }
     throw new Error(`Xóa quyền chia sẻ thất bại: ${detail} | permissionId="${anyonePerm.id}"`)
   }
+}
