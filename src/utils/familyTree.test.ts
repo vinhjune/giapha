@@ -3,9 +3,10 @@ import type { GiaphaData, Person } from '../types/giapha'
 import {
   timVoChong,
   tuDongDienMe,
-  tuDongDienBo,
   sapXepAnhChiEm,
   laThanhVienThuocHo,
+  layConCai,
+  layBoCMe,
 } from './familyTree'
 
 const nguoiMau = (ghi: Partial<Person>): Person => ({
@@ -72,5 +73,63 @@ describe('laThanhVienThuocHo', () => {
 
   it('female with laThanhVienHo false is not clan member', () => {
     expect(laThanhVienThuocHo(nguoiMau({ gioiTinh: 'nu', laThanhVienHo: false }))).toBe(false)
+  })
+
+  it('person with gioiTinh khac and laThanhVienHo false is not clan member', () => {
+    expect(laThanhVienThuocHo(nguoiMau({ gioiTinh: 'khac', laThanhVienHo: false }))).toBe(false)
+  })
+})
+
+describe('layConCai', () => {
+  it('returns child Person objects for a parent', () => {
+    const data: GiaphaData = {
+      metadata: {} as any,
+      persons: {
+        bo: nguoiMau({ id: 'bo', conCaiIds: ['c1', 'c2'] }),
+        c1: nguoiMau({ id: 'c1' }),
+        c2: nguoiMau({ id: 'c2' }),
+      },
+    }
+    const result = layConCai('bo', data)
+    expect(result.map(p => p.id)).toEqual(['c1', 'c2'])
+  })
+
+  it('returns empty array for unknown personId', () => {
+    const data: GiaphaData = { metadata: {} as any, persons: {} }
+    expect(layConCai('nobody', data)).toEqual([])
+  })
+
+  it('skips stale child references not present in data', () => {
+    const data: GiaphaData = {
+      metadata: {} as any,
+      persons: {
+        bo: nguoiMau({ id: 'bo', conCaiIds: ['c1', 'ghost'] }),
+        c1: nguoiMau({ id: 'c1' }),
+      },
+    }
+    expect(layConCai('bo', data).map(p => p.id)).toEqual(['c1'])
+  })
+})
+
+describe('layBoCMe', () => {
+  it('returns both parents when both exist', () => {
+    const data: GiaphaData = {
+      metadata: {} as any,
+      persons: {
+        con: nguoiMau({ id: 'con', boId: 'bo', meId: 'me' }),
+        bo: nguoiMau({ id: 'bo' }),
+        me: nguoiMau({ id: 'me' }),
+      },
+    }
+    const { bo, me } = layBoCMe(data.persons['con'], data)
+    expect(bo?.id).toBe('bo')
+    expect(me?.id).toBe('me')
+  })
+
+  it('returns undefined for unset parent IDs', () => {
+    const data: GiaphaData = { metadata: {} as any, persons: {} }
+    const { bo, me } = layBoCMe(nguoiMau({ id: 'x' }), data)
+    expect(bo).toBeUndefined()
+    expect(me).toBeUndefined()
   })
 })

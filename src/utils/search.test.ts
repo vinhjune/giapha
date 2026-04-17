@@ -31,4 +31,12 @@ describe('timKiemTheoTen', () => {
     const results = timKiemTheoTen('binh', data)
     expect(results.map(p => p.id)).toContain('p2')
   })
+
+  it('matches names with Đ/đ when searching with d', () => {
+    const dataD: GiaphaData = {
+      metadata: {} as any,
+      persons: { p4: p('p4', 'Đặng Văn Dũng') },
+    }
+    expect(timKiemTheoTen('dang', dataD).map(p => p.id)).toContain('p4')
+  })
 })

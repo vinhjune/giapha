@@ -37,7 +37,8 @@ export function sapXepAnhChiEm(persons: Person[]): Person[] {
 }
 
 export function laThanhVienThuocHo(person: Person): boolean {
-  if (person.gioiTinh === 'nu' && !person.laThanhVienHo) return false
+  // Males are always clan members; females and 'khac' follow the laThanhVienHo flag
+  if (person.gioiTinh !== 'nam' && !person.laThanhVienHo) return false
   return true
 }
 
