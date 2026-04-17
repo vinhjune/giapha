@@ -67,4 +67,34 @@ describe('useGiaphaStore spouse sync', () => {
     const b = useGiaphaStore.getState().data?.persons.b
     expect(b?.honNhan).toEqual([])
   })
+
+  it('stores optional email and phone when adding a person', () => {
+    const id = useGiaphaStore.getState().themNguoi({
+      hoTen: 'Người C',
+      gioiTinh: 'khac',
+      email: 'c@example.com',
+      soDienThoai: '0901234567',
+      laThanhVienHo: true,
+      honNhan: [],
+      conCaiIds: [],
+    })
+
+    const c = useGiaphaStore.getState().data?.persons[id]
+    expect(c?.email).toBe('c@example.com')
+    expect(c?.soDienThoai).toBe('0901234567')
+  })
+
+  it('allows email and phone to be empty', () => {
+    const id = useGiaphaStore.getState().themNguoi({
+      hoTen: 'Người D',
+      gioiTinh: 'nu',
+      laThanhVienHo: false,
+      honNhan: [],
+      conCaiIds: [],
+    })
+
+    const d = useGiaphaStore.getState().data?.persons[id]
+    expect(d?.email).toBeUndefined()
+    expect(d?.soDienThoai).toBeUndefined()
+  })
 })

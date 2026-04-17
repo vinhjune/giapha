@@ -46,6 +46,18 @@ export default function PersonDetail({ onEdit }: Props) {
           <dt className="text-gray-500 w-24">Giới tính:</dt>
           <dd>{person.gioiTinh === 'nam' ? 'Nam' : person.gioiTinh === 'nu' ? 'Nữ' : 'Khác'}</dd>
         </div>
+        {person.email && (
+          <div className="flex gap-2">
+            <dt className="text-gray-500 w-24">Email:</dt>
+            <dd>{person.email}</dd>
+          </div>
+        )}
+        {person.soDienThoai && (
+          <div className="flex gap-2">
+            <dt className="text-gray-500 w-24">Điện thoại:</dt>
+            <dd>{person.soDienThoai}</dd>
+          </div>
+        )}
         <div className="flex gap-2">
           <dt className="text-gray-500 w-24">Ngày sinh:</dt>
           <dd>{formatNgay(person.namSinh)}</dd>
