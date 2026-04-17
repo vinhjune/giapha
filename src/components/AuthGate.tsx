@@ -42,7 +42,7 @@ const DEMO_DATA: GiaphaData = {
 }
 
 export default function AuthGate({ children }: Props) {
-  const { data, fileId, setData, setUser } = useGiaphaStore()
+  const { data, fileId, setData, setUser, setFileId } = useGiaphaStore()
   const [loading, setLoading] = useState(true)
   const [publicMode, setPublicMode] = useState(false)
 
@@ -94,6 +94,7 @@ export default function AuthGate({ children }: Props) {
     function handleDemo() {
       setData(DEMO_DATA)
       setUser('demo@example.com', 'admin')
+      setFileId('demo-file-id')
       setPublicMode(true)
     }
 
