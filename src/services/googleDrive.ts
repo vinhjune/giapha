@@ -24,7 +24,15 @@ export async function docFile(fileId: string): Promise<GiaphaData> {
 /** Read file without auth (public mode via API key) */
 export async function docFileCong(fileId: string, apiKey: string): Promise<GiaphaData> {
   const res = await fetch(`${DRIVE_API}/files/${fileId}?alt=media&key=${apiKey}`)
-  if (!res.ok) throw new Error(`Không đọc được file công khai: ${res.status}`)
+  if (!res.ok) {
+    let detail = `${res.status}`
+    try {
+      const body = await res.json()
+      const msg = body?.error?.message || body?.error?.status
+      if (msg) detail = `${res.status} – ${msg}`
+    } catch { /* response was not JSON */ }
+    throw new Error(`Không đọc được file công khai: ${detail}`)
+  }
   return res.json()
 }
 

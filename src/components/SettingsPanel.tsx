@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
-import { chiaSeCong, xoaChiaSeCong, ghiFile } from '../services/googleDrive'
+import { chiaSeCong, xoaChiaSeCong, ghiFile, docFileCong } from '../services/googleDrive'
 import PermissionManager from './PermissionManager'
 
 interface Props {
@@ -10,6 +10,9 @@ interface Props {
 export default function SettingsPanel({ onClose }: Props) {
   const { data, fileId, currentRole, setData } = useGiaphaStore()
   const [toggling, setToggling] = useState(false)
+  const [verifyError, setVerifyError] = useState<string | null>(null)
+
+  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY
 
   if (currentRole !== 'admin' || !data || !fileId) return null
 
@@ -18,12 +21,29 @@ export default function SettingsPanel({ onClose }: Props) {
   async function handleTogglePublic() {
     if (!data || !fileId) return
     setToggling(true)
+    setVerifyError(null)
     try {
       if (isPublic) {
         await xoaChiaSeCong(fileId)
       } else {
         await chiaSeCong(fileId)
+
+        // Verify the API key can actually read the file now
+        if (apiKey) {
+          try {
+            await docFileCong(fileId, apiKey)
+          } catch (e: unknown) {
+            const msg = (e as Error).message
+            setVerifyError(
+              `Đã chia sẻ Drive nhưng đọc bằng API key thất bại:\n${msg}\n\n` +
+              `Kiểm tra: (1) Drive API đã được bật trong Google Cloud Console chưa? ` +
+              `(2) API key có bị giới hạn HTTP referrer không?`
+            )
+            // Still save cheDoCong=true since Drive sharing worked
+          }
+        }
       }
+
       const updated = {
         ...data,
         metadata: { ...data.metadata, cheDoCong: !isPublic },
@@ -68,8 +88,11 @@ export default function SettingsPanel({ onClose }: Props) {
               />
             </button>
           </div>
-          {isPublic && (
+          {isPublic && !verifyError && (
             <p className="mt-2 text-xs text-green-600">✓ Bất kỳ ai có link đều có thể xem</p>
+          )}
+          {verifyError && (
+            <p className="mt-2 text-xs text-red-600 whitespace-pre-wrap">{verifyError}</p>
           )}
         </div>
 
