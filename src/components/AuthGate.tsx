@@ -27,23 +27,37 @@ export default function AuthGate({ children }: Props) {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
   useEffect(() => {
-    khoiTaoAuth(clientId, SCOPE_DRIVE, async (token) => {
-      if (!token) { setLoading(false); return }
-
-      try {
-        const email = await fetchUserEmail(token)
-        if (fileId) {
-          const d = await docFile(fileId)
-          setData(d)
-          const user = d.metadata.danhSachNguoiDung.find(u => u.email === email)
-          const role = user?.role || (d.metadata.nguoiTao === email ? 'admin' : 'viewer')
-          setUser(email, role)
-        }
-      } catch {
-        // ignore load errors — show login page
-      }
+    // GIS script loads with async defer — wait for it before initializing
+    if (!clientId) {
       setLoading(false)
-    })
+      return
+    }
+
+    function initWhenReady() {
+      if (typeof (window as any).google === 'undefined') {
+        setTimeout(initWhenReady, 100)
+        return
+      }
+      khoiTaoAuth(clientId, SCOPE_DRIVE, async (token) => {
+        if (!token) { setLoading(false); return }
+
+        try {
+          const email = await fetchUserEmail(token)
+          if (fileId) {
+            const d = await docFile(fileId)
+            setData(d)
+            const user = d.metadata.danhSachNguoiDung.find(u => u.email === email)
+            const role = user?.role || (d.metadata.nguoiTao === email ? 'admin' : 'viewer')
+            setUser(email, role)
+          }
+        } catch {
+          // ignore load errors — show login page
+        }
+        setLoading(false)
+      })
+    }
+
+    initWhenReady()
   }, [])
 
   if (loading) {
