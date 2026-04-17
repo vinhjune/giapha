@@ -202,7 +202,7 @@ export default function AuthGate({ children }: Props) {
 
     return (
       <LoginPage
-        publicModeAvailable={Boolean(fileId && apiKey)}
+        publicModeAvailable={true}
         onPublicMode={handlePublicMode}
         onDemo={!clientId ? handleDemo : undefined}
       />
