@@ -57,11 +57,18 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
     const person: Person = { id, ...personData }
     set(state => {
       if (!state.data) return {}
+      const persons: Record<string, Person> = { ...state.data.persons, [id]: person }
+      // Sync conCaiIds for both parents
+      if (personData.boId && persons[personData.boId]) {
+        const bo = persons[personData.boId]
+        persons[personData.boId] = { ...bo, conCaiIds: [...bo.conCaiIds, id] }
+      }
+      if (personData.meId && persons[personData.meId]) {
+        const me = persons[personData.meId]
+        persons[personData.meId] = { ...me, conCaiIds: [...me.conCaiIds, id] }
+      }
       return {
-        data: {
-          ...state.data,
-          persons: { ...state.data.persons, [id]: person },
-        },
+        data: { ...state.data, persons },
         isDirty: true,
       }
     })
@@ -88,12 +95,20 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
       if (!state.data) return {}
       const persons = { ...state.data.persons }
       delete persons[id]
-      // Clean up references in all remaining persons
-      Object.values(persons).forEach(p => {
-        if (p.boId === id) p.boId = undefined
-        if (p.meId === id) p.meId = undefined
-        p.conCaiIds = p.conCaiIds.filter(c => c !== id)
-        p.honNhan = p.honNhan.filter(h => h.voChongId !== id)
+      // Rebuild any person that references the deleted id
+      Object.keys(persons).forEach(pid => {
+        const p = persons[pid]
+        const needsUpdate = p.boId === id || p.meId === id ||
+          p.conCaiIds.includes(id) || p.honNhan.some(h => h.voChongId === id)
+        if (needsUpdate) {
+          persons[pid] = {
+            ...p,
+            boId: p.boId === id ? undefined : p.boId,
+            meId: p.meId === id ? undefined : p.meId,
+            conCaiIds: p.conCaiIds.filter(c => c !== id),
+            honNhan: p.honNhan.filter(h => h.voChongId !== id),
+          }
+        }
       })
       return { data: { ...state.data, persons }, isDirty: true }
     })
@@ -109,14 +124,19 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   })),
 
   acquireSoftLock: () => {
-    const { data, currentUserEmail } = get()
-    if (!data || !currentUserEmail) return
-    set(state => ({
-      data: state.data ? {
-        ...state.data,
-        metadata: { ...state.data.metadata, dangChinhSua: taoSoftLock(currentUserEmail, currentUserEmail) },
-      } : null,
-    }))
+    if (!get().data || !get().currentUserEmail) return
+    set(state => {
+      if (!state.data || !state.currentUserEmail) return {}
+      return {
+        data: {
+          ...state.data,
+          metadata: {
+            ...state.data.metadata,
+            dangChinhSua: taoSoftLock(state.currentUserEmail, state.currentUserEmail),
+          },
+        },
+      }
+    })
   },
 
   releaseSoftLock: () => {
