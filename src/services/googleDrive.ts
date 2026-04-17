@@ -127,8 +127,9 @@ export async function chiaSeCong(fileId: string): Promise<void> {
     body: JSON.stringify({ role: 'reader', type: 'anyone' }),
   })
   if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Chia sẻ thất bại: ${err}`)
+    let detail = `${res.status}`
+    try { const b = await res.json(); detail = b?.error?.message || detail } catch { /* ignore */ }
+    throw new Error(`Chia sẻ thất bại: ${detail}`)
   }
 }
 
@@ -138,9 +139,18 @@ export async function xoaChiaSeCong(fileId: string): Promise<void> {
   if (!token) throw new Error('Chưa đăng nhập')
   const authHeader = { Authorization: `Bearer ${token}` }
 
-  // Get permission ID first
+  // Check ownership first
+  const metaRes = await fetch(`${DRIVE_API}/files/${fileId}?fields=ownedByMe,capabilities(canShare)`, { headers: authHeader })
+  if (metaRes.ok) {
+    const meta = await metaRes.json()
+    if (!meta.ownedByMe && !meta.capabilities?.canShare) {
+      throw new Error('Bạn không phải chủ sở hữu file này và không có quyền quản lý chia sẻ. Hãy dùng tài khoản Google đã tạo file.')
+    }
+  }
+
+  // Get permission ID (no field filter so we always get the id)
   const res = await fetch(
-    `${DRIVE_API}/files/${fileId}/permissions?fields=permissions(id,type)`,
+    `${DRIVE_API}/files/${fileId}/permissions`,
     { headers: authHeader }
   )
   if (!res.ok) throw new Error(`Không lấy được danh sách quyền: ${res.status}`)
@@ -148,10 +158,14 @@ export async function xoaChiaSeCong(fileId: string): Promise<void> {
   const { permissions } = await res.json()
   const anyonePerm = permissions?.find((p: any) => p.type === 'anyone')
   if (!anyonePerm) return
+  if (!anyonePerm.id) throw new Error('Không tìm được ID của quyền công khai')
 
   const delRes = await fetch(
     `${DRIVE_API}/files/${fileId}/permissions/${anyonePerm.id}`,
     { method: 'DELETE', headers: authHeader }
   )
-  if (!delRes.ok) throw new Error(`Xóa quyền chia sẻ thất bại: ${delRes.status}`)
-}
+  if (!delRes.ok) {
+    let detail = `${delRes.status}`
+    try { const b = await delRes.json(); detail = b?.error?.message || b?.error?.status || detail } catch { /* ignore */ }
+    throw new Error(`Xóa quyền chia sẻ thất bại: ${detail} | permissionId="${anyonePerm.id}"`)
+  }
