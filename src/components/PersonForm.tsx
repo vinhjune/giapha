@@ -13,6 +13,8 @@ interface Props {
 interface FormState {
   hoTen: string
   gioiTinh: GioiTinh
+  email: string
+  soDienThoai: string
   ngaySinh: string
   ngayMat: string
   queQuan: string
@@ -47,7 +49,7 @@ function strToNgay(s: string): NgayThang | undefined {
 }
 
 const empty: FormState = {
-  hoTen: '', gioiTinh: 'nam', ngaySinh: '', ngayMat: '',
+  hoTen: '', gioiTinh: 'nam', email: '', soDienThoai: '', ngaySinh: '', ngayMat: '',
   queQuan: '', tieuSu: '', laThanhVienHo: true, thuTuAnhChi: '',
   boId: '', meId: '', voChongIds: [],
 }
@@ -60,6 +62,8 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       return {
         hoTen: editPerson.hoTen,
         gioiTinh: editPerson.gioiTinh,
+        email: editPerson.email || '',
+        soDienThoai: editPerson.soDienThoai || '',
         ngaySinh: ngayToStr(editPerson.namSinh),
         ngayMat: ngayToStr(editPerson.namMat),
         queQuan: editPerson.queQuan || '',
@@ -114,6 +118,8 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     const personData: Omit<Person, 'id'> = {
       hoTen: form.hoTen.trim(),
       gioiTinh: form.gioiTinh,
+      email: form.email.trim() || undefined,
+      soDienThoai: form.soDienThoai.trim() || undefined,
       namSinh: strToNgay(form.ngaySinh),
       namMat: strToNgay(form.ngayMat),
       queQuan: form.queQuan || undefined,
@@ -167,6 +173,26 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                     {g === 'nam' ? 'Nam' : g === 'nu' ? 'Nữ' : 'Khác'}
                   </label>
                 ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700">Số điện thoại</label>
+                <input
+                  value={form.soDienThoai}
+                  onChange={e => setForm(f => ({ ...f, soDienThoai: e.target.value }))}
+                  className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
               </div>
             </div>
 

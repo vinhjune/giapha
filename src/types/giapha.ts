@@ -20,6 +20,8 @@ export interface Person {
   id: string
   hoTen: string                // Full name
   gioiTinh: GioiTinh
+  email?: string
+  soDienThoai?: string
   namSinh?: NgayThang
   namMat?: NgayThang
   queQuan?: string             // Hometown
