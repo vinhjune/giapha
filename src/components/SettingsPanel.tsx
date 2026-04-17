@@ -63,7 +63,7 @@ export default function SettingsPanel({ onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end pt-12 pr-4">
       <div className="fixed inset-0" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl border border-gray-200 w-80 max-h-[80vh] overflow-y-auto">
+      <div className="relative bg-white rounded-xl shadow-xl border border-gray-200 w-[26rem] max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <h2 className="font-semibold text-gray-800">Cài đặt</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>

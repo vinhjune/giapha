@@ -54,15 +54,17 @@ export default function PermissionManager() {
           </div>
         ))}
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="Email"
-          className="flex-1 px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
-        <select value={newRole} onChange={e => setNewRole(e.target.value as Role)}
-          className="px-2 py-1.5 text-sm border rounded">
-          <option value="viewer">Thành viên</option>
-          <option value="editor">Quản lý</option>
-        </select>
-        <button onClick={addUser} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Thêm</button>
+          className="flex-1 min-w-0 px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
+        <div className="flex gap-2">
+          <select value={newRole} onChange={e => setNewRole(e.target.value as Role)}
+            className="px-2 py-1.5 text-sm border rounded">
+            <option value="viewer">Thành viên</option>
+            <option value="editor">Quản lý</option>
+          </select>
+          <button onClick={addUser} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Thêm</button>
+        </div>
       </div>
     </div>
   )
