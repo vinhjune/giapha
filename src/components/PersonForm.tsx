@@ -261,7 +261,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
               <label className="text-sm font-medium text-gray-700">Mẹ</label>
               <div className="mt-1 flex flex-wrap gap-2">
                 {multipleWives.length > 1 && !form.meId ? (
-                  <select onChange={e => setForm(f => ({ ...f, meId: Number(e.target.value) || undefined }))}
+                  <select onChange={e => setForm(f => ({ ...f, meId: e.target.value ? Number(e.target.value) : undefined }))}
                     className="flex-1 px-3 py-1.5 text-sm border rounded">
                     <option value="">-- Chọn mẹ --</option>
                     {multipleWives.map(id => (

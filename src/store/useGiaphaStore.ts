@@ -221,11 +221,10 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
       delete persons[id]
       // Rebuild any person that references the deleted id
       Object.values(persons).forEach(p => {
-        const pid = p.id
         const needsUpdate = p.boId === id || p.meId === id ||
           p.conCaiIds.includes(id) || p.honNhan.some(h => h.voChongId === id)
         if (needsUpdate) {
-          persons[pid] = {
+          persons[p.id] = {
             ...p,
             boId: p.boId === id ? undefined : p.boId,
             meId: p.meId === id ? undefined : p.meId,
