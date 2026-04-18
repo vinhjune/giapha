@@ -8,13 +8,10 @@ interface Props {
 
 export default function PersonCard({ person, isSelected, onClick }: Props) {
   const isClan = person.laThanhVienHo
-  const backgroundClass = person.laThanhVienHo
-    ? person.gioiTinh === 'nu'
-      ? 'bg-pink-100'
-      : 'bg-blue-100'
-    : person.gioiTinh === 'nam'
-      ? 'bg-purple-100'
-      : 'bg-yellow-100'
+  const backgroundByGroup = isClan
+    ? { nam: 'bg-blue-100', nu: 'bg-pink-100', khac: 'bg-blue-100' }
+    : { nam: 'bg-purple-100', nu: 'bg-yellow-100', khac: 'bg-yellow-100' }
+  const backgroundClass = backgroundByGroup[person.gioiTinh]
   return (
     <div
       onClick={onClick}
