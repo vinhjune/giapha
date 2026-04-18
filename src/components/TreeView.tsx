@@ -512,14 +512,16 @@ export default function TreeView() {
     const a = event.touches.item(0)
     const b = event.touches.item(1)
     if (!a || !b) return
+    const { startDistance, startZoom } = pinchStateRef.current
+    if (startDistance <= 0) return
+
     const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
-    if (!pinchStateRef.current.startDistance) return
 
     const rect = event.currentTarget.getBoundingClientRect()
     const centerX = (a.clientX + b.clientX) / 2 - rect.left
     const centerY = (a.clientY + b.clientY) / 2 - rect.top
 
-    const nextZoom = pinchStateRef.current.startZoom * (distance / pinchStateRef.current.startDistance)
+    const nextZoom = startZoom * (distance / startDistance)
     applyZoom(nextZoom, centerX, centerY)
   }, [applyZoom])
 
