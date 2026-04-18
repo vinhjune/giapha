@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import TreeView from './TreeView'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { GiaphaData } from '../types/giapha'
@@ -42,5 +42,20 @@ describe('TreeView', () => {
   it('shows deeply nested descendants under female line', () => {
     render(<TreeView />)
     expect(screen.getByText('Chắt')).toBeInTheDocument()
+  })
+
+  it('allows panning with mouse drag on desktop', () => {
+    render(<TreeView />)
+    const container = screen.getByTestId('tree-view-container')
+
+    container.scrollLeft = 120
+    container.scrollTop = 80
+
+    fireEvent.mouseDown(container, { button: 0, clientX: 300, clientY: 200 })
+    fireEvent.mouseMove(container, { clientX: 260, clientY: 170 })
+    fireEvent.mouseUp(container)
+
+    expect(container.scrollLeft).toBe(160)
+    expect(container.scrollTop).toBe(110)
   })
 })
