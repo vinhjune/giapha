@@ -111,6 +111,19 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     setPickerOpen(null)
   }
 
+  function handleVoChongSelected(person: Person) {
+    setForm(f => {
+      const nextVoChongIds = [...f.voChongIds, person.id]
+      const shouldAutoMarkNgoaiHo = !editPerson && person.laThanhVienHo
+      return {
+        ...f,
+        voChongIds: nextVoChongIds,
+        laThanhVienHo: shouldAutoMarkNgoaiHo ? false : f.laThanhVienHo,
+      }
+    })
+    setPickerOpen(null)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.hoTen.trim()) return
@@ -128,7 +141,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       namMat: strToNgay(form.ngayMat),
       queQuan: form.queQuan || undefined,
       tieuSu: form.tieuSu || undefined,
-      laThanhVienHo: form.gioiTinh === 'nu' ? form.laThanhVienHo : true,
+      laThanhVienHo: form.laThanhVienHo,
       thuTuAnhChi: form.thuTuAnhChi ? parseInt(form.thuTuAnhChi) : undefined,
       boId: form.boId || undefined,
       meId: form.meId || undefined,
@@ -200,13 +213,14 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
               </div>
             </div>
 
-            {form.gioiTinh === 'nu' && (
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="checkbox" checked={form.laThanhVienHo}
-                  onChange={e => setForm(f => ({ ...f, laThanhVienHo: e.target.checked }))} />
-                Thuộc dòng họ (không lấy chồng ngoài)
-              </label>
-            )}
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!form.laThanhVienHo}
+                onChange={e => setForm(f => ({ ...f, laThanhVienHo: !e.target.checked }))}
+              />
+              Người ngoài họ
+            </label>
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <div className="flex-1">
@@ -316,7 +330,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       )}
       {pickerOpen === 'vochong' && (
         <PersonPicker title="Chọn vợ/chồng" excludeIds={[editPerson?.id || '', ...form.voChongIds].filter(Boolean)}
-          onSelect={p => { setForm(f => ({ ...f, voChongIds: [...f.voChongIds, p.id] })); setPickerOpen(null) }}
+          onSelect={handleVoChongSelected}
           onClose={() => setPickerOpen(null)} />
       )}
     </>
