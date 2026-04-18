@@ -145,7 +145,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-40 flex items-end justify-center p-2 sm:items-center sm:p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-[480px] max-h-[100dvh] sm:max-h-[90vh] flex flex-col">
+        <div data-testid="person-form-modal" className="bg-white rounded-lg shadow-xl w-full max-w-[480px] max-h-[100dvh] sm:max-h-[90vh] flex flex-col">
           <div className="flex justify-between items-center px-4 py-3 border-b">
             <h3 className="font-semibold">{editPerson ? 'Sửa thông tin' : 'Thêm người mới'}</h3>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>

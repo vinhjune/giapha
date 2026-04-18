@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { render } from '@testing-library/react'
+import { describe, it, expect, afterEach } from 'vitest'
+import { act, render } from '@testing-library/react'
 import { tuDongDienMe, tuDongDienBo } from '../utils/familyTree'
 import type { GiaphaData } from '../types/giapha'
 import type { Person } from '../types/giapha'
@@ -25,10 +25,20 @@ describe('PersonForm auto-fill', () => {
 })
 
 describe('PersonForm responsive layout', () => {
-  it('uses mobile-friendly modal width classes', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+  })
+
+  it('modal container has responsive width and max-width classes', () => {
     useGiaphaStore.setState({
       data,
       currentUserEmail: null,
+      acquireSoftLock: () => {},
+      releaseSoftLock: () => {},
     })
 
     const editPerson: Person = {
@@ -40,12 +50,12 @@ describe('PersonForm responsive layout', () => {
       conCaiIds: [],
     }
 
-    const { container } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
-    const modal = container.querySelector('.fixed.inset-0 > div') as HTMLDivElement | null
+    const { getByTestId } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+    const modal = getByTestId('person-form-modal') as HTMLDivElement
 
-    expect(modal).not.toBeNull()
-    expect(modal?.className).toContain('w-full')
-    expect(modal?.className).toContain('max-w-[480px]')
-    expect(modal?.className).toContain('max-h-[100dvh]')
+    expect(modal.className).toContain('w-full')
+    expect(modal.className).toContain('max-w-[480px]')
+    expect(modal.className).toContain('max-h-[100dvh]')
+    expect(modal.className).toContain('sm:max-h-[90vh]')
   })
 })
