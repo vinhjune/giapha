@@ -79,7 +79,7 @@ function PersonRow({ person, depth, onSelect, selectedId, highlightId, isSpouse 
 export default function ListView() {
   const { data, selectedPersonId, focusedPersonId, selectPerson } = useGiaphaStore()
   if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
-  const highlightPersonId = focusedPersonId ?? selectedPersonId
+  const highlightedPersonId = focusedPersonId ?? selectedPersonId
 
   const roots = Object.values(data.persons).filter(p => p.laThanhVienHo && (!p.boId || !data.persons[p.boId]))
   const sortedRoots = sapXepAnhChiEm(roots)
@@ -88,7 +88,7 @@ export default function ListView() {
     <div className="flex-1 overflow-y-auto bg-white p-2">
       {sortedRoots.map(root => (
         <PersonRow key={root.id} person={root} depth={0}
-          onSelect={selectPerson} selectedId={selectedPersonId} highlightId={highlightPersonId} />
+          onSelect={selectPerson} selectedId={selectedPersonId} highlightId={highlightedPersonId} />
       ))}
       {sortedRoots.length === 0 && (
         <p className="text-center text-gray-400 py-8">Chưa có người nào. Hãy thêm người đầu tiên.</p>
