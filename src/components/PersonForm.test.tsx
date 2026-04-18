@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest'
+import { render } from '@testing-library/react'
 import { tuDongDienMe, tuDongDienBo } from '../utils/familyTree'
 import type { GiaphaData } from '../types/giapha'
+import type { Person } from '../types/giapha'
+import { useGiaphaStore } from '../store/useGiaphaStore'
+import PersonForm from './PersonForm'
 
 const data: GiaphaData = {
   metadata: {} as any,
@@ -17,5 +21,31 @@ describe('PersonForm auto-fill', () => {
 
   it('selecting mother with one husband auto-fills father', () => {
     expect(tuDongDienBo('me1', data)).toBe('bo1')
+  })
+})
+
+describe('PersonForm responsive layout', () => {
+  it('uses mobile-friendly modal width classes', () => {
+    useGiaphaStore.setState({
+      data,
+      currentUserEmail: null,
+    })
+
+    const editPerson: Person = {
+      id: 'bo1',
+      hoTen: 'Bố',
+      gioiTinh: 'nam',
+      laThanhVienHo: true,
+      honNhan: [{ voChongId: 'me1' }],
+      conCaiIds: [],
+    }
+
+    const { container } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+    const modal = container.querySelector('.fixed.inset-0 > div') as HTMLDivElement | null
+
+    expect(modal).not.toBeNull()
+    expect(modal?.className).toContain('w-full')
+    expect(modal?.className).toContain('max-w-[480px]')
+    expect(modal?.className).toContain('max-h-[100dvh]')
   })
 })

@@ -144,8 +144,8 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-xl w-[480px] max-h-[90vh] flex flex-col">
+      <div className="fixed inset-0 bg-black/40 z-40 flex items-end justify-center p-2 sm:items-center sm:p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-[480px] max-h-[100dvh] sm:max-h-[90vh] flex flex-col">
           <div className="flex justify-between items-center px-4 py-3 border-b">
             <h3 className="font-semibold">{editPerson ? 'Sửa thông tin' : 'Thêm người mới'}</h3>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
@@ -176,7 +176,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <div className="flex-1">
                 <label className="text-sm font-medium text-gray-700">Email</label>
                 <input
@@ -204,7 +204,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
               </label>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <div className="flex-1">
                 <label className="text-sm font-medium text-gray-700">Ngày sinh</label>
                 <input type="text" value={form.ngaySinh} placeholder="dd/mm/yyyy"
@@ -228,7 +228,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
 
             <div>
               <label className="text-sm font-medium text-gray-700">Bố</label>
-              <div className="mt-1 flex gap-2">
+              <div className="mt-1 flex flex-wrap gap-2">
                 <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-700">
                   {form.boId ? getName(form.boId) : <span className="text-gray-400">Chưa chọn</span>}
                 </div>
@@ -241,7 +241,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
 
             <div>
               <label className="text-sm font-medium text-gray-700">Mẹ</label>
-              <div className="mt-1 flex gap-2">
+              <div className="mt-1 flex flex-wrap gap-2">
                 {multipleWives.length > 1 && !form.meId ? (
                   <select onChange={e => setForm(f => ({ ...f, meId: e.target.value }))}
                     className="flex-1 px-3 py-1.5 text-sm border rounded">
@@ -288,7 +288,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                 className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
               <button type="submit"
                 className="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700">
                 {editPerson ? 'Lưu thay đổi' : 'Thêm'}
