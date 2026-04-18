@@ -29,6 +29,14 @@ function taoDataMau(): GiaphaData {
         honNhan: [],
         conCaiIds: [],
       },
+      c: {
+        id: 'c',
+        hoTen: 'Người C',
+        gioiTinh: 'nam',
+        laThanhVienHo: true,
+        honNhan: [],
+        conCaiIds: [],
+      },
     },
   }
 }
@@ -96,5 +104,28 @@ describe('useGiaphaStore spouse sync', () => {
     const d = useGiaphaStore.getState().data?.persons[id]
     expect(d?.email).toBeUndefined()
     expect(d?.soDienThoai).toBeUndefined()
+  })
+
+  it('updates child father when adding a new father with children', () => {
+    const newFatherId = useGiaphaStore.getState().themNguoi({
+      hoTen: 'Ông Nông',
+      gioiTinh: 'nam',
+      laThanhVienHo: true,
+      honNhan: [],
+      conCaiIds: ['b'],
+    })
+
+    const child = useGiaphaStore.getState().data?.persons.b
+    const father = useGiaphaStore.getState().data?.persons[newFatherId]
+    expect(child?.boId).toBe(newFatherId)
+    expect(father?.conCaiIds).toContain('b')
+  })
+
+  it('keeps parent conCaiIds in sync when editing boId', () => {
+    useGiaphaStore.getState().suaNguoi('b', { boId: 'a' })
+    expect(useGiaphaStore.getState().data?.persons.a.conCaiIds).toContain('b')
+
+    useGiaphaStore.getState().suaNguoi('b', { boId: undefined })
+    expect(useGiaphaStore.getState().data?.persons.a.conCaiIds).not.toContain('b')
   })
 })
