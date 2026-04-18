@@ -70,6 +70,30 @@ describe('TreeView', () => {
     expect(container.scrollLeft).toBe(180)
   })
 
+  it('zooms in and out with toolbar buttons', () => {
+    render(<TreeView />)
+    const scaleLayer = screen.getByTestId('tree-view-scale-layer')
+    const zoomInButton = screen.getByRole('button', { name: 'Phóng to cây' })
+    const zoomOutButton = screen.getByRole('button', { name: 'Thu nhỏ cây' })
+
+    expect(scaleLayer).toHaveStyle({ transform: 'scale(1)' })
+    fireEvent.click(zoomInButton)
+    expect(scaleLayer).toHaveStyle({ transform: 'scale(1.1)' })
+
+    fireEvent.click(zoomOutButton)
+    expect(scaleLayer).toHaveStyle({ transform: 'scale(1)' })
+  })
+
+  it('supports ctrl + wheel zooming', () => {
+    render(<TreeView />)
+    const container = screen.getByTestId('tree-view-container')
+    const scaleLayer = screen.getByTestId('tree-view-scale-layer')
+
+    fireEvent.wheel(container, { deltaY: -100, ctrlKey: true, clientX: 200, clientY: 150 })
+
+    expect(scaleLayer).toHaveStyle({ transform: 'scale(1.1)' })
+  })
+
   it('renders descendant connectors in blue with same thickness as couple lines', () => {
     const { container } = render(<TreeView />)
     const svgLines = container.querySelectorAll('svg line')
