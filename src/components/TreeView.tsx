@@ -15,6 +15,7 @@ const FOREST_GAP = 80    // horizontal gap between disconnected family trees
 const KEYBOARD_PAN_STEP = 60
 const NODE_HORIZONTAL_PADDING = 20
 const NAME_CHAR_WIDTH_ESTIMATE = 8
+const NAME_TEXT_STYLE = '600 12px sans-serif'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -154,11 +155,32 @@ function cW(childNodes: TreeNode[]): number {
   return childNodes.reduce((s, c, i) => s + c.subtreeWidth + (i > 0 ? H_GAP : 0), 0)
 }
 
-function calcNodeWidth(persons: Record<string, Person>): number {
-  const longestNameLength = Object.values(persons)
-    .reduce((maxLen, person) => Math.max(maxLen, person.hoTen.trim().length), 0)
+function estimateNameWidth(name: string): number {
+  return name.trim().length * NAME_CHAR_WIDTH_ESTIMATE
+}
 
-  return Math.max(MIN_NODE_W, longestNameLength * NAME_CHAR_WIDTH_ESTIMATE + NODE_HORIZONTAL_PADDING)
+function measureNameWidth(name: string, textMeasureContext: CanvasRenderingContext2D | null): number {
+  const normalized = name.trim()
+  if (!normalized) return 0
+
+  if (!textMeasureContext) {
+    return estimateNameWidth(normalized)
+  }
+
+  textMeasureContext.font = NAME_TEXT_STYLE
+  return Math.ceil(textMeasureContext.measureText(normalized).width)
+}
+
+function calcNodeWidth(persons: Record<string, Person>): number {
+  const textMeasureContext =
+    typeof document !== 'undefined' && !(typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent))
+      ? document.createElement('canvas').getContext('2d')
+      : null
+
+  const longestNameWidth = Object.values(persons)
+    .reduce((maxWidth, person) => Math.max(maxWidth, measureNameWidth(person.hoTen, textMeasureContext)), 0)
+
+  return Math.max(MIN_NODE_W, longestNameWidth + NODE_HORIZONTAL_PADDING)
 }
 
 function calcSubtreeWidth(node: TreeNode, nodeWidth: number): void {
@@ -340,7 +362,7 @@ export default function TreeView() {
   const highlightedPersonId = focusedPersonId ?? selectedPersonId
 
   const { cards, lines, width, height } = useMemo(() => {
-    if (!data) return { cards: [], lines: [], width: 0, height: 0, nodeWidth: MIN_NODE_W }
+    if (!data) return { cards: [], lines: [], width: 0, height: 0 }
     const persons = data.persons
     const nodeWidth = calcNodeWidth(persons)
     const childrenIndex = taoChiMucCon(persons)
@@ -373,7 +395,7 @@ export default function TreeView() {
       if (tree) trees.push(tree)
     }
 
-    if (trees.length === 0) return { cards: [], lines: [], width: 0, height: 0, nodeWidth }
+    if (trees.length === 0) return { cards: [], lines: [], width: 0, height: 0 }
 
     let startX = 20
     for (const tree of trees) {
@@ -389,7 +411,7 @@ export default function TreeView() {
     const maxX = Math.max(...cards.map(c => c.x + c.width)) + 40
     const maxY = Math.max(...cards.map(c => c.y)) + NODE_H + 40
 
-    return { cards, lines, width: maxX, height: maxY, nodeWidth }
+    return { cards, lines, width: maxX, height: maxY }
   }, [data])
 
   useEffect(() => {
