@@ -2,6 +2,7 @@ import { useMemo, useRef, useEffect, useState, useCallback } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonCard from './PersonCard'
 import type { Person } from '../types/giapha'
+import { sapXepAnhChiEm } from '../utils/familyTree'
 
 const NODE_W = 120
 const NODE_H = 64
@@ -93,12 +94,15 @@ function buildTree(
 
   const marriages: Marriage[] = []
   const matchedChildIds = new Set<string>()
+  const orderedChildIds = sapXepAnhChiEm(
+    (childrenIndex[person.id] ?? []).map(id => persons[id]).filter(Boolean) as Person[]
+  ).map(child => child.id)
 
   for (const h of person.honNhan) {
     const spouse = persons[h.voChongId] ?? null
     const sId = h.voChongId
 
-    const childIds = (childrenIndex[person.id] ?? []).filter(cId => {
+    const childIds = orderedChildIds.filter(cId => {
       const c = persons[cId]
       if (!c) return false
       return person.gioiTinh === 'nam'
@@ -118,7 +122,7 @@ function buildTree(
   }
 
   // Children not linked to any marriage (boId/meId missing)
-  const unmatched = (childrenIndex[person.id] ?? [])
+  const unmatched = orderedChildIds
     .filter(id => !matchedChildIds.has(id))
     .map(id => buildTree(id, persons, childrenIndex, visited))
     .filter(Boolean) as TreeNode[]
