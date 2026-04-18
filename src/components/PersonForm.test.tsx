@@ -121,3 +121,96 @@ describe('PersonForm parent confirmation on add', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('PersonForm outside-clan marker', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+    vi.restoreAllMocks()
+  })
+
+  it('shows outside-clan checkbox unchecked by default for new person', () => {
+    useGiaphaStore.setState({
+      data,
+      acquireSoftLock: () => {},
+      releaseSoftLock: () => {},
+    })
+
+    const { getByLabelText } = render(<PersonForm onClose={() => {}} />)
+    const outsideCheckbox = getByLabelText('Người ngoài họ') as HTMLInputElement
+
+    expect(outsideCheckbox.checked).toBe(false)
+  })
+
+  it('auto-checks outside-clan when selecting an in-clan spouse while adding', () => {
+    useGiaphaStore.setState({
+      data,
+      acquireSoftLock: () => {},
+      releaseSoftLock: () => {},
+    })
+
+    const { getByText, getByLabelText, getAllByText } = render(<PersonForm onClose={() => {}} />)
+
+    fireEvent.click(getByText('+ Thêm vợ/chồng'))
+    fireEvent.click(getByText('Chọn vợ/chồng'))
+    fireEvent.click(getAllByText('Bố')[1])
+
+    const outsideCheckbox = getByLabelText('Người ngoài họ') as HTMLInputElement
+    expect(outsideCheckbox.checked).toBe(true)
+  })
+
+  it('allows user to uncheck outside-clan after auto-check before saving', () => {
+    const themNguoi = vi.fn()
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    useGiaphaStore.setState({
+      data,
+      themNguoi,
+      suaNguoi: vi.fn(),
+      acquireSoftLock: () => {},
+      releaseSoftLock: () => {},
+    })
+
+    const { container, getByText, getByLabelText, getAllByText } = render(<PersonForm onClose={() => {}} />)
+    const nameInput = container.querySelector('input[required]') as HTMLInputElement
+
+    fireEvent.change(nameInput, { target: { value: 'Người mới' } })
+    fireEvent.click(getByText('+ Thêm vợ/chồng'))
+    fireEvent.click(getByText('Chọn vợ/chồng'))
+    fireEvent.click(getAllByText('Bố')[1])
+
+    const outsideCheckbox = getByLabelText('Người ngoài họ') as HTMLInputElement
+    expect(outsideCheckbox.checked).toBe(true)
+    fireEvent.click(outsideCheckbox)
+    expect(outsideCheckbox.checked).toBe(false)
+
+    fireEvent.submit(container.querySelector('form')!)
+
+    expect(themNguoi).toHaveBeenCalledWith(expect.objectContaining({ laThanhVienHo: true }))
+  })
+
+  it('shows current outside-clan state when editing', () => {
+    useGiaphaStore.setState({
+      data,
+      acquireSoftLock: () => {},
+      releaseSoftLock: () => {},
+    })
+
+    const editPerson: Person = {
+      id: 'me1',
+      hoTen: 'Mẹ',
+      gioiTinh: 'nu',
+      laThanhVienHo: false,
+      honNhan: [{ voChongId: 'bo1' }],
+      conCaiIds: [],
+    }
+
+    const { getByLabelText } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+    const outsideCheckbox = getByLabelText('Người ngoài họ') as HTMLInputElement
+
+    expect(outsideCheckbox.checked).toBe(true)
+  })
+})
