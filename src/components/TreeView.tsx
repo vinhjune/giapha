@@ -2,6 +2,7 @@ import { useMemo, useRef, useEffect, useState, useCallback } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonCard from './PersonCard'
 import type { Person } from '../types/giapha'
+import { sapXepAnhChiEm } from '../utils/familyTree'
 
 const NODE_W = 120
 const NODE_H = 64
@@ -93,12 +94,15 @@ function buildTree(
 
   const marriages: Marriage[] = []
   const matchedChildIds = new Set<number>()
+  const orderedChildIds = sapXepAnhChiEm(
+    (childrenIndex[person.id] ?? []).map(id => persons[id]).filter(Boolean) as Person[]
+  ).map(child => child.id)
 
   for (const h of person.honNhan) {
     const spouse = persons[h.voChongId] ?? null
     const spouseId = h.voChongId
 
-    const childIds = (childrenIndex[person.id] ?? []).filter(cId => {
+    const childIds = orderedChildIds.filter(cId => {
       const c = persons[cId]
       if (!c) return false
       return person.gioiTinh === 'nam'
@@ -118,7 +122,7 @@ function buildTree(
   }
 
   // Children not linked to any marriage (boId/meId missing)
-  const unmatched = (childrenIndex[person.id] ?? [])
+  const unmatched = orderedChildIds
     .filter(id => !matchedChildIds.has(id))
     .map(id => buildTree(id, persons, childrenIndex, visited))
     .filter(Boolean) as TreeNode[]
@@ -313,7 +317,7 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[]): void {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function TreeView() {
-  const { data, selectedPersonId, selectPerson } = useGiaphaStore()
+  const { data, selectedPersonId, focusedPersonId, selectPerson } = useGiaphaStore()
   const containerRef = useRef<HTMLDivElement>(null)
   const dragStateRef = useRef({
     dragging: false,
@@ -323,6 +327,7 @@ export default function TreeView() {
     startTop: 0,
   })
   const [isDragging, setIsDragging] = useState(false)
+  const highlightedPersonId = focusedPersonId ?? selectedPersonId
 
   const { cards, lines, width, height } = useMemo(() => {
     if (!data) return { cards: [], lines: [], width: 0, height: 0 }
@@ -377,15 +382,15 @@ export default function TreeView() {
   }, [data])
 
   useEffect(() => {
-    if (!selectedPersonId || !containerRef.current) return
-    const card = cards.find(c => c.person.id === selectedPersonId)
+    if (!highlightedPersonId || !containerRef.current) return
+    const card = cards.find(c => c.person.id === highlightedPersonId)
     if (!card) return
     containerRef.current.scrollTo({
       left: card.x - containerRef.current.clientWidth / 2 + NODE_W / 2,
       top: card.y - containerRef.current.clientHeight / 2 + NODE_H / 2,
       behavior: 'smooth',
     })
-  }, [selectedPersonId, cards])
+  }, [highlightedPersonId, cards])
 
   if (!data) return <div className="flex-1 flex items-center justify-center text-gray-400">Chưa có dữ liệu</div>
 
@@ -483,7 +488,7 @@ export default function TreeView() {
           >
             <PersonCard
               person={card.person}
-              isSelected={card.person.id === selectedPersonId}
+              isSelected={card.person.id === highlightedPersonId}
               onClick={() => selectPerson(card.person.id)}
             />
           </div>

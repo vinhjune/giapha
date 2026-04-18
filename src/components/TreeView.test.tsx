@@ -79,4 +79,36 @@ describe('TreeView', () => {
     expect(container.querySelector('svg line[stroke="#3B82F6"][stroke-width="2"]')).not.toBeNull()
     expect(container.querySelector('svg line[stroke="#CBD5E1"]')).toBeNull()
   })
+
+  it('orders siblings left-to-right from eldest to youngest', () => {
+    const siblingData: GiaphaData = {
+      ...data,
+      persons: {
+        ...data.persons,
+        1: { ...data.persons[1], conCaiIds: [3, 8] },
+        2: { ...data.persons[2], conCaiIds: [3, 8] },
+        3: { ...data.persons[3], thuTuAnhChi: 2 },
+        8: {
+          id: 8,
+          hoTen: 'Con cả',
+          gioiTinh: 'nam',
+          laThanhVienHo: true,
+          boId: 1,
+          meId: 2,
+          thuTuAnhChi: 1,
+          honNhan: [],
+          conCaiIds: [],
+        },
+      },
+    }
+    useGiaphaStore.setState({ data: siblingData })
+
+    render(<TreeView />)
+    const eldestCard = screen.getByText('Con cả').closest('div[style*="position: absolute"]') as HTMLDivElement | null
+    const youngerCard = screen.getByText('Con gái').closest('div[style*="position: absolute"]') as HTMLDivElement | null
+
+    expect(eldestCard).not.toBeNull()
+    expect(youngerCard).not.toBeNull()
+    expect(parseFloat((eldestCard as HTMLDivElement).style.left)).toBeLessThan(parseFloat((youngerCard as HTMLDivElement).style.left))
+  })
 })

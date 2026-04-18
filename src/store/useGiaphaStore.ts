@@ -12,6 +12,7 @@ interface GiaphaState {
   currentRole: Role | 'public'
   viewMode: ViewMode
   selectedPersonId: number | null
+  focusedPersonId: number | null
   isDirty: boolean
   isSaving: boolean
   conflictDetected: boolean
@@ -22,6 +23,7 @@ interface GiaphaState {
   setUser: (email: string, role: Role | 'public') => void
   setViewMode: (mode: ViewMode) => void
   selectPerson: (id: number | null) => void
+  focusPerson: (id: number | null) => void
 
   themNguoi: (person: Omit<Person, 'id'>) => number
   suaNguoi: (id: number, updates: Partial<Person>) => void
@@ -42,6 +44,7 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   currentRole: 'public',
   viewMode: 'tree',
   selectedPersonId: null,
+  focusedPersonId: null,
   isDirty: false,
   isSaving: false,
   conflictDetected: false,
@@ -53,7 +56,8 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   },
   setUser: (email, role) => set({ currentUserEmail: email, currentRole: role }),
   setViewMode: (mode) => set({ viewMode: mode }),
-  selectPerson: (id) => set({ selectedPersonId: id }),
+  selectPerson: (id) => set({ selectedPersonId: id, focusedPersonId: id }),
+  focusPerson: (id) => set({ focusedPersonId: id }),
 
   themNguoi: (personData) => {
     const id = taoId(get().data?.persons || {})
