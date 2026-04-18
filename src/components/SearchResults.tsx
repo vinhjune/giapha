@@ -2,7 +2,7 @@ import type { Person } from '../types/giapha'
 
 interface Props {
   results: Person[]
-  onSelect: (id: string) => void
+  onSelect: (id: number) => void
 }
 
 export default function SearchResults({ results, onSelect }: Props) {

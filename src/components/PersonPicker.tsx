@@ -5,7 +5,7 @@ import type { Person } from '../types/giapha'
 
 interface Props {
   title: string
-  excludeIds?: string[]
+  excludeIds?: number[]
   onSelect: (person: Person) => void
   onClose: () => void
 }

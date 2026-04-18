@@ -13,24 +13,24 @@ function taoDataMau(): GiaphaData {
       danhSachNguoiDung: [],
     },
     persons: {
-      a: {
-        id: 'a',
+      1: {
+        id: 1,
         hoTen: 'Người A',
         gioiTinh: 'nam',
         laThanhVienHo: true,
         honNhan: [],
         conCaiIds: [],
       },
-      b: {
-        id: 'b',
+      2: {
+        id: 2,
         hoTen: 'Người B',
         gioiTinh: 'nu',
         laThanhVienHo: false,
         honNhan: [],
         conCaiIds: [],
       },
-      c: {
-        id: 'c',
+      3: {
+        id: 3,
         hoTen: 'Người C',
         gioiTinh: 'nam',
         laThanhVienHo: true,
@@ -57,22 +57,22 @@ describe('useGiaphaStore spouse sync', () => {
   })
 
   it('updates reverse spouse link when editing a person', () => {
-    useGiaphaStore.getState().suaNguoi('a', {
-      honNhan: [{ voChongId: 'b' }],
+    useGiaphaStore.getState().suaNguoi(1, {
+      honNhan: [{ voChongId: 2 }],
     })
 
-    const b = useGiaphaStore.getState().data?.persons.b
-    expect(b?.honNhan).toEqual([{ voChongId: 'a' }])
+    const b = useGiaphaStore.getState().data?.persons[2]
+    expect(b?.honNhan).toEqual([{ voChongId: 1 }])
   })
 
   it('removes reverse spouse link when spouse is removed', () => {
-    useGiaphaStore.getState().suaNguoi('a', {
-      honNhan: [{ voChongId: 'b' }],
+    useGiaphaStore.getState().suaNguoi(1, {
+      honNhan: [{ voChongId: 2 }],
     })
 
-    useGiaphaStore.getState().suaNguoi('a', { honNhan: [] })
+    useGiaphaStore.getState().suaNguoi(1, { honNhan: [] })
 
-    const b = useGiaphaStore.getState().data?.persons.b
+    const b = useGiaphaStore.getState().data?.persons[2]
     expect(b?.honNhan).toEqual([])
   })
 
@@ -112,20 +112,20 @@ describe('useGiaphaStore spouse sync', () => {
       gioiTinh: 'nam',
       laThanhVienHo: true,
       honNhan: [],
-      conCaiIds: ['b'],
+      conCaiIds: [2],
     })
 
-    const child = useGiaphaStore.getState().data?.persons.b
+    const child = useGiaphaStore.getState().data?.persons[2]
     const father = useGiaphaStore.getState().data?.persons[newFatherId]
     expect(child?.boId).toBe(newFatherId)
-    expect(father?.conCaiIds).toContain('b')
+    expect(father?.conCaiIds).toContain(2)
   })
 
   it('keeps parent conCaiIds in sync when editing boId', () => {
-    useGiaphaStore.getState().suaNguoi('b', { boId: 'a' })
-    expect(useGiaphaStore.getState().data?.persons.a.conCaiIds).toContain('b')
+    useGiaphaStore.getState().suaNguoi(2, { boId: 1 })
+    expect(useGiaphaStore.getState().data?.persons[1].conCaiIds).toContain(2)
 
-    useGiaphaStore.getState().suaNguoi('b', { boId: undefined })
-    expect(useGiaphaStore.getState().data?.persons.a.conCaiIds).not.toContain('b')
+    useGiaphaStore.getState().suaNguoi(2, { boId: undefined })
+    expect(useGiaphaStore.getState().data?.persons[1].conCaiIds).not.toContain(2)
   })
 })

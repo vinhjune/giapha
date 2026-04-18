@@ -15,9 +15,9 @@ const data: GiaphaData = {
     danhSachNguoiDung: [],
   },
   persons: {
-    p1: { id: 'p1', hoTen: 'Nguyễn Văn An', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
-    p2: { id: 'p2', hoTen: 'Nguyễn Văn Anh', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
-    p3: { id: 'p3', hoTen: 'Nguyễn Văn Bình', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+    1: { id: 1, hoTen: 'Nguyễn Văn An', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+    2: { id: 2, hoTen: 'Nguyễn Văn Anh', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+    3: { id: 3, hoTen: 'Nguyễn Văn Bình', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
   },
 }
 
@@ -29,8 +29,8 @@ describe('SearchBar focus behavior', () => {
       currentUserEmail: null,
       currentRole: 'public',
       viewMode: 'tree',
-      selectedPersonId: 'p1',
-      focusedPersonId: 'p1',
+      selectedPersonId: 1,
+      focusedPersonId: 1,
       isDirty: false,
       isSaving: false,
       conflictDetected: false,
@@ -44,8 +44,8 @@ describe('SearchBar focus behavior', () => {
     await user.type(screen.getByPlaceholderText('Tìm kiếm theo tên...'), 'Bình')
 
     const { selectedPersonId, focusedPersonId } = useGiaphaStore.getState()
-    expect(selectedPersonId).toBe('p1')
-    expect(focusedPersonId).toBe('p3')
+    expect(selectedPersonId).toBe(1)
+    expect(focusedPersonId).toBe(3)
   })
 
   it('focuses chosen member from search results without opening its detail', async () => {
@@ -56,7 +56,7 @@ describe('SearchBar focus behavior', () => {
     await user.click(screen.getByText('Nguyễn Văn Anh'))
 
     const { selectedPersonId, focusedPersonId } = useGiaphaStore.getState()
-    expect(selectedPersonId).toBe('p1')
-    expect(focusedPersonId).toBe('p2')
+    expect(selectedPersonId).toBe(1)
+    expect(focusedPersonId).toBe(2)
   })
 })
