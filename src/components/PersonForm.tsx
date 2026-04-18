@@ -114,6 +114,10 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.hoTen.trim()) return
+    if (!editPerson && (!form.boId || !form.meId)) {
+      const shouldContinue = confirm('Chưa nhập đủ thông tin bố và mẹ thành viên. Bạn có thể bổ sung sau. Bạn có chắc muốn lưu không?')
+      if (!shouldContinue) return
+    }
 
     const personData: Omit<Person, 'id'> = {
       hoTen: form.hoTen.trim(),
