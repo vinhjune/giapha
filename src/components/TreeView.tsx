@@ -13,6 +13,9 @@ const V_GAP = 130        // vertical gap between generations (enlarged to fit sp
 const SPOUSE_DROP = 8    // gap between person card bottom and spouse card top
 const FOREST_GAP = 80    // horizontal gap between disconnected family trees
 const KEYBOARD_PAN_STEP = 60
+const MIN_ZOOM = 0.5
+const MAX_ZOOM = 2
+const ZOOM_STEP = 0.1
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -319,6 +322,11 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[]): void {
 export default function TreeView() {
   const { data, selectedPersonId, focusedPersonId, selectPerson } = useGiaphaStore()
   const containerRef = useRef<HTMLDivElement>(null)
+  const pinchStateRef = useRef({
+    pinching: false,
+    startDistance: 0,
+    startZoom: 1,
+  })
   const dragStateRef = useRef({
     dragging: false,
     startX: 0,
@@ -327,6 +335,7 @@ export default function TreeView() {
     startTop: 0,
   })
   const [isDragging, setIsDragging] = useState(false)
+  const [zoom, setZoom] = useState(1)
   const highlightedPersonId = focusedPersonId ?? selectedPersonId
 
   const { cards, lines, width, height } = useMemo(() => {
@@ -392,8 +401,6 @@ export default function TreeView() {
     })
   }, [highlightedPersonId, cards])
 
-  if (!data) return <div className="flex-1 flex items-center justify-center text-gray-400">Chưa có dữ liệu</div>
-
   const onMouseDown = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     if (event.button !== 0 || !containerRef.current) return
     event.preventDefault()
@@ -448,6 +455,80 @@ export default function TreeView() {
     return () => window.removeEventListener('mouseup', stopDragging)
   }, [stopDragging])
 
+  const clampZoom = useCallback((value: number) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value)), [])
+
+  const applyZoom = useCallback((targetZoom: number, centerX?: number, centerY?: number) => {
+    if (!containerRef.current) return
+
+    const nextZoom = clampZoom(targetZoom)
+    if (nextZoom === zoom) return
+
+    const container = containerRef.current
+    const anchorX = centerX ?? container.clientWidth / 2
+    const anchorY = centerY ?? container.clientHeight / 2
+    const contentX = (container.scrollLeft + anchorX) / zoom
+    const contentY = (container.scrollTop + anchorY) / zoom
+
+    setZoom(nextZoom)
+
+    requestAnimationFrame(() => {
+      if (!containerRef.current) return
+      containerRef.current.scrollLeft = contentX * nextZoom - anchorX
+      containerRef.current.scrollTop = contentY * nextZoom - anchorY
+    })
+  }, [clampZoom, zoom])
+
+  const zoomIn = useCallback(() => applyZoom(Number((zoom + ZOOM_STEP).toFixed(2))), [applyZoom, zoom])
+  const zoomOut = useCallback(() => applyZoom(Number((zoom - ZOOM_STEP).toFixed(2))), [applyZoom, zoom])
+  const resetZoom = useCallback(() => applyZoom(1), [applyZoom])
+
+  const onWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
+    if (!event.ctrlKey) return
+    event.preventDefault()
+
+    const rect = event.currentTarget.getBoundingClientRect()
+    const centerX = event.clientX - rect.left
+    const centerY = event.clientY - rect.top
+    const direction = event.deltaY < 0 ? 1 : -1
+    applyZoom(Number((zoom + direction * ZOOM_STEP).toFixed(2)), centerX, centerY)
+  }, [applyZoom, zoom])
+
+  const onTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 2) return
+    const a = event.touches.item(0)
+    const b = event.touches.item(1)
+    if (!a || !b) return
+    pinchStateRef.current = {
+      pinching: true,
+      startDistance: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+      startZoom: zoom,
+    }
+  }, [zoom])
+
+  const onTouchMove = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (!pinchStateRef.current.pinching || event.touches.length !== 2) return
+    event.preventDefault()
+
+    const a = event.touches.item(0)
+    const b = event.touches.item(1)
+    if (!a || !b) return
+    const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+    if (!pinchStateRef.current.startDistance) return
+
+    const rect = event.currentTarget.getBoundingClientRect()
+    const centerX = (a.clientX + b.clientX) / 2 - rect.left
+    const centerY = (a.clientY + b.clientY) / 2 - rect.top
+
+    const nextZoom = pinchStateRef.current.startZoom * (distance / pinchStateRef.current.startDistance)
+    applyZoom(nextZoom, centerX, centerY)
+  }, [applyZoom])
+
+  const onTouchEnd = useCallback(() => {
+    pinchStateRef.current.pinching = false
+  }, [])
+
+  if (!data) return <div className="flex-1 flex items-center justify-center text-gray-400">Chưa có dữ liệu</div>
+
   return (
     <div
       ref={containerRef}
@@ -460,39 +541,84 @@ export default function TreeView() {
       onMouseUp={stopDragging}
       onMouseLeave={stopDragging}
       onKeyDown={onKeyDown}
+      onWheel={onWheel}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
-      <div style={{ width, height, position: 'relative' }}>
-        <svg
-          style={{ position: 'absolute', top: 0, left: 0, width, height, pointerEvents: 'none', zIndex: 0 }}
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 p-2 shadow-sm">
+        <button
+          type="button"
+          onClick={zoomOut}
+          disabled={zoom <= MIN_ZOOM}
+          aria-label="Thu nhỏ cây"
+          className="h-8 w-8 rounded border border-gray-200 text-lg leading-none disabled:opacity-50"
         >
-          {lines.map((l, i) => (
-            <line
-              key={i}
-              x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-              stroke={l.isCouple ? '#F97316' : '#3B82F6'}
-              strokeWidth={2}
-            />
-          ))}
-        </svg>
-        {cards.map((card, i) => (
-          <div
-            key={`${card.person.id}-${i}`}
-            style={{
-              position: 'absolute',
-              left: card.x,
-              top: card.y,
-              width: NODE_W,
-              zIndex: 1,
-              opacity: card.isSpouse ? 0.85 : 1,
-            }}
+          −
+        </button>
+        <button
+          type="button"
+          onClick={resetZoom}
+          aria-label="Đặt lại mức thu phóng"
+          className="rounded border border-gray-200 px-2 py-1 text-xs font-medium"
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <button
+          type="button"
+          onClick={zoomIn}
+          disabled={zoom >= MAX_ZOOM}
+          aria-label="Phóng to cây"
+          className="h-8 w-8 rounded border border-gray-200 text-lg leading-none disabled:opacity-50"
+        >
+          +
+        </button>
+      </div>
+      <div style={{ width: width * zoom, height: height * zoom, position: 'relative' }}>
+        <div
+          data-testid="tree-view-scale-layer"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width,
+            height,
+            transform: `scale(${zoom})`,
+            transformOrigin: 'top left',
+          }}
+        >
+          <svg
+            style={{ position: 'absolute', top: 0, left: 0, width, height, pointerEvents: 'none', zIndex: 0 }}
           >
-            <PersonCard
-              person={card.person}
-              isSelected={card.person.id === highlightedPersonId}
-              onClick={() => selectPerson(card.person.id)}
-            />
-          </div>
-        ))}
+            {lines.map((l, i) => (
+              <line
+                key={i}
+                x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+                stroke={l.isCouple ? '#F97316' : '#3B82F6'}
+                strokeWidth={2}
+              />
+            ))}
+          </svg>
+          {cards.map((card, i) => (
+            <div
+              key={`${card.person.id}-${i}`}
+              style={{
+                position: 'absolute',
+                left: card.x,
+                top: card.y,
+                width: NODE_W,
+                zIndex: 1,
+                opacity: card.isSpouse ? 0.85 : 1,
+              }}
+            >
+              <PersonCard
+                person={card.person}
+                isSelected={card.person.id === highlightedPersonId}
+                onClick={() => selectPerson(card.person.id)}
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
