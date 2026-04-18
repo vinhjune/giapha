@@ -464,8 +464,8 @@ export default function TreeView() {
             <line
               key={i}
               x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-              stroke={l.isCouple ? '#F97316' : '#CBD5E1'}
-              strokeWidth={l.isCouple ? 2 : 1.5}
+              stroke={l.isCouple ? '#F97316' : '#3B82F6'}
+              strokeWidth={2}
             />
           ))}
         </svg>

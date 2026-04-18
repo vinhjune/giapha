@@ -69,4 +69,14 @@ describe('TreeView', () => {
 
     expect(container.scrollLeft).toBe(180)
   })
+
+  it('renders descendant connectors in blue with same thickness as couple lines', () => {
+    const { container } = render(<TreeView />)
+    const svgLines = container.querySelectorAll('svg line')
+
+    expect(svgLines.length).toBeGreaterThan(0)
+    expect(container.querySelector('svg line[stroke="#F97316"][stroke-width="2"]')).not.toBeNull()
+    expect(container.querySelector('svg line[stroke="#3B82F6"][stroke-width="2"]')).not.toBeNull()
+    expect(container.querySelector('svg line[stroke="#CBD5E1"]')).toBeNull()
+  })
 })
