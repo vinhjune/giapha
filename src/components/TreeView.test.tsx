@@ -111,4 +111,24 @@ describe('TreeView', () => {
     expect(youngerCard).not.toBeNull()
     expect(parseFloat((eldestCard as HTMLDivElement).style.left)).toBeLessThan(parseFloat((youngerCard as HTMLDivElement).style.left))
   })
+
+  it('expands node width for long names and keeps name on a single line', () => {
+    const longName = 'Nguyễn Văn Thành Viên Có Tên Rất Dài Để Kiểm Tra Hiển Thị'
+    const longNameData: GiaphaData = {
+      ...data,
+      persons: {
+        ...data.persons,
+        p1: { ...data.persons.p1, hoTen: longName },
+      },
+    }
+    useGiaphaStore.setState({ data: longNameData })
+
+    render(<TreeView />)
+    const longNameText = screen.getByText(longName)
+    const card = longNameText.closest('div[style*="position: absolute"]') as HTMLDivElement | null
+
+    expect(card).not.toBeNull()
+    expect(parseFloat((card as HTMLDivElement).style.width)).toBeGreaterThan(120)
+    expect(longNameText).toHaveClass('whitespace-nowrap')
+  })
 })

@@ -19,12 +19,12 @@ export default function PersonCard({ person, isSelected, onClick }: Props) {
     <div
       onClick={onClick}
       className={`
-        w-28 min-h-[56px] rounded-lg border-2 px-2 py-1.5 cursor-pointer text-center shadow-sm transition-all
+        w-full min-h-[56px] rounded-lg border-2 px-2 py-1.5 cursor-pointer text-center shadow-sm transition-all
         ${backgroundClass}
         ${isSelected ? 'border-blue-500' : isClan ? 'border-gray-300 hover:border-blue-300' : 'border-dashed border-gray-200'}
       `}
     >
-      <div className="text-xs font-semibold leading-tight text-gray-800">
+      <div className="text-xs font-semibold leading-tight text-gray-800 whitespace-nowrap">
         {person.hoTen}
       </div>
       {person.namSinh && (
