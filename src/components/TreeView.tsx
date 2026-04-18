@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from 'react'
+import { useMemo, useRef, useEffect, useState, useCallback } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonCard from './PersonCard'
 import type { Person } from '../types/giapha'
@@ -11,6 +11,7 @@ const H_GAP = 20         // gap between siblings within the same marriage
 const V_GAP = 130        // vertical gap between generations (enlarged to fit spouse row)
 const SPOUSE_DROP = 8    // gap between person card bottom and spouse card top
 const FOREST_GAP = 80    // horizontal gap between disconnected family trees
+const KEYBOARD_PAN_STEP = 60
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -314,6 +315,14 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[]): void {
 export default function TreeView() {
   const { data, selectedPersonId, selectPerson } = useGiaphaStore()
   const containerRef = useRef<HTMLDivElement>(null)
+  const dragStateRef = useRef({
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    startLeft: 0,
+    startTop: 0,
+  })
+  const [isDragging, setIsDragging] = useState(false)
 
   const { cards, lines, width, height } = useMemo(() => {
     if (!data) return { cards: [], lines: [], width: 0, height: 0 }
@@ -380,8 +389,73 @@ export default function TreeView() {
 
   if (!data) return <div className="flex-1 flex items-center justify-center text-gray-400">Chưa có dữ liệu</div>
 
+  const onMouseDown = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || !containerRef.current) return
+    event.preventDefault()
+
+    dragStateRef.current = {
+      dragging: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      startLeft: containerRef.current.scrollLeft,
+      startTop: containerRef.current.scrollTop,
+    }
+    setIsDragging(true)
+  }, [])
+
+  const onMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragStateRef.current.dragging || !containerRef.current) return
+    event.preventDefault()
+
+    const deltaX = event.clientX - dragStateRef.current.startX
+    const deltaY = event.clientY - dragStateRef.current.startY
+
+    containerRef.current.scrollLeft = dragStateRef.current.startLeft - deltaX
+    containerRef.current.scrollTop = dragStateRef.current.startTop - deltaY
+  }, [])
+
+  const onKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      containerRef.current.scrollLeft -= KEYBOARD_PAN_STEP
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      containerRef.current.scrollLeft += KEYBOARD_PAN_STEP
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      containerRef.current.scrollTop -= KEYBOARD_PAN_STEP
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      containerRef.current.scrollTop += KEYBOARD_PAN_STEP
+    }
+  }, [])
+
+  const stopDragging = useCallback(() => {
+    if (!dragStateRef.current.dragging) return
+    dragStateRef.current.dragging = false
+    setIsDragging(false)
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener('mouseup', stopDragging)
+    return () => window.removeEventListener('mouseup', stopDragging)
+  }, [stopDragging])
+
   return (
-    <div ref={containerRef} className="flex-1 overflow-auto bg-gray-50 relative">
+    <div
+      ref={containerRef}
+      data-testid="tree-view-container"
+      className={`flex-1 overflow-auto bg-gray-50 relative ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+      tabIndex={0}
+      aria-label="Cây gia phả"
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={stopDragging}
+      onMouseLeave={stopDragging}
+      onKeyDown={onKeyDown}
+    >
       <div style={{ width, height, position: 'relative' }}>
         <svg
           style={{ position: 'absolute', top: 0, left: 0, width, height, pointerEvents: 'none', zIndex: 0 }}
