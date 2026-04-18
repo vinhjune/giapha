@@ -6,12 +6,15 @@ interface Props {
   onClick: () => void
 }
 
+const CLAN_BACKGROUND_BY_GENDER = { nam: 'bg-blue-100', nu: 'bg-pink-100', khac: 'bg-blue-100' } as const
+const NON_CLAN_BACKGROUND_BY_GENDER = { nam: 'bg-purple-100', nu: 'bg-yellow-100', khac: 'bg-yellow-100' } as const
+
 export default function PersonCard({ person, isSelected, onClick }: Props) {
   const isClan = person.laThanhVienHo
   const backgroundByGroup = isClan
-    ? { nam: 'bg-blue-100', nu: 'bg-pink-100', khac: 'bg-blue-100' }
-    : { nam: 'bg-purple-100', nu: 'bg-yellow-100', khac: 'bg-yellow-100' }
-  const backgroundClass = backgroundByGroup[person.gioiTinh]
+    ? CLAN_BACKGROUND_BY_GENDER
+    : NON_CLAN_BACKGROUND_BY_GENDER
+  const backgroundClass = backgroundByGroup[person.gioiTinh] ?? backgroundByGroup.khac
   return (
     <div
       onClick={onClick}
