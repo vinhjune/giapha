@@ -10,6 +10,7 @@ const SPOUSE_SEP = 24    // gap between consecutive spouse zones
 const H_GAP = 20         // gap between siblings within the same marriage
 const V_GAP = 130        // vertical gap between generations (enlarged to fit spouse row)
 const SPOUSE_DROP = 8    // gap between person card bottom and spouse card top
+const FOREST_GAP = 80    // horizontal gap between disconnected family trees
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -45,11 +46,39 @@ interface SvgLine {
   isCouple: boolean
 }
 
+function taoChiMucCon(persons: Record<string, Person>): Record<string, string[]> {
+  const index: Record<string, string[]> = {}
+  const daThem: Record<string, Set<string>> = {}
+
+  const themCon = (parentId: string, childId: string) => {
+    if (!persons[parentId] || !persons[childId]) return
+    if (!index[parentId]) {
+      index[parentId] = []
+      daThem[parentId] = new Set<string>()
+    }
+    if (daThem[parentId].has(childId)) return
+    daThem[parentId].add(childId)
+    index[parentId].push(childId)
+  }
+
+  for (const person of Object.values(persons)) {
+    for (const childId of person.conCaiIds) themCon(person.id, childId)
+  }
+
+  for (const person of Object.values(persons)) {
+    if (person.boId) themCon(person.boId, person.id)
+    if (person.meId) themCon(person.meId, person.id)
+  }
+
+  return index
+}
+
 // ─── Build tree ───────────────────────────────────────────────────────────────
 
 function buildTree(
   personId: string,
   persons: Record<string, Person>,
+  childrenIndex: Record<string, string[]>,
   visited: Set<string>
 ): TreeNode | null {
   if (visited.has(personId)) return null
@@ -68,7 +97,7 @@ function buildTree(
     const spouse = persons[h.voChongId] ?? null
     const sId = h.voChongId
 
-    const childIds = person.conCaiIds.filter(cId => {
+    const childIds = (childrenIndex[person.id] ?? []).filter(cId => {
       const c = persons[cId]
       if (!c) return false
       return person.gioiTinh === 'nam'
@@ -82,15 +111,15 @@ function buildTree(
       spouseX: 0,
       descentX: 0,
       childNodes: childIds
-        .map(id => buildTree(id, persons, visited))
+        .map(id => buildTree(id, persons, childrenIndex, visited))
         .filter(Boolean) as TreeNode[],
     })
   }
 
   // Children not linked to any marriage (boId/meId missing)
-  const unmatched = person.conCaiIds
+  const unmatched = (childrenIndex[person.id] ?? [])
     .filter(id => !matchedChildIds.has(id))
-    .map(id => buildTree(id, persons, visited))
+    .map(id => buildTree(id, persons, childrenIndex, visited))
     .filter(Boolean) as TreeNode[]
   if (unmatched.length > 0) {
     marriages.push({ spouse: null, spouseX: -1, descentX: 0, childNodes: unmatched })
@@ -289,24 +318,48 @@ export default function TreeView() {
   const { cards, lines, width, height } = useMemo(() => {
     if (!data) return { cards: [], lines: [], width: 0, height: 0 }
     const persons = data.persons
+    const childrenIndex = taoChiMucCon(persons)
 
     // Root = clan member with no known father
     const root =
       Object.values(persons).find(
         p => p.laThanhVienHo && (!p.boId || !persons[p.boId])
       ) ?? Object.values(persons).find(p => !p.boId || !persons[p.boId])
-    if (!root) return { cards: [], lines: [], width: 0, height: 0 }
 
     const visited = new Set<string>()
-    const tree = buildTree(root.id, persons, visited)
-    if (!tree) return { cards: [], lines: [], width: 0, height: 0 }
+    const trees: TreeNode[] = []
 
-    calcSubtreeWidth(tree)
-    assignPositions(tree, 20, 0)
+    if (root) {
+      const primaryTree = buildTree(root.id, persons, childrenIndex, visited)
+      if (primaryTree) trees.push(primaryTree)
+    }
+
+    const extraRoots = Object.values(persons).filter(
+      p => !visited.has(p.id) && (!p.boId || !persons[p.boId])
+    )
+    for (const extraRoot of extraRoots) {
+      const tree = buildTree(extraRoot.id, persons, childrenIndex, visited)
+      if (tree) trees.push(tree)
+    }
+
+    const unvisitedPersons = Object.values(persons).filter(p => !visited.has(p.id))
+    for (const person of unvisitedPersons) {
+      const tree = buildTree(person.id, persons, childrenIndex, visited)
+      if (tree) trees.push(tree)
+    }
+
+    if (trees.length === 0) return { cards: [], lines: [], width: 0, height: 0 }
+
+    let startX = 20
+    for (const tree of trees) {
+      calcSubtreeWidth(tree)
+      assignPositions(tree, startX, 0)
+      startX += tree.subtreeWidth + FOREST_GAP
+    }
 
     const cards: RenderCard[] = []
     const lines: SvgLine[] = []
-    collect(tree, cards, lines)
+    for (const tree of trees) collect(tree, cards, lines)
 
     const maxX = Math.max(...cards.map(c => c.x)) + NODE_W + 40
     const maxY = Math.max(...cards.map(c => c.y)) + NODE_H + 40
