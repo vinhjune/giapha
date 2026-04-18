@@ -58,4 +58,15 @@ describe('TreeView', () => {
     expect(container.scrollLeft).toBe(160)
     expect(container.scrollTop).toBe(110)
   })
+
+  it('supports keyboard panning with arrow keys', () => {
+    render(<TreeView />)
+    const container = screen.getByTestId('tree-view-container')
+
+    container.scrollLeft = 120
+    container.focus()
+    fireEvent.keyDown(container, { key: 'ArrowRight' })
+
+    expect(container.scrollLeft).toBe(180)
+  })
 })
