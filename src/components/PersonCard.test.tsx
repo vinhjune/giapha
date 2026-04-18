@@ -4,7 +4,7 @@ import PersonCard from './PersonCard'
 import type { Person } from '../types/giapha'
 
 const nguoiMau = (ghiDe: Partial<Person>): Person => ({
-  id: 'p',
+  id: 1,
   hoTen: 'Người mẫu',
   gioiTinh: 'nam',
   laThanhVienHo: true,

@@ -14,13 +14,13 @@ const data: GiaphaData = {
     danhSachNguoiDung: [],
   },
   persons: {
-    p1: { id: 'p1', hoTen: 'Tổ', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: 'p2' }], conCaiIds: ['p3'] },
-    p2: { id: 'p2', hoTen: 'Bà', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: 'p1' }], conCaiIds: ['p3'] },
-    p3: { id: 'p3', hoTen: 'Con gái', gioiTinh: 'nu', laThanhVienHo: true, boId: 'p1', meId: 'p2', honNhan: [{ voChongId: 'p4' }], conCaiIds: ['p5'] },
-    p4: { id: 'p4', hoTen: 'Con rể', gioiTinh: 'nam', laThanhVienHo: false, honNhan: [{ voChongId: 'p3' }], conCaiIds: ['p5'] },
-    p5: { id: 'p5', hoTen: 'Cháu gái', gioiTinh: 'nu', laThanhVienHo: false, boId: 'p4', meId: 'p3', honNhan: [{ voChongId: 'p6' }], conCaiIds: [] },
-    p6: { id: 'p6', hoTen: 'Chồng cháu gái', gioiTinh: 'nam', laThanhVienHo: false, honNhan: [{ voChongId: 'p5' }], conCaiIds: ['p7'] },
-    p7: { id: 'p7', hoTen: 'Chắt', gioiTinh: 'nam', laThanhVienHo: false, boId: 'p6', meId: 'p5', honNhan: [], conCaiIds: [] },
+    1: { id: 1, hoTen: 'Tổ', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: 2 }], conCaiIds: [3] },
+    2: { id: 2, hoTen: 'Bà', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: 1 }], conCaiIds: [3] },
+    3: { id: 3, hoTen: 'Con gái', gioiTinh: 'nu', laThanhVienHo: true, boId: 1, meId: 2, honNhan: [{ voChongId: 4 }], conCaiIds: [5] },
+    4: { id: 4, hoTen: 'Con rể', gioiTinh: 'nam', laThanhVienHo: false, honNhan: [{ voChongId: 3 }], conCaiIds: [5] },
+    5: { id: 5, hoTen: 'Cháu gái', gioiTinh: 'nu', laThanhVienHo: false, boId: 4, meId: 3, honNhan: [{ voChongId: 6 }], conCaiIds: [] },
+    6: { id: 6, hoTen: 'Chồng cháu gái', gioiTinh: 'nam', laThanhVienHo: false, honNhan: [{ voChongId: 5 }], conCaiIds: [7] },
+    7: { id: 7, hoTen: 'Chắt', gioiTinh: 'nam', laThanhVienHo: false, boId: 6, meId: 5, honNhan: [], conCaiIds: [] },
   },
 }
 

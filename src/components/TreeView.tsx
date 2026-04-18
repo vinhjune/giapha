@@ -47,15 +47,15 @@ interface SvgLine {
   isCouple: boolean
 }
 
-function taoChiMucCon(persons: Record<string, Person>): Record<string, string[]> {
-  const index: Record<string, string[]> = {}
-  const daThem: Record<string, Set<string>> = {}
+function taoChiMucCon(persons: Record<number, Person>): Record<number, number[]> {
+  const index: Record<number, number[]> = {}
+  const daThem: Record<number, Set<number>> = {}
 
-  const themCon = (parentId: string, childId: string) => {
+  const themCon = (parentId: number, childId: number) => {
     if (!persons[parentId] || !persons[childId]) return
     if (!index[parentId]) {
       index[parentId] = []
-      daThem[parentId] = new Set<string>()
+      daThem[parentId] = new Set<number>()
     }
     if (daThem[parentId].has(childId)) return
     daThem[parentId].add(childId)
@@ -77,10 +77,10 @@ function taoChiMucCon(persons: Record<string, Person>): Record<string, string[]>
 // ─── Build tree ───────────────────────────────────────────────────────────────
 
 function buildTree(
-  personId: string,
-  persons: Record<string, Person>,
-  childrenIndex: Record<string, string[]>,
-  visited: Set<string>
+  personId: number,
+  persons: Record<number, Person>,
+  childrenIndex: Record<number, number[]>,
+  visited: Set<number>
 ): TreeNode | null {
   if (visited.has(personId)) return null
   visited.add(personId)
@@ -92,18 +92,18 @@ function buildTree(
   for (const h of person.honNhan) visited.add(h.voChongId)
 
   const marriages: Marriage[] = []
-  const matchedChildIds = new Set<string>()
+  const matchedChildIds = new Set<number>()
 
   for (const h of person.honNhan) {
     const spouse = persons[h.voChongId] ?? null
-    const sId = h.voChongId
+    const spouseId = h.voChongId
 
     const childIds = (childrenIndex[person.id] ?? []).filter(cId => {
       const c = persons[cId]
       if (!c) return false
       return person.gioiTinh === 'nam'
-        ? c.boId === person.id && c.meId === sId
-        : c.meId === person.id && c.boId === sId
+        ? c.boId === person.id && c.meId === spouseId
+        : c.meId === person.id && c.boId === spouseId
     })
     childIds.forEach(id => matchedChildIds.add(id))
 
@@ -335,7 +335,7 @@ export default function TreeView() {
         p => p.laThanhVienHo && (!p.boId || !persons[p.boId])
       ) ?? Object.values(persons).find(p => !p.boId || !persons[p.boId])
 
-    const visited = new Set<string>()
+    const visited = new Set<number>()
     const trees: TreeNode[] = []
 
     if (root) {

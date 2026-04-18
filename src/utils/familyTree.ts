@@ -1,6 +1,6 @@
 import type { GiaphaData, Person } from '../types/giapha'
 
-export function timVoChong(personId: string, data: GiaphaData): string[] {
+export function timVoChong(personId: number, data: GiaphaData): number[] {
   const person = data.persons[personId]
   if (!person) return []
   return person.honNhan.map(h => h.voChongId)
@@ -10,7 +10,7 @@ export function timVoChong(personId: string, data: GiaphaData): string[] {
  * Given a fatherId, if father has exactly one wife, return her ID.
  * If multiple wives, return null (caller must show dropdown).
  */
-export function tuDongDienMe(boId: string, data: GiaphaData): string | null {
+export function tuDongDienMe(boId: number, data: GiaphaData): number | null {
   const bo = data.persons[boId]
   if (!bo) return null
   if (bo.honNhan.length === 1) return bo.honNhan[0].voChongId
@@ -20,7 +20,7 @@ export function tuDongDienMe(boId: string, data: GiaphaData): string | null {
 /**
  * Given a motherId, if mother has exactly one husband, return his ID.
  */
-export function tuDongDienBo(meId: string, data: GiaphaData): string | null {
+export function tuDongDienBo(meId: number, data: GiaphaData): number | null {
   const me = data.persons[meId]
   if (!me) return null
   if (me.honNhan.length === 1) return me.honNhan[0].voChongId
@@ -43,7 +43,7 @@ export function laThanhVienThuocHo(person: Person): boolean {
 }
 
 /** Get all children of a person */
-export function layConCai(personId: string, data: GiaphaData): Person[] {
+export function layConCai(personId: number, data: GiaphaData): Person[] {
   const person = data.persons[personId]
   if (!person) return []
   return person.conCaiIds.map(id => data.persons[id]).filter(Boolean) as Person[]

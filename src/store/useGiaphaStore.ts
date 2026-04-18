@@ -11,7 +11,7 @@ interface GiaphaState {
   currentUserEmail: string | null
   currentRole: Role | 'public'
   viewMode: ViewMode
-  selectedPersonId: string | null
+  selectedPersonId: number | null
   isDirty: boolean
   isSaving: boolean
   conflictDetected: boolean
@@ -21,11 +21,11 @@ interface GiaphaState {
   setFileId: (id: string) => void
   setUser: (email: string, role: Role | 'public') => void
   setViewMode: (mode: ViewMode) => void
-  selectPerson: (id: string | null) => void
+  selectPerson: (id: number | null) => void
 
-  themNguoi: (person: Omit<Person, 'id'>) => string
-  suaNguoi: (id: string, updates: Partial<Person>) => void
-  xoaNguoi: (id: string) => void
+  themNguoi: (person: Omit<Person, 'id'>) => number
+  suaNguoi: (id: number, updates: Partial<Person>) => void
+  xoaNguoi: (id: number) => void
 
   setIsSaving: (v: boolean) => void
   setConflictDetected: (v: boolean) => void
@@ -56,11 +56,11 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   selectPerson: (id) => set({ selectedPersonId: id }),
 
   themNguoi: (personData) => {
-    const id = taoId()
+    const id = taoId(get().data?.persons || {})
     const person: Person = { id, ...personData }
     set(state => {
       if (!state.data) return {}
-      const persons: Record<string, Person> = { ...state.data.persons, [id]: person }
+      const persons: Record<number, Person> = { ...state.data.persons, [id]: person }
       // Sync spouse links (A -> B also means B -> A)
       person.honNhan.forEach(h => {
         const spouse = persons[h.voChongId]
@@ -113,7 +113,7 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
       const existing = state.data.persons[id]
       if (!existing) return {}
       const updated = { ...existing, ...updates }
-      const persons: Record<string, Person> = { ...state.data.persons, [id]: updated }
+      const persons: Record<number, Person> = { ...state.data.persons, [id]: updated }
 
       const oldSpouseIds = new Set(existing.honNhan.map(h => h.voChongId))
       const newSpouseIds = new Set(updated.honNhan.map(h => h.voChongId))
@@ -220,8 +220,8 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
       const persons = { ...state.data.persons }
       delete persons[id]
       // Rebuild any person that references the deleted id
-      Object.keys(persons).forEach(pid => {
-        const p = persons[pid]
+      Object.values(persons).forEach(p => {
+        const pid = p.id
         const needsUpdate = p.boId === id || p.meId === id ||
           p.conCaiIds.includes(id) || p.honNhan.some(h => h.voChongId === id)
         if (needsUpdate) {

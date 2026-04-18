@@ -14,8 +14,8 @@ const data: GiaphaData = {
     danhSachNguoiDung: [],
   },
   persons: {
-    p1: {
-      id: 'p1',
+    1: {
+      id: 1,
       hoTen: 'Nguyễn Văn A',
       gioiTinh: 'nam',
       laThanhVienHo: true,
@@ -33,7 +33,7 @@ describe('PersonDetail permissions', () => {
       currentUserEmail: null,
       currentRole: 'public',
       viewMode: 'tree',
-      selectedPersonId: 'p1',
+      selectedPersonId: 1,
       isDirty: false,
       isSaving: false,
       conflictDetected: false,
@@ -61,8 +61,8 @@ describe('PersonDetail contact info', () => {
           danhSachNguoiDung: [],
         },
         persons: {
-          p1: {
-            id: 'p1',
+          1: {
+            id: 1,
             hoTen: 'Người Có Liên Hệ',
             gioiTinh: 'nam',
             email: 'p1@example.com',
@@ -73,7 +73,7 @@ describe('PersonDetail contact info', () => {
           },
         },
       },
-      selectedPersonId: 'p1',
+      selectedPersonId: 1,
       currentRole: 'viewer',
       fileId: null,
       currentUserEmail: null,
