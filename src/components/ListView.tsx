@@ -8,13 +8,21 @@ interface RowProps {
   onSelect: (id: string) => void
   selectedId: string | null
   highlightId: string | null
+  isSpouse?: boolean
+  hideChildren?: boolean
 }
 
-function PersonRow({ person, depth, onSelect, selectedId, highlightId }: RowProps) {
+function PersonRow({ person, depth, onSelect, selectedId, highlightId, isSpouse = false, hideChildren = false }: RowProps) {
   const data = useGiaphaStore(s => s.data)
   const isClan = laThanhVienThuocHo(person)
   const isSelected = person.id === selectedId
   const isHighlighted = person.id === highlightId
+
+  const spouses = data
+    ? person.honNhan
+      .map(h => data.persons[h.voChongId])
+      .filter((p): p is Person => Boolean(p) && !p.laThanhVienHo)
+    : []
 
   const children = data
     ? sapXepAnhChiEm(person.conCaiIds.map(id => data.persons[id]).filter(Boolean) as Person[])
@@ -31,6 +39,9 @@ function PersonRow({ person, depth, onSelect, selectedId, highlightId }: RowProp
         onClick={() => onSelect(person.id)}
       >
         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isClan ? 'bg-blue-500' : 'bg-gray-300'}`} />
+        {isSpouse && (
+          <span aria-label="Vợ/chồng" className="text-xs text-amber-500">💍</span>
+        )}
         <span className={`text-sm ${isClan ? 'text-gray-900' : 'text-gray-400'}`}>
           {person.hoTen}
         </span>
@@ -41,10 +52,26 @@ function PersonRow({ person, depth, onSelect, selectedId, highlightId }: RowProp
           <span className="text-xs text-gray-300 ml-auto">†</span>
         )}
       </div>
-      {children.map(child => (
-        <PersonRow key={child.id} person={child} depth={depth + 1}
-          onSelect={onSelect} selectedId={selectedId} highlightId={highlightId} />
-      ))}
+      {!hideChildren && (
+        <>
+          {spouses.map(spouse => (
+            <PersonRow
+              key={`spouse-${person.id}-${spouse.id}`}
+              person={spouse}
+              depth={depth + 1}
+              onSelect={onSelect}
+              selectedId={selectedId}
+              highlightId={highlightId}
+              isSpouse
+              hideChildren
+            />
+          ))}
+          {children.map(child => (
+            <PersonRow key={child.id} person={child} depth={depth + 1}
+              onSelect={onSelect} selectedId={selectedId} highlightId={highlightId} />
+          ))}
+        </>
+      )}
     </>
   )
 }
@@ -53,10 +80,7 @@ export default function ListView() {
   const { data, selectedPersonId, selectPerson } = useGiaphaStore()
   if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
 
-  const roots = Object.values(data.persons).filter(p => {
-    if (!p.boId) return true
-    return !data.persons[p.boId]
-  })
+  const roots = Object.values(data.persons).filter(p => p.laThanhVienHo && (!p.boId || !data.persons[p.boId]))
   const sortedRoots = sapXepAnhChiEm(roots)
 
   return (
