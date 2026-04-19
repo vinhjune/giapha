@@ -44,6 +44,19 @@ describe('TreeView', () => {
     expect(screen.getByText('Chắt')).toBeInTheDocument()
   })
 
+  it('shows generation order suffix when setting is enabled', () => {
+    useGiaphaStore.setState({
+      data: {
+        ...data,
+        metadata: { ...data.metadata, hienThiThuTuDoi: true },
+      },
+    })
+
+    render(<TreeView />)
+    expect(screen.getByText('Tổ (#1)')).toBeInTheDocument()
+    expect(screen.getByText('Con gái (#2)')).toBeInTheDocument()
+  })
+
   it('allows panning with mouse drag on desktop', () => {
     render(<TreeView />)
     const container = screen.getByTestId('tree-view-container')

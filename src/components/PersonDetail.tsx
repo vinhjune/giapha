@@ -1,5 +1,7 @@
+import { useMemo } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { Person } from '../types/giapha'
+import { dinhDangTenNguoi, tinhThuTuDoi } from '../utils/familyTree'
 
 function formatNgay(d?: { nam?: number; thang?: number; ngay?: number }) {
   if (!d) return '—'
@@ -19,6 +21,9 @@ export default function PersonDetail({ onEdit }: Props) {
   if (!selectedPersonId || !data) return null
   const person = data.persons[selectedPersonId]
   if (!person) return null
+  const showGenerationOrder = Boolean(data.metadata.hienThiThuTuDoi)
+  const generationById = useMemo(() => tinhThuTuDoi(data), [data])
+  const formatName = (p: Person) => dinhDangTenNguoi(p, generationById, showGenerationOrder)
 
   const canEdit = currentRole === 'admin' || currentRole === 'editor'
   const personId = selectedPersonId // capture non-null value for closure
@@ -29,7 +34,7 @@ export default function PersonDetail({ onEdit }: Props) {
   const conCai = person.conCaiIds.map(id => data.persons[id]).filter(Boolean)
 
   function handleDelete() {
-    if (!confirm(`Xóa ${person.hoTen}?`)) return
+    if (!confirm(`Xóa ${formatName(person)}?`)) return
     xoaNguoi(personId)
     selectPerson(null)
   }
@@ -37,7 +42,7 @@ export default function PersonDetail({ onEdit }: Props) {
   return (
     <aside className="w-80 bg-white border-l border-gray-200 p-4 overflow-y-auto">
       <div className="flex justify-between items-start mb-4">
-        <h2 className="text-lg font-bold text-gray-800">{person.hoTen}</h2>
+        <h2 className="text-lg font-bold text-gray-800">{formatName(person)}</h2>
         <button onClick={() => selectPerson(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
       </div>
 
@@ -77,13 +82,13 @@ export default function PersonDetail({ onEdit }: Props) {
         {bo && (
           <div className="flex gap-2">
             <dt className="text-gray-500 w-24">Bố:</dt>
-            <dd><button className="text-blue-600 hover:underline" onClick={() => selectPerson(bo.id)}>{bo.hoTen}</button></dd>
+            <dd><button className="text-blue-600 hover:underline" onClick={() => selectPerson(bo.id)}>{formatName(bo)}</button></dd>
           </div>
         )}
         {me && (
           <div className="flex gap-2">
             <dt className="text-gray-500 w-24">Mẹ:</dt>
-            <dd><button className="text-blue-600 hover:underline" onClick={() => selectPerson(me.id)}>{me.hoTen}</button></dd>
+            <dd><button className="text-blue-600 hover:underline" onClick={() => selectPerson(me.id)}>{formatName(me)}</button></dd>
           </div>
         )}
         {voChong.length > 0 && (
@@ -91,7 +96,7 @@ export default function PersonDetail({ onEdit }: Props) {
             <dt className="text-gray-500 w-24">Vợ/Chồng:</dt>
             <dd className="flex flex-col gap-0.5">
               {voChong.map(v => (
-                <button key={v!.id} className="text-blue-600 hover:underline text-left" onClick={() => selectPerson(v!.id)}>{v!.hoTen}</button>
+                <button key={v!.id} className="text-blue-600 hover:underline text-left" onClick={() => selectPerson(v!.id)}>{formatName(v!)}</button>
               ))}
             </dd>
           </div>
@@ -101,7 +106,7 @@ export default function PersonDetail({ onEdit }: Props) {
             <dt className="text-gray-500 w-24">Con cái:</dt>
             <dd className="flex flex-col gap-0.5">
               {conCai.map(c => (
-                <button key={c!.id} className="text-blue-600 hover:underline text-left" onClick={() => selectPerson(c!.id)}>{c!.hoTen}</button>
+                <button key={c!.id} className="text-blue-600 hover:underline text-left" onClick={() => selectPerson(c!.id)}>{formatName(c!)}</button>
               ))}
             </dd>
           </div>

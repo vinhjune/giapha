@@ -10,6 +10,7 @@ interface Props {
 export default function SettingsPanel({ onClose }: Props) {
   const { data, fileId, currentRole, setData } = useGiaphaStore()
   const [toggling, setToggling] = useState(false)
+  const [togglingGenerationOrder, setTogglingGenerationOrder] = useState(false)
   const [verifyError, setVerifyError] = useState<string | null>(null)
   const [inheritedWarning, setInheritedWarning] = useState(false)
 
@@ -18,6 +19,7 @@ export default function SettingsPanel({ onClose }: Props) {
   if (currentRole !== 'admin' || !data || !fileId) return null
 
   const isPublic = data.metadata.cheDoCong
+  const showGenerationOrder = Boolean(data.metadata.hienThiThuTuDoi)
 
   async function handleTogglePublic() {
     if (!data || !fileId) return
@@ -57,6 +59,23 @@ export default function SettingsPanel({ onClose }: Props) {
       alert('Lỗi: ' + (e as Error).message)
     } finally {
       setToggling(false)
+    }
+  }
+
+  async function handleToggleGenerationOrder() {
+    if (!data || !fileId) return
+    setTogglingGenerationOrder(true)
+    try {
+      const updated = {
+        ...data,
+        metadata: { ...data.metadata, hienThiThuTuDoi: !showGenerationOrder },
+      }
+      await ghiFile(fileId, updated)
+      setData(updated)
+    } catch (e: unknown) {
+      alert('Lỗi: ' + (e as Error).message)
+    } finally {
+      setTogglingGenerationOrder(false)
     }
   }
 
@@ -103,6 +122,30 @@ export default function SettingsPanel({ onClose }: Props) {
           {verifyError && (
             <p className="mt-2 text-xs text-red-600 whitespace-pre-wrap">{verifyError}</p>
           )}
+        </div>
+
+        <div className="p-4 border-b border-gray-100">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Hiển thị thứ tự đời</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Hiển thị tên theo dạng "Họ tên (#đời)"
+              </p>
+            </div>
+            <button
+              onClick={handleToggleGenerationOrder}
+              disabled={togglingGenerationOrder}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
+                showGenerationOrder ? 'bg-blue-600' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${
+                  showGenerationOrder ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
         </div>
 
         <PermissionManager />

@@ -2,6 +2,7 @@ import type { Person } from '../types/giapha'
 
 interface Props {
   person: Person
+  displayName?: string
   isSelected: boolean
   onClick: () => void
 }
@@ -9,7 +10,7 @@ interface Props {
 const CLAN_BACKGROUND_BY_GENDER = { nam: 'bg-blue-100', nu: 'bg-pink-100', khac: 'bg-blue-100' } as const
 const NON_CLAN_BACKGROUND_BY_GENDER = { nam: 'bg-purple-100', nu: 'bg-yellow-100', khac: 'bg-yellow-100' } as const
 
-export default function PersonCard({ person, isSelected, onClick }: Props) {
+export default function PersonCard({ person, displayName, isSelected, onClick }: Props) {
   const isClan = person.laThanhVienHo
   const backgroundByGroup = isClan
     ? CLAN_BACKGROUND_BY_GENDER
@@ -25,7 +26,7 @@ export default function PersonCard({ person, isSelected, onClick }: Props) {
       `}
     >
       <div className="text-xs font-semibold leading-tight text-gray-800 whitespace-nowrap">
-        {person.hoTen}
+        {displayName ?? person.hoTen}
       </div>
       {person.namSinh && (
         <div className="text-[10px] text-gray-400 mt-0.5">

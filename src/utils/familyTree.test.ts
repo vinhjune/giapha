@@ -7,6 +7,8 @@ import {
   laThanhVienThuocHo,
   layConCai,
   layBoCMe,
+  tinhThuTuDoi,
+  dinhDangTenNguoi,
 } from './familyTree'
 
 const nguoiMau = (ghi: Partial<Person>): Person => ({
@@ -131,5 +133,25 @@ describe('layBoCMe', () => {
     const { bo, me } = layBoCMe(nguoiMau({ id: 999 }), data)
     expect(bo).toBeUndefined()
     expect(me).toBeUndefined()
+  })
+})
+
+describe('tinhThuTuDoi + dinhDangTenNguoi', () => {
+  it('calculates generation order and formats person name with generation', () => {
+    const data: GiaphaData = {
+      metadata: {} as any,
+      persons: {
+        1: nguoiMau({ id: 1, hoTen: 'Cụ Tổ', gioiTinh: 'nam', honNhan: [{ voChongId: 2 }], conCaiIds: [3] }),
+        2: nguoiMau({ id: 2, hoTen: 'Bà Tổ', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: 1 }], conCaiIds: [3] }),
+        3: nguoiMau({ id: 3, hoTen: 'Ông Nông', gioiTinh: 'nam', boId: 1, meId: 2, honNhan: [], conCaiIds: [] }),
+      },
+    }
+
+    const thuTuDoiById = tinhThuTuDoi(data)
+    expect(thuTuDoiById[1]).toBe(1)
+    expect(thuTuDoiById[2]).toBe(1)
+    expect(thuTuDoiById[3]).toBe(2)
+    expect(dinhDangTenNguoi(data.persons[3], thuTuDoiById, true)).toBe('Ông Nông (#2)')
+    expect(dinhDangTenNguoi(data.persons[3], thuTuDoiById, false)).toBe('Ông Nông')
   })
 })
