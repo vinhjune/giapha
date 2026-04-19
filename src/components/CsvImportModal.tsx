@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import { importSingleCsvToGiapha } from '../utils/csvImport'
 import type { ImportResult } from '../utils/csvImport'
+import type { Metadata } from '../types/giapha'
 
 interface Props {
   onClose: () => void
@@ -25,10 +26,13 @@ export default function CsvImportModal({ onClose }: Props) {
     reader.onload = (evt) => {
       const text = evt.target?.result
       if (typeof text !== 'string') return
-      const metadata = data?.metadata ?? {
+      const metadata: Metadata = data?.metadata ?? {
         tenDongHo: 'Gia phả',
-        nguonGoc: '',
-        ngayCapNhat: new Date().toISOString(),
+        ngayTao: new Date().toISOString(),
+        nguoiTao: '',
+        phienBan: 1,
+        cheDoCong: false,
+        danhSachNguoiDung: [],
       }
       const res = importSingleCsvToGiapha(text, metadata)
       setResult(res)

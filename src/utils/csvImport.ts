@@ -81,21 +81,6 @@ function str(v: string): string | undefined {
   return t === '' ? undefined : t
 }
 
-function parseNum(v: string, col: string, row: number, issues: ImportIssue[]): number | null {
-  const t = v.trim()
-  if (t === '') return null
-  const n = Number(t)
-  if (!Number.isInteger(n) || n <= 0) {
-    issues.push({
-      level: 'error', code: 'INVALID_ID',
-      message: `Cột "${col}" dòng ${row}: "${t}" không phải số nguyên dương hợp lệ.`,
-      rowNumber: row, columnName: col,
-    })
-    return null
-  }
-  return n
-}
-
 function parseBool(v: string): boolean | undefined {
   const t = v.trim().toLowerCase()
   if (t === '' || t == null) return undefined
