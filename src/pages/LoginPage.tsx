@@ -2,7 +2,7 @@ import { dangNhap } from '../services/googleAuth'
 
 interface Props {
   publicModeAvailable: boolean
-  onPublicMode: () => void
+  onPublicMode: () => void | Promise<void>
   onDemo?: () => void
 }
 
@@ -32,7 +32,7 @@ export default function LoginPage({ publicModeAvailable, onPublicMode, onDemo }:
 
         {publicModeAvailable && (
           <button onClick={onPublicMode} className="w-full py-2 text-sm text-gray-500 hover:text-gray-700">
-            Xem không cần đăng nhập
+            Chỉ xem
           </button>
         )}
 

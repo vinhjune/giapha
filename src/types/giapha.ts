@@ -20,6 +20,8 @@ export interface Person {
   id: number
   hoTen: string                // Full name
   gioiTinh: GioiTinh
+  email?: string
+  soDienThoai?: string
   namSinh?: NgayThang
   namMat?: NgayThang
   queQuan?: string             // Hometown
@@ -58,5 +60,5 @@ export interface Metadata {
 
 export interface GiaphaData {
   metadata: Metadata
-  persons: Record<string, Person>  // id → Person map
+  persons: Record<number, Person>  // id → Person map
 }

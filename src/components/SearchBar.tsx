@@ -6,7 +6,7 @@ import type { Person } from '../types/giapha'
 
 export default function SearchBar() {
   const data = useGiaphaStore(s => s.data)
-  const selectPerson = useGiaphaStore(s => s.selectPerson)
+  const focusPerson = useGiaphaStore(s => s.focusPerson)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Person[]>([])
   const [open, setOpen] = useState(false)
@@ -19,13 +19,13 @@ export default function SearchBar() {
     const found = timKiemTheoTen(val, data)
     setResults(found)
     if (found.length === 1) {
-      selectPerson(found[0].id)
+      focusPerson(found[0].id)
       setQuery('')
       setOpen(false)
     } else {
       setOpen(found.length > 0)
     }
-  }, [data, selectPerson])
+  }, [data, focusPerson])
 
   // Close on outside click
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function SearchBar() {
         placeholder="Tìm kiếm theo tên..."
         className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
       />
-      {open && <SearchResults results={results} onSelect={id => { selectPerson(id); setQuery(''); setOpen(false) }} />}
+      {open && <SearchResults results={results} onSelect={id => { focusPerson(id); setQuery(''); setOpen(false) }} />}
     </div>
   )
 }

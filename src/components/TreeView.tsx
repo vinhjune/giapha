@@ -1,15 +1,24 @@
-import { useMemo, useRef, useEffect } from 'react'
+import { useMemo, useRef, useEffect, useState, useCallback } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonCard from './PersonCard'
 import type { Person } from '../types/giapha'
+import { sapXepAnhChiEm } from '../utils/familyTree'
 
-const NODE_W = 120
+const MIN_NODE_W = 120
 const NODE_H = 64
 const COUPLE_GAP = 24    // gap: person's right edge → start of first spouse zone
 const SPOUSE_SEP = 24    // gap between consecutive spouse zones
 const H_GAP = 20         // gap between siblings within the same marriage
 const V_GAP = 130        // vertical gap between generations (enlarged to fit spouse row)
 const SPOUSE_DROP = 8    // gap between person card bottom and spouse card top
+const FOREST_GAP = 80    // horizontal gap between disconnected family trees
+const KEYBOARD_PAN_STEP = 60
+const MIN_ZOOM = 0.5
+const MAX_ZOOM = 2
+const ZOOM_STEP = 0.1
+const NODE_HORIZONTAL_PADDING = 20
+const NAME_CHAR_WIDTH_ESTIMATE = 8
+const NAME_TEXT_STYLE = '600 12px sans-serif'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -36,6 +45,7 @@ interface RenderCard {
   person: Person
   x: number
   y: number
+  width: number
   isSpouse: boolean
 }
 
@@ -45,11 +55,39 @@ interface SvgLine {
   isCouple: boolean
 }
 
+function taoChiMucCon(persons: Record<number, Person>): Record<number, number[]> {
+  const index: Record<number, number[]> = {}
+  const daThem: Record<number, Set<number>> = {}
+
+  const themCon = (parentId: number, childId: number) => {
+    if (!persons[parentId] || !persons[childId]) return
+    if (!index[parentId]) {
+      index[parentId] = []
+      daThem[parentId] = new Set<number>()
+    }
+    if (daThem[parentId].has(childId)) return
+    daThem[parentId].add(childId)
+    index[parentId].push(childId)
+  }
+
+  for (const person of Object.values(persons)) {
+    for (const childId of person.conCaiIds) themCon(person.id, childId)
+  }
+
+  for (const person of Object.values(persons)) {
+    if (person.boId) themCon(person.boId, person.id)
+    if (person.meId) themCon(person.meId, person.id)
+  }
+
+  return index
+}
+
 // ─── Build tree ───────────────────────────────────────────────────────────────
 
 function buildTree(
   personId: number,
-  persons: Record<string, Person>,
+  persons: Record<number, Person>,
+  childrenIndex: Record<number, number[]>,
   visited: Set<number>
 ): TreeNode | null {
   if (visited.has(personId)) return null
@@ -63,17 +101,20 @@ function buildTree(
 
   const marriages: Marriage[] = []
   const matchedChildIds = new Set<number>()
+  const orderedChildIds = sapXepAnhChiEm(
+    (childrenIndex[person.id] ?? []).map(id => persons[id]).filter(Boolean) as Person[]
+  ).map(child => child.id)
 
   for (const h of person.honNhan) {
     const spouse = persons[h.voChongId] ?? null
-    const sId = h.voChongId
+    const spouseId = h.voChongId
 
-    const childIds = person.conCaiIds.filter(cId => {
+    const childIds = orderedChildIds.filter(cId => {
       const c = persons[cId]
       if (!c) return false
       return person.gioiTinh === 'nam'
-        ? c.boId === person.id && c.meId === sId
-        : c.meId === person.id && c.boId === sId
+        ? c.boId === person.id && c.meId === spouseId
+        : c.meId === person.id && c.boId === spouseId
     })
     childIds.forEach(id => matchedChildIds.add(id))
 
@@ -82,15 +123,15 @@ function buildTree(
       spouseX: 0,
       descentX: 0,
       childNodes: childIds
-        .map(id => buildTree(id, persons, visited))
+        .map(id => buildTree(id, persons, childrenIndex, visited))
         .filter(Boolean) as TreeNode[],
     })
   }
 
   // Children not linked to any marriage (boId/meId missing)
-  const unmatched = person.conCaiIds
+  const unmatched = orderedChildIds
     .filter(id => !matchedChildIds.has(id))
-    .map(id => buildTree(id, persons, visited))
+    .map(id => buildTree(id, persons, childrenIndex, visited))
     .filter(Boolean) as TreeNode[]
   if (unmatched.length > 0) {
     marriages.push({ spouse: null, spouseX: -1, descentX: 0, childNodes: unmatched })
@@ -117,33 +158,61 @@ function cW(childNodes: TreeNode[]): number {
   return childNodes.reduce((s, c, i) => s + c.subtreeWidth + (i > 0 ? H_GAP : 0), 0)
 }
 
-function calcSubtreeWidth(node: TreeNode): void {
+function estimateNameWidth(name: string): number {
+  return name.trim().length * NAME_CHAR_WIDTH_ESTIMATE
+}
+
+function measureNameWidth(name: string, textMeasureContext: CanvasRenderingContext2D | null): number {
+  const normalized = name.trim()
+  if (!normalized) return 0
+
+  if (!textMeasureContext) {
+    return estimateNameWidth(normalized)
+  }
+
+  textMeasureContext.font = NAME_TEXT_STYLE
+  return Math.ceil(textMeasureContext.measureText(normalized).width)
+}
+
+function calcNodeWidth(persons: Record<number, Person>): number {
+  const textMeasureContext =
+    typeof document !== 'undefined' && !(typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent))
+      ? document.createElement('canvas').getContext('2d')
+      : null
+
+  const longestNameWidth = Object.values(persons)
+    .reduce((maxWidth, person) => Math.max(maxWidth, measureNameWidth(person.hoTen, textMeasureContext)), 0)
+
+  return Math.max(MIN_NODE_W, longestNameWidth + NODE_HORIZONTAL_PADDING)
+}
+
+function calcSubtreeWidth(node: TreeNode, nodeWidth: number): void {
   for (const m of node.marriages)
-    for (const c of m.childNodes) calcSubtreeWidth(c)
+    for (const c of m.childNodes) calcSubtreeWidth(c, nodeWidth)
 
   if (node.marriages.length === 0) {
-    node.subtreeWidth = NODE_W
+    node.subtreeWidth = nodeWidth
     return
   }
 
   // Single no-spouse group → symmetric (children centered under person)
   if (node.marriages.length === 1 && !node.marriages[0].spouse) {
-    node.subtreeWidth = Math.max(NODE_W, cW(node.marriages[0].childNodes))
+    node.subtreeWidth = Math.max(nodeWidth, cW(node.marriages[0].childNodes))
     return
   }
 
   // Normal: person-left + spouse zones
   let zonesW = 0
   for (let k = 0; k < node.marriages.length; k++) {
-    const zoneW = Math.max(NODE_W, cW(node.marriages[k].childNodes))
+    const zoneW = Math.max(nodeWidth, cW(node.marriages[k].childNodes))
     zonesW += zoneW + (k > 0 ? SPOUSE_SEP : 0)
   }
-  node.subtreeWidth = NODE_W + COUPLE_GAP + zonesW
+  node.subtreeWidth = nodeWidth + COUPLE_GAP + zonesW
 }
 
 // ─── Top-down: assign positions ───────────────────────────────────────────────
 
-function assignPositions(node: TreeNode, startX: number, depth: number): void {
+function assignPositions(node: TreeNode, startX: number, depth: number, nodeWidth: number): void {
   node.y = depth * (NODE_H + V_GAP)
 
   // Leaf
@@ -157,13 +226,13 @@ function assignPositions(node: TreeNode, startX: number, depth: number): void {
     const m = node.marriages[0]
     const childrenW = cW(m.childNodes)
     const midX = startX + node.subtreeWidth / 2
-    node.x = midX - NODE_W / 2
+    node.x = midX - nodeWidth / 2
     m.spouseX = -1
     m.descentX = midX
     if (m.childNodes.length > 0) {
       let cx = midX - childrenW / 2
       for (const child of m.childNodes) {
-        assignPositions(child, cx, depth + 1)
+        assignPositions(child, cx, depth + 1, nodeWidth)
         cx += child.subtreeWidth + H_GAP
       }
     }
@@ -172,19 +241,19 @@ function assignPositions(node: TreeNode, startX: number, depth: number): void {
 
   // Normal: person at left, spouse zones to the right
   node.x = startX
-  let rightOff = NODE_W + COUPLE_GAP
+  let rightOff = nodeWidth + COUPLE_GAP
 
   for (let k = 0; k < node.marriages.length; k++) {
     const m = node.marriages[k]
     if (k > 0) rightOff += SPOUSE_SEP
 
     const childrenW = cW(m.childNodes)
-    const zoneW = Math.max(NODE_W, childrenW)
+    const zoneW = Math.max(nodeWidth, childrenW)
 
     if (m.spouse) {
       // Spouse card centered in zone; descent from spouse card center
-      m.spouseX = startX + rightOff + (zoneW - NODE_W) / 2
-      m.descentX = m.spouseX + NODE_W / 2
+      m.spouseX = startX + rightOff + (zoneW - nodeWidth) / 2
+      m.descentX = m.spouseX + nodeWidth / 2
     } else {
       // No spouse in this group; descent from zone center
       m.spouseX = -1
@@ -195,7 +264,7 @@ function assignPositions(node: TreeNode, startX: number, depth: number): void {
     if (m.childNodes.length > 0) {
       let cx = m.descentX - childrenW / 2
       for (const child of m.childNodes) {
-        assignPositions(child, cx, depth + 1)
+        assignPositions(child, cx, depth + 1, nodeWidth)
         cx += child.subtreeWidth + H_GAP
       }
     }
@@ -215,8 +284,8 @@ function assignPositions(node: TreeNode, startX: number, depth: number): void {
 //   ── horizontal child connector
 //   ↓ stems to each child
 
-function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[]): void {
-  cards.push({ person: node.person, x: node.x, y: node.y, isSpouse: false })
+function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[], nodeWidth: number): void {
+  cards.push({ person: node.person, x: node.x, y: node.y, width: nodeWidth, isSpouse: false })
 
   // Y positions for spouse row (sits below the person card)
   const spouseTopY   = node.y + NODE_H + SPOUSE_DROP
@@ -226,8 +295,8 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[]): void {
   const spouseMarriages = node.marriages.filter(m => m.spouse && m.spouseX >= 0)
 
   if (spouseMarriages.length > 0) {
-    const personCenterX     = node.x + NODE_W / 2
-    const lastSpouseCenterX = Math.max(...spouseMarriages.map(m => m.spouseX + NODE_W / 2))
+    const personCenterX     = node.x + nodeWidth / 2
+    const lastSpouseCenterX = Math.max(...spouseMarriages.map(m => m.spouseX + nodeWidth / 2))
 
     // Vertical: person bottom-center → trunk level
     lines.push({
@@ -243,7 +312,7 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[]): void {
     })
     // Spouse cards (rendered on top of trunk via z-index)
     for (const m of spouseMarriages) {
-      cards.push({ person: m.spouse!, x: m.spouseX, y: spouseTopY, isSpouse: true })
+      cards.push({ person: m.spouse!, x: m.spouseX, y: spouseTopY, width: nodeWidth, isSpouse: true })
     }
   }
 
@@ -263,8 +332,8 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[]): void {
     })
 
     // Horizontal connector spanning all child stems + descentX
-    const firstCX = m.childNodes[0].x + NODE_W / 2
-    const lastCX  = m.childNodes[m.childNodes.length - 1].x + NODE_W / 2
+    const firstCX = m.childNodes[0].x + nodeWidth / 2
+    const lastCX  = m.childNodes[m.childNodes.length - 1].x + nodeWidth / 2
     const connL   = Math.min(m.descentX, firstCX)
     const connR   = Math.max(m.descentX, lastCX)
     if (connL < connR) {
@@ -273,9 +342,9 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[]): void {
 
     // Vertical stems: connector → each child top
     for (const child of m.childNodes) {
-      const cx = child.x + NODE_W / 2
+      const cx = child.x + nodeWidth / 2
       lines.push({ x1: cx, y1: connY, x2: cx, y2: child.y, isCouple: false })
-      collect(child, cards, lines)
+      collect(child, cards, lines, nodeWidth)
     }
   }
 }
@@ -283,84 +352,309 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[]): void {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function TreeView() {
-  const { data, selectedPersonId, selectPerson } = useGiaphaStore()
+  const { data, selectedPersonId, focusedPersonId, selectPerson } = useGiaphaStore()
   const containerRef = useRef<HTMLDivElement>(null)
+  const pinchStateRef = useRef({
+    pinching: false,
+    startDistance: 0,
+    startZoom: 1,
+  })
+  const dragStateRef = useRef({
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    startLeft: 0,
+    startTop: 0,
+  })
+  const [isDragging, setIsDragging] = useState(false)
+  const [zoom, setZoom] = useState(1)
+  const highlightedPersonId = focusedPersonId ?? selectedPersonId
 
   const { cards, lines, width, height } = useMemo(() => {
     if (!data) return { cards: [], lines: [], width: 0, height: 0 }
     const persons = data.persons
+    const nodeWidth = calcNodeWidth(persons)
+    const childrenIndex = taoChiMucCon(persons)
 
     // Root = clan member with no known father
     const root =
       Object.values(persons).find(
         p => p.laThanhVienHo && (!p.boId || !persons[p.boId])
       ) ?? Object.values(persons).find(p => !p.boId || !persons[p.boId])
-    if (!root) return { cards: [], lines: [], width: 0, height: 0 }
 
     const visited = new Set<number>()
-    const tree = buildTree(root.id, persons, visited)
-    if (!tree) return { cards: [], lines: [], width: 0, height: 0 }
+    const trees: TreeNode[] = []
 
-    calcSubtreeWidth(tree)
-    assignPositions(tree, 20, 0)
+    if (root) {
+      const primaryTree = buildTree(root.id, persons, childrenIndex, visited)
+      if (primaryTree) trees.push(primaryTree)
+    }
+
+    const extraRoots = Object.values(persons).filter(
+      p => !visited.has(p.id) && (!p.boId || !persons[p.boId])
+    )
+    for (const extraRoot of extraRoots) {
+      const tree = buildTree(extraRoot.id, persons, childrenIndex, visited)
+      if (tree) trees.push(tree)
+    }
+
+    const unvisitedPersons = Object.values(persons).filter(p => !visited.has(p.id))
+    for (const person of unvisitedPersons) {
+      const tree = buildTree(person.id, persons, childrenIndex, visited)
+      if (tree) trees.push(tree)
+    }
+
+    if (trees.length === 0) return { cards: [], lines: [], width: 0, height: 0 }
+
+    let startX = 20
+    for (const tree of trees) {
+      calcSubtreeWidth(tree, nodeWidth)
+      assignPositions(tree, startX, 0, nodeWidth)
+      startX += tree.subtreeWidth + FOREST_GAP
+    }
 
     const cards: RenderCard[] = []
     const lines: SvgLine[] = []
-    collect(tree, cards, lines)
+    for (const tree of trees) collect(tree, cards, lines, nodeWidth)
 
-    const maxX = Math.max(...cards.map(c => c.x)) + NODE_W + 40
+    const maxX = Math.max(...cards.map(c => c.x + c.width)) + 40
     const maxY = Math.max(...cards.map(c => c.y)) + NODE_H + 40
 
     return { cards, lines, width: maxX, height: maxY }
   }, [data])
 
   useEffect(() => {
-    if (!selectedPersonId || !containerRef.current) return
-    const card = cards.find(c => c.person.id === selectedPersonId)
+    if (!highlightedPersonId || !containerRef.current) return
+    const card = cards.find(c => c.person.id === highlightedPersonId)
     if (!card) return
     containerRef.current.scrollTo({
-      left: card.x - containerRef.current.clientWidth / 2 + NODE_W / 2,
+      left: card.x - containerRef.current.clientWidth / 2 + card.width / 2,
       top: card.y - containerRef.current.clientHeight / 2 + NODE_H / 2,
       behavior: 'smooth',
     })
-  }, [selectedPersonId, cards])
+  }, [highlightedPersonId, cards])
+
+  const onMouseDown = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || !containerRef.current) return
+    event.preventDefault()
+
+    dragStateRef.current = {
+      dragging: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      startLeft: containerRef.current.scrollLeft,
+      startTop: containerRef.current.scrollTop,
+    }
+    setIsDragging(true)
+  }, [])
+
+  const onMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragStateRef.current.dragging || !containerRef.current) return
+    event.preventDefault()
+
+    const deltaX = event.clientX - dragStateRef.current.startX
+    const deltaY = event.clientY - dragStateRef.current.startY
+
+    containerRef.current.scrollLeft = dragStateRef.current.startLeft - deltaX
+    containerRef.current.scrollTop = dragStateRef.current.startTop - deltaY
+  }, [])
+
+  const onKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      containerRef.current.scrollLeft -= KEYBOARD_PAN_STEP
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      containerRef.current.scrollLeft += KEYBOARD_PAN_STEP
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      containerRef.current.scrollTop -= KEYBOARD_PAN_STEP
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      containerRef.current.scrollTop += KEYBOARD_PAN_STEP
+    }
+  }, [])
+
+  const stopDragging = useCallback(() => {
+    if (!dragStateRef.current.dragging) return
+    dragStateRef.current.dragging = false
+    setIsDragging(false)
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener('mouseup', stopDragging)
+    return () => window.removeEventListener('mouseup', stopDragging)
+  }, [stopDragging])
+
+  const clampZoom = useCallback((value: number) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value)), [])
+
+  const applyZoom = useCallback((targetZoom: number, centerX?: number, centerY?: number) => {
+    if (!containerRef.current) return
+
+    const nextZoom = clampZoom(targetZoom)
+    if (nextZoom === zoom) return
+
+    const container = containerRef.current
+    const anchorX = centerX ?? container.clientWidth / 2
+    const anchorY = centerY ?? container.clientHeight / 2
+    const contentX = (container.scrollLeft + anchorX) / zoom
+    const contentY = (container.scrollTop + anchorY) / zoom
+
+    setZoom(nextZoom)
+
+    requestAnimationFrame(() => {
+      if (!containerRef.current) return
+      containerRef.current.scrollLeft = contentX * nextZoom - anchorX
+      containerRef.current.scrollTop = contentY * nextZoom - anchorY
+    })
+  }, [clampZoom, zoom])
+
+  const zoomIn = useCallback(() => applyZoom(Number((zoom + ZOOM_STEP).toFixed(2))), [applyZoom, zoom])
+  const zoomOut = useCallback(() => applyZoom(Number((zoom - ZOOM_STEP).toFixed(2))), [applyZoom, zoom])
+  const resetZoom = useCallback(() => applyZoom(1), [applyZoom])
+
+  const onWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
+    if (!event.ctrlKey) return
+    event.preventDefault()
+
+    const rect = event.currentTarget.getBoundingClientRect()
+    const centerX = event.clientX - rect.left
+    const centerY = event.clientY - rect.top
+    const direction = event.deltaY < 0 ? 1 : -1
+    applyZoom(Number((zoom + direction * ZOOM_STEP).toFixed(2)), centerX, centerY)
+  }, [applyZoom, zoom])
+
+  const onTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 2) return
+    const a = event.touches.item(0)
+    const b = event.touches.item(1)
+    if (!a || !b) return
+    pinchStateRef.current = {
+      pinching: true,
+      startDistance: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+      startZoom: zoom,
+    }
+  }, [zoom])
+
+  const onTouchMove = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    if (!pinchStateRef.current.pinching || event.touches.length !== 2) return
+    event.preventDefault()
+
+    const a = event.touches.item(0)
+    const b = event.touches.item(1)
+    if (!a || !b) return
+    const { startDistance, startZoom } = pinchStateRef.current
+    if (startDistance <= 0) return
+
+    const distance = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+
+    const rect = event.currentTarget.getBoundingClientRect()
+    const centerX = (a.clientX + b.clientX) / 2 - rect.left
+    const centerY = (a.clientY + b.clientY) / 2 - rect.top
+
+    const nextZoom = startZoom * (distance / startDistance)
+    applyZoom(nextZoom, centerX, centerY)
+  }, [applyZoom])
+
+  const onTouchEnd = useCallback(() => {
+    pinchStateRef.current.pinching = false
+  }, [])
 
   if (!data) return <div className="flex-1 flex items-center justify-center text-gray-400">Chưa có dữ liệu</div>
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-auto bg-gray-50 relative">
-      <div style={{ width, height, position: 'relative' }}>
-        <svg
-          style={{ position: 'absolute', top: 0, left: 0, width, height, pointerEvents: 'none', zIndex: 0 }}
+    <div
+      ref={containerRef}
+      data-testid="tree-view-container"
+      className={`flex-1 overflow-auto bg-gray-50 relative ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+      tabIndex={0}
+      aria-label="Cây gia phả"
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={stopDragging}
+      onMouseLeave={stopDragging}
+      onKeyDown={onKeyDown}
+      onWheel={onWheel}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
+    >
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 p-2 shadow-sm">
+        <button
+          type="button"
+          onClick={zoomOut}
+          disabled={zoom <= MIN_ZOOM}
+          aria-label="Thu nhỏ cây"
+          className="h-8 w-8 rounded border border-gray-200 text-lg leading-none disabled:opacity-50"
         >
-          {lines.map((l, i) => (
-            <line
-              key={i}
-              x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-              stroke={l.isCouple ? '#F97316' : '#CBD5E1'}
-              strokeWidth={l.isCouple ? 2 : 1.5}
-            />
-          ))}
-        </svg>
-        {cards.map((card, i) => (
-          <div
-            key={`${card.person.id}-${i}`}
-            style={{
-              position: 'absolute',
-              left: card.x,
-              top: card.y,
-              width: NODE_W,
-              zIndex: 1,
-              opacity: card.isSpouse ? 0.85 : 1,
-            }}
+          −
+        </button>
+        <button
+          type="button"
+          onClick={resetZoom}
+          aria-label="Đặt lại mức thu phóng"
+          className="rounded border border-gray-200 px-2 py-1 text-xs font-medium"
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <button
+          type="button"
+          onClick={zoomIn}
+          disabled={zoom >= MAX_ZOOM}
+          aria-label="Phóng to cây"
+          className="h-8 w-8 rounded border border-gray-200 text-lg leading-none disabled:opacity-50"
+        >
+          +
+        </button>
+      </div>
+      <div style={{ width: width * zoom, height: height * zoom, position: 'relative' }}>
+        <div
+          data-testid="tree-view-scale-layer"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width,
+            height,
+            transform: `scale(${zoom})`,
+            transformOrigin: 'top left',
+          }}
+        >
+          <svg
+            style={{ position: 'absolute', top: 0, left: 0, width, height, pointerEvents: 'none', zIndex: 0 }}
           >
-            <PersonCard
-              person={card.person}
-              isSelected={card.person.id === selectedPersonId}
-              onClick={() => selectPerson(card.person.id)}
-            />
-          </div>
-        ))}
+            {lines.map((l, i) => (
+              <line
+                key={i}
+                x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+                stroke={l.isCouple ? '#F97316' : '#3B82F6'}
+                strokeWidth={2}
+              />
+            ))}
+          </svg>
+          {cards.map((card, i) => (
+            <div
+              key={`${card.person.id}-${i}`}
+              style={{
+                position: 'absolute',
+                left: card.x,
+                top: card.y,
+                width: card.width,
+                zIndex: 1,
+                opacity: card.isSpouse ? 0.85 : 1,
+              }}
+            >
+              <PersonCard
+                person={card.person}
+                isSelected={card.person.id === highlightedPersonId}
+                onClick={() => selectPerson(card.person.id)}
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

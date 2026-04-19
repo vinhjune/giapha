@@ -4,9 +4,9 @@ import type { Person } from '../types/giapha'
 function formatNgay(d?: { nam?: number; thang?: number; ngay?: number }) {
   if (!d) return '—'
   const parts = []
-  if (d.ngay) parts.push(d.ngay)
-  if (d.thang) parts.push(d.thang)
-  if (d.nam) parts.push(d.nam)
+  if (d.ngay)  parts.push(String(d.ngay).padStart(2, '0'))
+  if (d.thang) parts.push(String(d.thang).padStart(2, '0'))
+  if (d.nam)   parts.push(d.nam)
   return parts.join('/') || '—'
 }
 
@@ -46,14 +46,28 @@ export default function PersonDetail({ onEdit }: Props) {
           <dt className="text-gray-500 w-24">Giới tính:</dt>
           <dd>{person.gioiTinh === 'nam' ? 'Nam' : person.gioiTinh === 'nu' ? 'Nữ' : 'Khác'}</dd>
         </div>
+        {person.email && (
+          <div className="flex gap-2">
+            <dt className="text-gray-500 w-24">Email:</dt>
+            <dd>{person.email}</dd>
+          </div>
+        )}
+        {person.soDienThoai && (
+          <div className="flex gap-2">
+            <dt className="text-gray-500 w-24">Điện thoại:</dt>
+            <dd>{person.soDienThoai}</dd>
+          </div>
+        )}
         <div className="flex gap-2">
-          <dt className="text-gray-500 w-24">Năm sinh:</dt>
+          <dt className="text-gray-500 w-24">Ngày sinh:</dt>
           <dd>{formatNgay(person.namSinh)}</dd>
         </div>
-        <div className="flex gap-2">
-          <dt className="text-gray-500 w-24">Năm mất:</dt>
-          <dd>{formatNgay(person.namMat)}</dd>
-        </div>
+        {person.namMat && (
+          <div className="flex gap-2">
+            <dt className="text-gray-500 w-24">Ngày mất:</dt>
+            <dd>{formatNgay(person.namMat)}</dd>
+          </div>
+        )}
         {person.queQuan && (
           <div className="flex gap-2">
             <dt className="text-gray-500 w-24">Quê quán:</dt>

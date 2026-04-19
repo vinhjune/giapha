@@ -10,7 +10,7 @@ import {
 } from './familyTree'
 
 const nguoiMau = (ghi: Partial<Person>): Person => ({
-  id: 1,
+  id: 0,
   hoTen: 'Test',
   gioiTinh: 'nam',
   laThanhVienHo: true,
@@ -24,11 +24,11 @@ describe('timVoChong', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        10: nguoiMau({ id: 10, gioiTinh: 'nam', honNhan: [{ voChongId: 20 }] }),
-        20: nguoiMau({ id: 20, gioiTinh: 'nu' }),
+        1: nguoiMau({ id: 1, gioiTinh: 'nam', honNhan: [{ voChongId: 2 }] }),
+        2: nguoiMau({ id: 2, gioiTinh: 'nu' }),
       },
     }
-    expect(timVoChong(10, data)).toEqual([20])
+    expect(timVoChong(1, data)).toEqual([2])
   })
 })
 
@@ -37,32 +37,32 @@ describe('tuDongDienMe', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        10: nguoiMau({ id: 10, honNhan: [{ voChongId: 20 }] }),
-        20: nguoiMau({ id: 20 }),
+        1: nguoiMau({ id: 1, honNhan: [{ voChongId: 2 }] }),
+        2: nguoiMau({ id: 2 }),
       },
     }
-    expect(tuDongDienMe(10, data)).toBe(20)
+    expect(tuDongDienMe(1, data)).toBe(2)
   })
 
   it('returns null when father has multiple wives', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        10: nguoiMau({ id: 10, honNhan: [{ voChongId: 20 }, { voChongId: 21 }] }),
-        20: nguoiMau({ id: 20 }),
-        21: nguoiMau({ id: 21 }),
+        1: nguoiMau({ id: 1, honNhan: [{ voChongId: 2 }, { voChongId: 3 }] }),
+        2: nguoiMau({ id: 2 }),
+        3: nguoiMau({ id: 3 }),
       },
     }
-    expect(tuDongDienMe(10, data)).toBeNull()
+    expect(tuDongDienMe(1, data)).toBeNull()
   })
 })
 
 describe('sapXepAnhChiEm', () => {
   it('sorts siblings by thuTuAnhChi ascending, undeclared last', () => {
-    const a = nguoiMau({ id: 101, thuTuAnhChi: 2 })
-    const b = nguoiMau({ id: 102, thuTuAnhChi: 1 })
-    const c = nguoiMau({ id: 103 }) // no order
-    expect(sapXepAnhChiEm([a, b, c]).map(p => p.id)).toEqual([102, 101, 103])
+    const a = nguoiMau({ id: 1, thuTuAnhChi: 2 })
+    const b = nguoiMau({ id: 2, thuTuAnhChi: 1 })
+    const c = nguoiMau({ id: 3 }) // no order
+    expect(sapXepAnhChiEm([a, b, c]).map(p => p.id)).toEqual([2, 1, 3])
   })
 })
 
@@ -85,29 +85,29 @@ describe('layConCai', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        10: nguoiMau({ id: 10, conCaiIds: [30, 31] }),
-        30: nguoiMau({ id: 30 }),
-        31: nguoiMau({ id: 31 }),
+        1: nguoiMau({ id: 1, conCaiIds: [2, 3] }),
+        2: nguoiMau({ id: 2 }),
+        3: nguoiMau({ id: 3 }),
       },
     }
-    const result = layConCai(10, data)
-    expect(result.map(p => p.id)).toEqual([30, 31])
+    const result = layConCai(1, data)
+    expect(result.map(p => p.id)).toEqual([2, 3])
   })
 
   it('returns empty array for unknown personId', () => {
     const data: GiaphaData = { metadata: {} as any, persons: {} }
-    expect(layConCai(99, data)).toEqual([])
+    expect(layConCai(999, data)).toEqual([])
   })
 
   it('skips stale child references not present in data', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        10: nguoiMau({ id: 10, conCaiIds: [30, 99] }),
-        30: nguoiMau({ id: 30 }),
+        1: nguoiMau({ id: 1, conCaiIds: [2, 999] }),
+        2: nguoiMau({ id: 2 }),
       },
     }
-    expect(layConCai(10, data).map(p => p.id)).toEqual([30])
+    expect(layConCai(1, data).map(p => p.id)).toEqual([2])
   })
 })
 
@@ -116,19 +116,19 @@ describe('layBoCMe', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        40: nguoiMau({ id: 40, boId: 10, meId: 20 }),
-        10: nguoiMau({ id: 10 }),
-        20: nguoiMau({ id: 20 }),
+        1: nguoiMau({ id: 1, boId: 2, meId: 3 }),
+        2: nguoiMau({ id: 2 }),
+        3: nguoiMau({ id: 3 }),
       },
     }
-    const { bo, me } = layBoCMe(data.persons[40], data)
-    expect(bo?.id).toBe(10)
-    expect(me?.id).toBe(20)
+    const { bo, me } = layBoCMe(data.persons[1], data)
+    expect(bo?.id).toBe(2)
+    expect(me?.id).toBe(3)
   })
 
   it('returns undefined for unset parent IDs', () => {
     const data: GiaphaData = { metadata: {} as any, persons: {} }
-    const { bo, me } = layBoCMe(nguoiMau({ id: 'x' }), data)
+    const { bo, me } = layBoCMe(nguoiMau({ id: 999 }), data)
     expect(bo).toBeUndefined()
     expect(me).toBeUndefined()
   })

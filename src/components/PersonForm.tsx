@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonPicker from './PersonPicker'
 import { timVoChong } from '../utils/familyTree'
-import type { Person, GioiTinh } from '../types/giapha'
+import type { Person, GioiTinh, NgayThang } from '../types/giapha'
 
 interface Props {
   editPerson?: Person | null
@@ -13,21 +13,45 @@ interface Props {
 interface FormState {
   hoTen: string
   gioiTinh: GioiTinh
-  namSinh: string
-  namMat: string
+  email: string
+  soDienThoai: string
+  ngaySinh: string
+  ngayMat: string
   queQuan: string
   tieuSu: string
   laThanhVienHo: boolean
   thuTuAnhChi: string
-  boId: number | null
-  meId: number | null
+  boId?: number
+  meId?: number
   voChongIds: number[]
 }
 
+// Convert NgayThang → "dd/mm/yyyy" | "mm/yyyy" | "yyyy" | ""
+function ngayToStr(d?: NgayThang): string {
+  if (!d) return ''
+  const parts: (string | number)[] = []
+  if (d.ngay)  parts.push(String(d.ngay).padStart(2, '0'))
+  if (d.thang) parts.push(String(d.thang).padStart(2, '0'))
+  if (d.nam)   parts.push(d.nam)
+  return parts.join('/')
+}
+
+// Parse "dd/mm/yyyy" | "mm/yyyy" | "yyyy" → NgayThang | undefined
+function strToNgay(s: string): NgayThang | undefined {
+  const trimmed = s.trim()
+  if (!trimmed) return undefined
+  const parts = trimmed.split('/').map(Number)
+  if (parts.some(isNaN)) return undefined
+  if (parts.length === 3) return { ngay: parts[0], thang: parts[1], nam: parts[2] }
+  if (parts.length === 2) return { thang: parts[0], nam: parts[1] }
+  if (parts.length === 1 && parts[0]) return { nam: parts[0] }
+  return undefined
+}
+
 const empty: FormState = {
-  hoTen: '', gioiTinh: 'nam', namSinh: '', namMat: '',
+  hoTen: '', gioiTinh: 'nam', email: '', soDienThoai: '', ngaySinh: '', ngayMat: '',
   queQuan: '', tieuSu: '', laThanhVienHo: true, thuTuAnhChi: '',
-  boId: null, meId: null, voChongIds: [],
+  boId: undefined, meId: undefined, voChongIds: [],
 }
 
 export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) {
@@ -38,17 +62,19 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       return {
         hoTen: editPerson.hoTen,
         gioiTinh: editPerson.gioiTinh,
-        namSinh: editPerson.namSinh?.nam?.toString() || '',
-        namMat: editPerson.namMat?.nam?.toString() || '',
+        email: editPerson.email || '',
+        soDienThoai: editPerson.soDienThoai || '',
+        ngaySinh: ngayToStr(editPerson.namSinh),
+        ngayMat: ngayToStr(editPerson.namMat),
         queQuan: editPerson.queQuan || '',
         tieuSu: editPerson.tieuSu || '',
         laThanhVienHo: editPerson.laThanhVienHo,
         thuTuAnhChi: editPerson.thuTuAnhChi?.toString() || '',
-        boId: editPerson.boId ?? null,
-        meId: editPerson.meId ?? null,
+        boId: editPerson.boId,
+        meId: editPerson.meId,
         voChongIds: editPerson.honNhan.map(h => h.voChongId),
       }
-    } else if (defaultBoId != null) {
+    } else if (defaultBoId) {
       return { ...empty, boId: defaultBoId }
     }
     return empty
@@ -85,21 +111,40 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     setPickerOpen(null)
   }
 
+  function handleVoChongSelected(person: Person) {
+    setForm(f => {
+      const nextVoChongIds = [...f.voChongIds, person.id]
+      const shouldAutoMarkNgoaiHo = !editPerson && person.laThanhVienHo
+      return {
+        ...f,
+        voChongIds: nextVoChongIds,
+        laThanhVienHo: shouldAutoMarkNgoaiHo ? false : f.laThanhVienHo,
+      }
+    })
+    setPickerOpen(null)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.hoTen.trim()) return
+    if (!editPerson && (!form.boId || !form.meId)) {
+      const shouldContinue = confirm('Chưa nhập đủ thông tin bố và mẹ thành viên. Bạn có thể bổ sung sau. Bạn có chắc muốn lưu không?')
+      if (!shouldContinue) return
+    }
 
     const personData: Omit<Person, 'id'> = {
       hoTen: form.hoTen.trim(),
       gioiTinh: form.gioiTinh,
-      namSinh: form.namSinh ? { nam: parseInt(form.namSinh) } : undefined,
-      namMat: form.namMat ? { nam: parseInt(form.namMat) } : undefined,
+      email: form.email.trim() || undefined,
+      soDienThoai: form.soDienThoai.trim() || undefined,
+      namSinh: strToNgay(form.ngaySinh),
+      namMat: strToNgay(form.ngayMat),
       queQuan: form.queQuan || undefined,
       tieuSu: form.tieuSu || undefined,
-      laThanhVienHo: form.gioiTinh === 'nu' ? form.laThanhVienHo : true,
+      laThanhVienHo: form.laThanhVienHo,
       thuTuAnhChi: form.thuTuAnhChi ? parseInt(form.thuTuAnhChi) : undefined,
-      boId: form.boId ?? undefined,
-      meId: form.meId ?? undefined,
+      boId: form.boId,
+      meId: form.meId,
       honNhan: form.voChongIds.map(id => ({ voChongId: id })),
       conCaiIds: editPerson?.conCaiIds || [],
     }
@@ -116,8 +161,8 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-xl w-[480px] max-h-[90vh] flex flex-col">
+      <div className="fixed inset-0 bg-black/40 z-40 flex items-end justify-center p-2 sm:items-center sm:p-4">
+        <div data-testid="person-form-modal" className="bg-white rounded-lg shadow-xl w-full max-w-[480px] max-h-[100dvh] sm:max-h-[90vh] flex flex-col">
           <div className="flex justify-between items-center px-4 py-3 border-b">
             <h3 className="font-semibold">{editPerson ? 'Sửa thông tin' : 'Thêm người mới'}</h3>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
@@ -148,25 +193,46 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
               </div>
             </div>
 
-            {form.gioiTinh === 'nu' && (
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input type="checkbox" checked={form.laThanhVienHo}
-                  onChange={e => setForm(f => ({ ...f, laThanhVienHo: e.target.checked }))} />
-                Thuộc dòng họ (không lấy chồng ngoài)
-              </label>
-            )}
-
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <div className="flex-1">
-                <label className="text-sm font-medium text-gray-700">Năm sinh</label>
-                <input type="number" value={form.namSinh} min={1800} max={new Date().getFullYear()}
-                  onChange={e => setForm(f => ({ ...f, namSinh: e.target.value }))}
+                <label className="text-sm font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700">Số điện thoại</label>
+                <input
+                  value={form.soDienThoai}
+                  onChange={e => setForm(f => ({ ...f, soDienThoai: e.target.value }))}
+                  className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!form.laThanhVienHo}
+                onChange={e => setForm(f => ({ ...f, laThanhVienHo: !e.target.checked }))}
+              />
+              Người ngoài họ
+            </label>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700">Ngày sinh</label>
+                <input type="text" value={form.ngaySinh} placeholder="dd/mm/yyyy"
+                  onChange={e => setForm(f => ({ ...f, ngaySinh: e.target.value }))}
                   className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
               </div>
               <div className="flex-1">
-                <label className="text-sm font-medium text-gray-700">Năm mất</label>
-                <input type="number" value={form.namMat} min={1800} max={new Date().getFullYear()}
-                  onChange={e => setForm(f => ({ ...f, namMat: e.target.value }))}
+                <label className="text-sm font-medium text-gray-700">Ngày mất</label>
+                <input type="text" value={form.ngayMat} placeholder="dd/mm/yyyy"
+                  onChange={e => setForm(f => ({ ...f, ngayMat: e.target.value }))}
                   className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
               </div>
             </div>
@@ -180,36 +246,36 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
 
             <div>
               <label className="text-sm font-medium text-gray-700">Bố</label>
-              <div className="mt-1 flex gap-2">
+              <div className="mt-1 flex flex-wrap gap-2">
                 <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-700">
-                  {form.boId != null ? getName(form.boId) : <span className="text-gray-400">Chưa chọn</span>}
+                  {form.boId ? getName(form.boId) : <span className="text-gray-400">Chưa chọn</span>}
                 </div>
                 <button type="button" onClick={() => setPickerOpen('bo')}
                   className="px-3 py-1.5 text-sm bg-gray-100 border rounded hover:bg-gray-200">Chọn</button>
-                {form.boId != null && <button type="button" onClick={() => setForm(f => ({ ...f, boId: null }))}
+                {form.boId && <button type="button" onClick={() => setForm(f => ({ ...f, boId: undefined }))}
                   className="px-2 text-gray-400 hover:text-red-500">&times;</button>}
               </div>
             </div>
 
             <div>
               <label className="text-sm font-medium text-gray-700">Mẹ</label>
-              <div className="mt-1 flex gap-2">
+              <div className="mt-1 flex flex-wrap gap-2">
                 {multipleWives.length > 1 && !form.meId ? (
-                  <select onChange={e => setForm(f => ({ ...f, meId: e.target.value }))}
+                  <select onChange={e => setForm(f => ({ ...f, meId: e.target.value ? Number(e.target.value) : undefined }))}
                     className="flex-1 px-3 py-1.5 text-sm border rounded">
                     <option value="">-- Chọn mẹ --</option>
                     {multipleWives.map(id => (
-                      <option key={id} value={String(id)}>{getName(id)}</option>
+                      <option key={id} value={id}>{getName(id)}</option>
                     ))}
                   </select>
                 ) : (
                   <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-700">
-                    {form.meId != null ? getName(form.meId) : <span className="text-gray-400">Chưa chọn</span>}
+                    {form.meId ? getName(form.meId) : <span className="text-gray-400">Chưa chọn</span>}
                   </div>
                 )}
                 <button type="button" onClick={() => setPickerOpen('me')}
                   className="px-3 py-1.5 text-sm bg-gray-100 border rounded hover:bg-gray-200">Chọn</button>
-                {form.meId != null && <button type="button" onClick={() => setForm(f => ({ ...f, meId: null }))}
+                {form.meId && <button type="button" onClick={() => setForm(f => ({ ...f, meId: undefined }))}
                   className="px-2 text-gray-400 hover:text-red-500">&times;</button>}
               </div>
             </div>
@@ -240,7 +306,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                 className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
               <button type="submit"
                 className="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700">
                 {editPerson ? 'Lưu thay đổi' : 'Thêm'}
@@ -255,16 +321,16 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       </div>
 
       {pickerOpen === 'bo' && (
-        <PersonPicker title="Chọn bố" excludeIds={[...(form.meId != null ? [form.meId] : [])]}
+        <PersonPicker title="Chọn bố" excludeIds={[...(form.meId ? [form.meId] : [])]}
           onSelect={handleBoSelected} onClose={() => setPickerOpen(null)} />
       )}
       {pickerOpen === 'me' && (
-        <PersonPicker title="Chọn mẹ" excludeIds={[...(form.boId != null ? [form.boId] : [])]}
+        <PersonPicker title="Chọn mẹ" excludeIds={[...(form.boId ? [form.boId] : [])]}
           onSelect={handleMeSelected} onClose={() => setPickerOpen(null)} />
       )}
       {pickerOpen === 'vochong' && (
-        <PersonPicker title="Chọn vợ/chồng" excludeIds={[...(editPerson?.id != null ? [editPerson.id] : []), ...form.voChongIds]}
-          onSelect={p => { setForm(f => ({ ...f, voChongIds: [...f.voChongIds, p.id] })); setPickerOpen(null) }}
+        <PersonPicker title="Chọn vợ/chồng" excludeIds={[...(editPerson ? [editPerson.id] : []), ...form.voChongIds]}
+          onSelect={handleVoChongSelected}
           onClose={() => setPickerOpen(null)} />
       )}
     </>

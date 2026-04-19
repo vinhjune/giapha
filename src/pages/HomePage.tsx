@@ -15,8 +15,17 @@ export default function HomePage() {
 
   const canEdit = currentRole === 'admin' || currentRole === 'editor'
 
-  function openAdd() { setEditPerson(null); setFormOpen(true) }
-  function openEdit(person: Person) { setEditPerson(person); setFormOpen(true) }
+  function openAdd() {
+    if (!canEdit) return
+    setEditPerson(null)
+    setFormOpen(true)
+  }
+
+  function openEdit(person: Person) {
+    if (!canEdit) return
+    setEditPerson(person)
+    setFormOpen(true)
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -38,7 +47,7 @@ export default function HomePage() {
         </button>
       )}
 
-      {formOpen && (
+      {canEdit && formOpen && (
         <PersonForm editPerson={editPerson} onClose={() => setFormOpen(false)} />
       )}
     </div>
