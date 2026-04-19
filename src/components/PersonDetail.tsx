@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { Person } from '../types/giapha'
 import { dinhDangTenNguoi, tinhThuTuDoi } from '../utils/familyTree'
@@ -21,7 +22,7 @@ export default function PersonDetail({ onEdit }: Props) {
   const person = data.persons[selectedPersonId]
   if (!person) return null
   const showGenerationOrder = Boolean(data.metadata.hienThiThuTuDoi)
-  const generationById = tinhThuTuDoi(data)
+  const generationById = useMemo(() => tinhThuTuDoi(data), [data])
   const formatName = (p: Person) => dinhDangTenNguoi(p, generationById, showGenerationOrder)
 
   const canEdit = currentRole === 'admin' || currentRole === 'editor'

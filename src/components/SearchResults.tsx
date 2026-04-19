@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { Person } from '../types/giapha'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import { dinhDangTenNguoi, tinhThuTuDoi } from '../utils/familyTree'
@@ -10,7 +11,7 @@ interface Props {
 export default function SearchResults({ results, onSelect }: Props) {
   const data = useGiaphaStore(s => s.data)
   const showGenerationOrder = Boolean(data?.metadata.hienThiThuTuDoi)
-  const generationById = data ? tinhThuTuDoi(data) : {}
+  const generationById = useMemo(() => (data ? tinhThuTuDoi(data) : {}), [data])
 
   return (
     <ul className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">

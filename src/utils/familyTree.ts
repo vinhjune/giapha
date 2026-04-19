@@ -77,43 +77,48 @@ export function tinhThuTuDoi(data: GiaphaData): Record<number, number> {
   })
   const roots = idsKhongCoBoMe.filter(id => persons[id].laThanhVienHo)
 
-  const distance: Record<number, number> = Object.fromEntries(ids.map(id => [id, Number.POSITIVE_INFINITY]))
+  const generationDistance: Record<number, number> = Object.fromEntries(ids.map(id => [id, Number.POSITIVE_INFINITY]))
 
-  const run01Bfs = (seedId: number) => {
-    if (!persons[seedId] || distance[seedId] === 0) return
-    distance[seedId] = 0
+  const bfsGenerationTraversal = (seedId: number) => {
+    if (!persons[seedId] || generationDistance[seedId] === 0) return
+    generationDistance[seedId] = 0
     const deque: number[] = [seedId]
 
     while (deque.length > 0) {
       const currentId = deque.shift()!
-      const currentDist = distance[currentId]
+      const currentDist = generationDistance[currentId]
 
       for (const spouseId of spousesById[currentId] ?? []) {
-        if (distance[spouseId] > currentDist) {
-          distance[spouseId] = currentDist
+        if (generationDistance[spouseId] > currentDist) {
+          generationDistance[spouseId] = currentDist
           deque.unshift(spouseId)
         }
       }
 
       for (const childId of childrenByParentId[currentId] ?? []) {
         const childDist = currentDist + 1
-        if (distance[childId] > childDist) {
-          distance[childId] = childDist
+        if (generationDistance[childId] > childDist) {
+          generationDistance[childId] = childDist
           deque.push(childId)
         }
       }
     }
   }
 
-  const seeds = roots.length > 0 ? roots : (idsKhongCoBoMe.length > 0 ? idsKhongCoBoMe : [Math.min(...ids)])
-  seeds.forEach(run01Bfs)
+  const primarySeeds = roots
+  const fallbackSeeds = idsKhongCoBoMe
+  const lastResortSeed = [Math.min(...ids)]
+  const seeds = primarySeeds.length > 0
+    ? primarySeeds
+    : (fallbackSeeds.length > 0 ? fallbackSeeds : lastResortSeed)
+  seeds.forEach(bfsGenerationTraversal)
 
   for (const id of ids) {
-    if (distance[id] !== Number.POSITIVE_INFINITY) continue
-    run01Bfs(id)
+    if (generationDistance[id] !== Number.POSITIVE_INFINITY) continue
+    bfsGenerationTraversal(id)
   }
 
-  return Object.fromEntries(ids.map(id => [id, distance[id] + 1]))
+  return Object.fromEntries(ids.map(id => [id, generationDistance[id] + 1]))
 }
 
 export function dinhDangTenNguoi(person: Person, thuTuDoiById: Record<number, number>, hienThiThuTuDoi: boolean): string {
