@@ -42,6 +42,87 @@ export function laThanhVienThuocHo(person: Person): boolean {
   return true
 }
 
+export function tinhThuTuDoi(data: GiaphaData): Record<number, number> {
+  const persons = data.persons
+  const ids = Object.keys(persons).map(Number)
+  if (ids.length === 0) return {}
+
+  const spousesById: Record<number, number[]> = {}
+  const childrenByParentId: Record<number, number[]> = {}
+
+  const themCon = (parentId: number, childId: number) => {
+    if (!persons[parentId] || !persons[childId]) return
+    if (!childrenByParentId[parentId]) childrenByParentId[parentId] = []
+    if (!childrenByParentId[parentId].includes(childId)) childrenByParentId[parentId].push(childId)
+  }
+
+  for (const person of Object.values(persons)) {
+    spousesById[person.id] = person.honNhan
+      .map(h => h.voChongId)
+      .filter(spouseId => Boolean(persons[spouseId]))
+
+    for (const childId of person.conCaiIds) themCon(person.id, childId)
+  }
+
+  for (const person of Object.values(persons)) {
+    if (person.boId) themCon(person.boId, person.id)
+    if (person.meId) themCon(person.meId, person.id)
+  }
+
+  const idsKhongCoBoMe = ids.filter(id => {
+    const person = persons[id]
+    const hasKnownFather = Boolean(person.boId && persons[person.boId])
+    const hasKnownMother = Boolean(person.meId && persons[person.meId])
+    return !hasKnownFather && !hasKnownMother
+  })
+  const roots = idsKhongCoBoMe.filter(id => persons[id].laThanhVienHo)
+
+  const distance: Record<number, number> = Object.fromEntries(ids.map(id => [id, Number.POSITIVE_INFINITY]))
+
+  const run01Bfs = (seedId: number) => {
+    if (!persons[seedId] || distance[seedId] === 0) return
+    distance[seedId] = 0
+    const deque: number[] = [seedId]
+
+    while (deque.length > 0) {
+      const currentId = deque.shift()!
+      const currentDist = distance[currentId]
+
+      for (const spouseId of spousesById[currentId] ?? []) {
+        if (distance[spouseId] > currentDist) {
+          distance[spouseId] = currentDist
+          deque.unshift(spouseId)
+        }
+      }
+
+      for (const childId of childrenByParentId[currentId] ?? []) {
+        const childDist = currentDist + 1
+        if (distance[childId] > childDist) {
+          distance[childId] = childDist
+          deque.push(childId)
+        }
+      }
+    }
+  }
+
+  const seeds = roots.length > 0 ? roots : (idsKhongCoBoMe.length > 0 ? idsKhongCoBoMe : [Math.min(...ids)])
+  seeds.forEach(run01Bfs)
+
+  for (const id of ids) {
+    if (distance[id] !== Number.POSITIVE_INFINITY) continue
+    run01Bfs(id)
+  }
+
+  return Object.fromEntries(ids.map(id => [id, distance[id] + 1]))
+}
+
+export function dinhDangTenNguoi(person: Person, thuTuDoiById: Record<number, number>, hienThiThuTuDoi: boolean): string {
+  if (!hienThiThuTuDoi) return person.hoTen
+  const thuTuDoi = thuTuDoiById[person.id]
+  if (!Number.isFinite(thuTuDoi)) return person.hoTen
+  return `${person.hoTen} (#${thuTuDoi})`
+}
+
 /** Get all children of a person */
 export function layConCai(personId: number, data: GiaphaData): Person[] {
   const person = data.persons[personId]

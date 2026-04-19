@@ -54,6 +54,7 @@ export interface Metadata {
   nguoiTao: string             // email of admin
   phienBan: number             // increments on each save (conflict detection)
   cheDoCong: boolean           // true = public read
+  hienThiThuTuDoi?: boolean    // true = show generation order after person name
   danhSachNguoiDung: NguoiDung[]
   dangChinhSua?: SoftLock      // soft lock
 }

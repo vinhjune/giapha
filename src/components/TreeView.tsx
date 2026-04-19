@@ -2,7 +2,7 @@ import { useMemo, useRef, useEffect, useState, useCallback } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonCard from './PersonCard'
 import type { Person } from '../types/giapha'
-import { sapXepAnhChiEm } from '../utils/familyTree'
+import { sapXepAnhChiEm, dinhDangTenNguoi, tinhThuTuDoi } from '../utils/familyTree'
 
 const MIN_NODE_W = 120
 const NODE_H = 64
@@ -174,14 +174,14 @@ function measureNameWidth(name: string, textMeasureContext: CanvasRenderingConte
   return Math.ceil(textMeasureContext.measureText(normalized).width)
 }
 
-function calcNodeWidth(persons: Record<number, Person>): number {
+function calcNodeWidth(persons: Record<number, Person>, displayNameById: Record<number, string>): number {
   const textMeasureContext =
     typeof document !== 'undefined' && !(typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent))
       ? document.createElement('canvas').getContext('2d')
       : null
 
   const longestNameWidth = Object.values(persons)
-    .reduce((maxWidth, person) => Math.max(maxWidth, measureNameWidth(person.hoTen, textMeasureContext)), 0)
+    .reduce((maxWidth, person) => Math.max(maxWidth, measureNameWidth(displayNameById[person.id] ?? person.hoTen, textMeasureContext)), 0)
 
   return Math.max(MIN_NODE_W, longestNameWidth + NODE_HORIZONTAL_PADDING)
 }
@@ -369,11 +369,22 @@ export default function TreeView() {
   const [isDragging, setIsDragging] = useState(false)
   const [zoom, setZoom] = useState(1)
   const highlightedPersonId = focusedPersonId ?? selectedPersonId
+  const showGenerationOrder = Boolean(data?.metadata.hienThiThuTuDoi)
+  const generationById = useMemo(() => (data ? tinhThuTuDoi(data) : {}), [data])
+  const displayNameById = useMemo(() => {
+    if (!data) return {}
+    return Object.fromEntries(
+      Object.values(data.persons).map(person => [
+        person.id,
+        dinhDangTenNguoi(person, generationById, showGenerationOrder),
+      ])
+    )
+  }, [data, generationById, showGenerationOrder])
 
   const { cards, lines, width, height } = useMemo(() => {
     if (!data) return { cards: [], lines: [], width: 0, height: 0 }
     const persons = data.persons
-    const nodeWidth = calcNodeWidth(persons)
+    const nodeWidth = calcNodeWidth(persons, displayNameById)
     const childrenIndex = taoChiMucCon(persons)
 
     // Root = clan member with no known father
@@ -421,7 +432,7 @@ export default function TreeView() {
     const maxY = Math.max(...cards.map(c => c.y)) + NODE_H + 40
 
     return { cards, lines, width: maxX, height: maxY }
-  }, [data])
+  }, [data, displayNameById])
 
   useEffect(() => {
     if (!highlightedPersonId || !containerRef.current) return
@@ -649,6 +660,7 @@ export default function TreeView() {
             >
               <PersonCard
                 person={card.person}
+                displayName={displayNameById[card.person.id]}
                 isSelected={card.person.id === highlightedPersonId}
                 onClick={() => selectPerson(card.person.id)}
               />

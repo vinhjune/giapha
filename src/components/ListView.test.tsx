@@ -117,4 +117,19 @@ describe('ListView spouse rendering', () => {
     expect(thanh.compareDocumentPosition(nga) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(nga.compareDocumentPosition(vinh) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
+
+  it('shows generation order suffix when setting is enabled', () => {
+    useGiaphaStore.setState({
+      data: {
+        ...data,
+        metadata: { ...data.metadata, hienThiThuTuDoi: true },
+      },
+    })
+
+    render(<ListView />)
+
+    expect(screen.getByText('Ông Nông (#1)')).toBeInTheDocument()
+    expect(screen.getByText('Bà Thanh (#1)')).toBeInTheDocument()
+    expect(screen.getByText('Vinh (#2)')).toBeInTheDocument()
+  })
 })
