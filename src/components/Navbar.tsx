@@ -4,6 +4,7 @@ import SearchBar from './SearchBar'
 import CsvImportModal from './CsvImportModal'
 import SettingsPanel from './SettingsPanel'
 import { ghiFile } from '../services/googleDrive'
+import { exportGiaphaToCSV, downloadCsv } from '../utils/csvExport'
 
 export default function Navbar() {
   const { data, fileId, isDirty, isSaving, currentRole, currentUserEmail, viewMode, setViewMode, setIsSaving, markSaved, setConflictDetected } = useGiaphaStore()
@@ -29,6 +30,14 @@ export default function Navbar() {
   }
 
   const canEdit = currentRole === 'admin' || currentRole === 'editor'
+
+  function handleExportCsv() {
+    if (!data) return
+    const csv = exportGiaphaToCSV(data)
+    const tenDongHo = data.metadata.tenDongHo.replace(/\s+/g, '_')
+    const date = new Date().toISOString().slice(0, 10)
+    downloadCsv(`giaphaHo${tenDongHo}_${date}.csv`, csv)
+  }
 
   return (
     <>
@@ -61,6 +70,14 @@ export default function Navbar() {
             className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
           >
             Nhập CSV
+          </button>
+        )}
+        {canEdit && data && (
+          <button
+            onClick={handleExportCsv}
+            className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+          >
+            Xuất CSV
           </button>
         )}
         {canEdit && isDirty && (
