@@ -59,6 +59,12 @@ export default function Navbar() {
         >
           Danh sách
         </button>
+        <button
+          onClick={() => setViewMode('members')}
+          className={`px-3 py-1 text-sm rounded ${viewMode === 'members' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-600'}`}
+        >
+          Thành viên
+        </button>
       </div>
 
       <SearchBar />

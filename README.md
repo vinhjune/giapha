@@ -60,6 +60,10 @@ Mở trình duyệt tại `http://localhost:5173`.
 
 Đăng nhập với quyền **admin**, bấm nút **Nhập CSV** trên thanh điều hướng. File CSV cần theo định dạng chuẩn — xem file mẫu tại [`docs/giapha-sample.csv`](docs/giapha-sample.csv).
 
+## Quản lý thành viên
+
+Trên thanh điều hướng, chọn tab **Thành viên** để mở màn hình bảng quản lý thành viên. Màn hình này hiển thị đầy đủ các cột theo chuẩn CSV (kèm cột **Đời**), cho phép sửa trực tiếp nhiều dòng, thêm dòng mới và bấm **Áp dụng thay đổi** để cập nhật dữ liệu hàng loạt.
+
 ---
 
 ## Cấu trúc dữ liệu
