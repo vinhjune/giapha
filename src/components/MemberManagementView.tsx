@@ -29,24 +29,48 @@ const COLUMNS: Array<{ key: RowField; label: string }> = [
   { key: 'gioiTinh', label: 'Giới tính' },
   { key: 'laThanhVienHo', label: 'Thành viên họ' },
   { key: 'thuTuAnhChi', label: 'Thứ tự anh/chị' },
-  { key: 'namSinh_nam', label: 'NS năm' },
-  { key: 'namSinh_thang', label: 'NS tháng' },
-  { key: 'namSinh_ngay', label: 'NS ngày' },
+  { key: 'namSinh_nam', label: 'Năm sinh' },
+  { key: 'namSinh_thang', label: 'Tháng sinh' },
+  { key: 'namSinh_ngay', label: 'Ngày sinh' },
   { key: 'namSinh_amLich', label: 'NS âm lịch' },
-  { key: 'namMat_nam', label: 'NM năm' },
-  { key: 'namMat_thang', label: 'NM tháng' },
-  { key: 'namMat_ngay', label: 'NM ngày' },
+  { key: 'namMat_nam', label: 'Năm mất' },
+  { key: 'namMat_thang', label: 'Tháng mất' },
+  { key: 'namMat_ngay', label: 'Ngày mất' },
   { key: 'namMat_amLich', label: 'NM âm lịch' },
   { key: 'boId', label: 'Bố ID' },
   { key: 'meId', label: 'Mẹ ID' },
   { key: 'voChongIds', label: 'Vợ/chồng IDs (;)' },
-  { key: 'queQuan', label: 'Quê quán' },
+  { key: 'queQuan', label: 'Địa chỉ' },
   { key: 'tieuSu', label: 'Tiểu sử' },
-  { key: 'anhDaiDien', label: 'Ảnh đại diện' },
   { key: 'email', label: 'Email' },
   { key: 'soDienThoai', label: 'SĐT' },
   { key: 'ghiChu', label: 'Ghi chú' },
 ]
+
+const DEFAULT_COLUMN_WIDTHS: Record<RowField, number> = {
+  id: 72,
+  hoTen: 160,
+  gioiTinh: 120,
+  laThanhVienHo: 116,
+  thuTuAnhChi: 130,
+  namSinh_nam: 110,
+  namSinh_thang: 110,
+  namSinh_ngay: 110,
+  namSinh_amLich: 110,
+  namMat_nam: 110,
+  namMat_thang: 110,
+  namMat_ngay: 110,
+  namMat_amLich: 110,
+  boId: 100,
+  meId: 100,
+  voChongIds: 140,
+  queQuan: 150,
+  tieuSu: 180,
+  anhDaiDien: 140,
+  email: 170,
+  soDienThoai: 120,
+  ghiChu: 360,
+}
 
 function dateToParts(d?: Person['namSinh']) {
   return {
@@ -129,6 +153,12 @@ export default function MemberManagementView() {
     if (!data) return []
     return Object.values(data.persons).sort((a, b) => a.id - b.id).map(personToRow)
   })
+  const [columnWidths, setColumnWidths] = useState(() =>
+    COLUMNS.reduce<Record<RowField, number>>((acc, col) => {
+      acc[col.key] = DEFAULT_COLUMN_WIDTHS[col.key]
+      return acc
+    }, { ...DEFAULT_COLUMN_WIDTHS })
+  )
   const [errorMessages, setErrorMessages] = useState<string[]>([])
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
 
@@ -154,6 +184,17 @@ export default function MemberManagementView() {
     setRows(Object.values(data.persons).sort((a, b) => a.id - b.id).map(personToRow))
     setErrorMessages([])
     setSaveMessage(null)
+  }
+
+  function handleDeleteRow(index: number) {
+    if (!canEdit) return
+    setRows(prev => prev.filter((_, i) => i !== index))
+    setErrorMessages([])
+    setSaveMessage(null)
+  }
+
+  function handleColumnWidthChange(field: RowField, width: number) {
+    setColumnWidths(prev => ({ ...prev, [field]: width }))
   }
 
   function handleApplyChanges() {
@@ -234,10 +275,29 @@ export default function MemberManagementView() {
             <tr>
               <th className="px-2 py-2 text-left font-semibold text-gray-600 border-b border-r">Đời</th>
               {COLUMNS.map(col => (
-                <th key={col.key} className="px-2 py-2 text-left font-semibold text-gray-600 border-b border-r last:border-r-0">
-                  {col.label}
+                <th
+                  key={col.key}
+                  className="px-2 py-2 text-left font-semibold text-gray-600 border-b border-r last:border-r-0"
+                  style={{ width: `${columnWidths[col.key]}px`, minWidth: `${columnWidths[col.key]}px` }}
+                >
+                  <div className="flex flex-col gap-1">
+                    <span>{col.label}</span>
+                    <label className="flex items-center gap-1 text-[10px] font-normal text-gray-500">
+                      <span>W</span>
+                      <input
+                        type="number"
+                        min={60}
+                        max={600}
+                        value={columnWidths[col.key]}
+                        onChange={e => handleColumnWidthChange(col.key, Number(e.target.value) || 60)}
+                        aria-label={`Độ rộng cột ${col.label}`}
+                        className="w-14 rounded border px-1 py-0.5 text-[10px]"
+                      />
+                    </label>
+                  </div>
                 </th>
               ))}
+              <th className="px-2 py-2 text-left font-semibold text-gray-600 border-b">Xóa</th>
             </tr>
           </thead>
           <tbody>
@@ -247,7 +307,11 @@ export default function MemberManagementView() {
                   {generationById[Number(row.id)] || ''}
                 </td>
                 {COLUMNS.map(col => (
-                  <td key={col.key} className="px-1 py-1 border-b border-r last:border-r-0">
+                  <td
+                    key={col.key}
+                    className="px-1 py-1 border-b border-r last:border-r-0"
+                    style={{ width: `${columnWidths[col.key]}px`, minWidth: `${columnWidths[col.key]}px` }}
+                  >
                     {col.key === 'gioiTinh' ? (
                       <select
                         value={row.gioiTinh}
@@ -256,32 +320,44 @@ export default function MemberManagementView() {
                         data-testid={`${col.key}-${rowIndex}`}
                         className="w-full px-2 py-1 border rounded"
                       >
-                        <option value="nam">nam</option>
-                        <option value="nu">nu</option>
-                        <option value="khac">khac</option>
+                        <option value="nam">Nam</option>
+                        <option value="nu">Nữ</option>
+                        <option value="khac">Khác</option>
                       </select>
                     ) : col.key === 'laThanhVienHo' ? (
-                      <select
-                        value={row.laThanhVienHo}
-                        disabled={!canEdit}
-                        onChange={e => handleCellChange(rowIndex, col.key, e.target.value)}
-                        data-testid={`${col.key}-${rowIndex}`}
-                        className="w-full px-2 py-1 border rounded"
-                      >
-                        <option value="true">true</option>
-                        <option value="false">false</option>
-                      </select>
+                      <div className="flex justify-center">
+                        <input
+                          type="checkbox"
+                          checked={row.laThanhVienHo === 'true'}
+                          disabled={!canEdit}
+                          onChange={e => handleCellChange(rowIndex, col.key, String(e.target.checked))}
+                          aria-label={`Thành viên họ dòng ${rowIndex + 1}`}
+                          data-testid={`${col.key}-${rowIndex}`}
+                          className="h-4 w-4"
+                        />
+                      </div>
                     ) : (
                       <input
                         value={row[col.key]}
                         disabled={!canEdit}
                         onChange={e => handleCellChange(rowIndex, col.key, e.target.value)}
                         data-testid={`${col.key}-${rowIndex}`}
-                        className="w-full min-w-[96px] px-2 py-1 border rounded"
+                        className="w-full px-2 py-1 border rounded"
                       />
                     )}
                   </td>
                 ))}
+                <td className="px-2 py-1 border-b text-center">
+                  <button
+                    type="button"
+                    disabled={!canEdit}
+                    onClick={() => handleDeleteRow(rowIndex)}
+                    aria-label={`Xóa thành viên dòng ${rowIndex + 1}`}
+                    className="rounded p-1 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300"
+                  >
+                    🗑
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
