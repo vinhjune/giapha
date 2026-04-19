@@ -1,0 +1,210 @@
+<h2>Cách hiển thị nhiều vợ/chồng trong cây gia phả</h2>
+<p class="subtitle">Mỗi ô dưới đây minh hoạ layout cho trường hợp: Nguyễn Văn A có 2 vợ, mỗi vợ có 2 con</p>
+
+<div class="cards" style="grid-template-columns: 1fr 1fr; gap: 28px;">
+
+  <!-- Option A: Current (broken) -->
+  <div class="card" data-choice="current" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc; padding:20px;">
+      <svg width="380" height="180" viewBox="0 0 380 180">
+        <!-- Husband -->
+        <rect x="120" y="10" width="90" height="38" rx="6" fill="#3b82f6" opacity="0.85"/>
+        <text x="165" y="34" text-anchor="middle" fill="white" font-size="11">Ông A</text>
+        <!-- Wife 1 -->
+        <rect x="220" y="10" width="70" height="38" rx="6" fill="#ec4899" opacity="0.7"/>
+        <text x="255" y="34" text-anchor="middle" fill="white" font-size="11">Bà 1</text>
+        <!-- Wife 2 -->
+        <rect x="300" y="10" width="70" height="38" rx="6" fill="#a855f7" opacity="0.7"/>
+        <text x="335" y="34" text-anchor="middle" fill="white" font-size="11">Bà 2</text>
+        <!-- Couple bar 1: A→Bà1 -->
+        <line x1="210" y1="29" x2="220" y2="29" stroke="#f97316" stroke-width="2.5"/>
+        <!-- Couple bar 2: A→Bà2 (overlaps!) -->
+        <line x1="210" y1="29" x2="300" y2="29" stroke="#a855f7" stroke-width="2.5" stroke-dasharray="4,2"/>
+        <!-- ⚠ overlap warning -->
+        <text x="255" y="58" text-anchor="middle" fill="#ef4444" font-size="10" font-weight="bold">⚠ đường bị chồng lên nhau</text>
+        <!-- Children bar 1 -->
+        <line x1="245" y1="48" x2="245" y2="80" stroke="#f97316" stroke-width="1.5"/>
+        <line x1="215" y1="80" x2="275" y2="80" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Children bar 2 -->
+        <line x1="335" y1="48" x2="335" y2="80" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <line x1="305" y1="80" x2="365" y2="80" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Children row 1 -->
+        <rect x="196" y="90" width="60" height="32" rx="5" fill="#e0f2fe"/>
+        <text x="226" y="111" text-anchor="middle" fill="#0369a1" font-size="10">Con 1</text>
+        <rect x="264" y="90" width="60" height="32" rx="5" fill="#e0f2fe"/>
+        <text x="294" y="111" text-anchor="middle" fill="#0369a1" font-size="10">Con 2</text>
+        <!-- Children row 2 -->
+        <rect x="286" y="90" width="60" height="32" rx="5" fill="#f3e8ff"/>
+        <text x="316" y="111" text-anchor="middle" fill="#7e22ce" font-size="10">Con 3</text>
+        <rect x="354" y="90" width="60" height="32" rx="5" fill="#f3e8ff"/>
+        <text x="384" y="111" text-anchor="middle" fill="#7e22ce" font-size="10">Con 4</text>
+        <!-- Stems -->
+        <line x1="226" y1="80" x2="226" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="294" y1="80" x2="294" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="316" y1="80" x2="316" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="384" y1="80" x2="384" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>❌ Hiện tại (lỗi)</h3>
+      <p>Cả 2 bà đều nằm cùng hàng bên phải ông. Đường nối bị đè lên nhau, không phân biệt được con của bà nào.</p>
+    </div>
+  </div>
+
+  <!-- Option A: Half-level (user's idea) -->
+  <div class="card" data-choice="A" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc; padding:20px;">
+      <svg width="340" height="210" viewBox="0 0 340 210">
+        <!-- Husband top center -->
+        <rect x="125" y="10" width="90" height="38" rx="6" fill="#3b82f6" opacity="0.85"/>
+        <text x="170" y="34" text-anchor="middle" fill="white" font-size="11">Ông A</text>
+        <!-- Vertical down from husband -->
+        <line x1="170" y1="48" x2="170" y2="68" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Horizontal to wife slots -->
+        <line x1="85" y1="68" x2="255" y2="68" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Stems to wives -->
+        <line x1="105" y1="68" x2="105" y2="88" stroke="#f97316" stroke-width="2"/>
+        <line x1="235" y1="68" x2="235" y2="88" stroke="#a855f7" stroke-width="2"/>
+        <!-- Wife 1 -->
+        <rect x="65" y="88" width="80" height="36" rx="6" fill="#fef3c7" stroke="#f97316" stroke-width="1.5"/>
+        <text x="105" y="111" text-anchor="middle" fill="#92400e" font-size="11">Bà Thứ Nhất</text>
+        <!-- Wife 2 -->
+        <rect x="195" y="88" width="80" height="36" rx="6" fill="#f3e8ff" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="235" y="111" text-anchor="middle" fill="#6b21a8" font-size="11">Bà Thứ Hai</text>
+        <!-- Descent from wife 1 -->
+        <line x1="105" y1="124" x2="105" y2="148" stroke="#f97316" stroke-width="1.5"/>
+        <line x1="65" y1="148" x2="145" y2="148" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Descent from wife 2 -->
+        <line x1="235" y1="124" x2="235" y2="148" stroke="#a855f7" stroke-width="1.5"/>
+        <line x1="195" y1="148" x2="275" y2="148" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Children of wife 1 -->
+        <rect x="30" y="158" width="60" height="30" rx="5" fill="#e0f2fe"/>
+        <text x="60" y="178" text-anchor="middle" fill="#0369a1" font-size="10">Con 1</text>
+        <rect x="100" y="158" width="60" height="30" rx="5" fill="#e0f2fe"/>
+        <text x="130" y="178" text-anchor="middle" fill="#0369a1" font-size="10">Con 2</text>
+        <!-- Children of wife 2 -->
+        <rect x="160" y="158" width="60" height="30" rx="5" fill="#f3e8ff"/>
+        <text x="190" y="178" text-anchor="middle" fill="#7e22ce" font-size="10">Con 3</text>
+        <rect x="230" y="158" width="60" height="30" rx="5" fill="#f3e8ff"/>
+        <text x="260" y="178" text-anchor="middle" fill="#7e22ce" font-size="10">Con 4</text>
+        <!-- Stems to children -->
+        <line x1="60"  y1="148" x2="60"  y2="158" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="130" y1="148" x2="130" y2="158" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="190" y1="148" x2="190" y2="158" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="260" y1="148" x2="260" y2="158" stroke="#94a3b8" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A — Vợ/chồng ở tầng trung gian</h3>
+      <p>Ông A ở trên, nối xuống hàng vợ/chồng, sau đó mỗi người vợ lại nối xuống con của mình. Dễ mở rộng cho 3+ vợ.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>✅</h4><ul><li>Rõ ràng với nhiều vợ</li><li>Không đè dòng</li></ul></div>
+        <div class="cons"><h4>⚠️</h4><ul><li>Tốn thêm 1 tầng chiều cao</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: Couple bar on row, spouses overlap descent (user's 2nd idea) -->
+  <div class="card" data-choice="B" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc; padding:20px;">
+      <svg width="340" height="200" viewBox="0 0 340 200">
+        <!-- Husband left -->
+        <rect x="10" y="30" width="85" height="38" rx="6" fill="#3b82f6" opacity="0.85"/>
+        <text x="52" y="54" text-anchor="middle" fill="white" font-size="11">Ông A</text>
+        <!-- Vertical from husband to connector line -->
+        <line x1="52" y1="68" x2="52" y2="88" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Horizontal connector at child level -->
+        <line x1="52" y1="88" x2="290" y2="88" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Wife 1: sits ON the connector line -->
+        <rect x="100" y="69" width="80" height="36" rx="6" fill="#fef3c7" stroke="#f97316" stroke-width="2"/>
+        <text x="140" y="92" text-anchor="middle" fill="#92400e" font-size="11">Bà Thứ Nhất</text>
+        <!-- Wife 2: further right on same line -->
+        <rect x="210" y="69" width="80" height="36" rx="6" fill="#f3e8ff" stroke="#a855f7" stroke-width="2"/>
+        <text x="250" y="92" text-anchor="middle" fill="#6b21a8" font-size="11">Bà Thứ Hai</text>
+        <!-- Descent from wife 1 midpoint -->
+        <line x1="140" y1="105" x2="140" y2="125" stroke="#f97316" stroke-width="2"/>
+        <line x1="105" y1="125" x2="175" y2="125" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Descent from wife 2 midpoint -->
+        <line x1="250" y1="105" x2="250" y2="125" stroke="#a855f7" stroke-width="2"/>
+        <line x1="215" y1="125" x2="285" y2="125" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Children of wife 1 -->
+        <rect x="75" y="135" width="60" height="30" rx="5" fill="#e0f2fe"/>
+        <text x="105" y="155" text-anchor="middle" fill="#0369a1" font-size="10">Con 1</text>
+        <rect x="145" y="135" width="60" height="30" rx="5" fill="#e0f2fe"/>
+        <text x="175" y="155" text-anchor="middle" fill="#0369a1" font-size="10">Con 2</text>
+        <!-- Children of wife 2 -->
+        <rect x="185" y="135" width="60" height="30" rx="5" fill="#f3e8ff"/>
+        <text x="215" y="155" text-anchor="middle" fill="#7e22ce" font-size="10">Con 3</text>
+        <rect x="255" y="135" width="60" height="30" rx="5" fill="#f3e8ff"/>
+        <text x="285" y="155" text-anchor="middle" fill="#7e22ce" font-size="10">Con 4</text>
+        <line x1="105" y1="125" x2="105" y2="135" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="175" y1="125" x2="175" y2="135" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="215" y1="125" x2="215" y2="135" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="285" y1="125" x2="285" y2="135" stroke="#94a3b8" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>B — Vợ/chồng nằm trên đường nối xuống con</h3>
+      <p>Ông A bên trái, đường dây ngang chạy qua các bà. Mỗi bà nằm "trên" đường dây đó, rồi từ mỗi bà lại nối xuống con của mình.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>✅</h4><ul><li>Không tốn thêm chiều cao</li><li>Trực quan</li></ul></div>
+        <div class="cons"><h4>⚠️</h4><ul><li>Layout lạ, ít phổ biến</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option C: Alternating sides -->
+  <div class="card" data-choice="C" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc; padding:20px;">
+      <svg width="340" height="190" viewBox="0 0 340 190">
+        <!-- Wife 1 LEFT -->
+        <rect x="10" y="20" width="80" height="36" rx="6" fill="#fef3c7" stroke="#f97316" stroke-width="1.5"/>
+        <text x="50" y="43" text-anchor="middle" fill="#92400e" font-size="11">Bà Thứ Nhất</text>
+        <!-- Husband CENTER -->
+        <rect x="130" y="20" width="80" height="36" rx="6" fill="#3b82f6" opacity="0.85"/>
+        <text x="170" y="43" text-anchor="middle" fill="white" font-size="11">Ông A</text>
+        <!-- Wife 2 RIGHT -->
+        <rect x="250" y="20" width="80" height="36" rx="6" fill="#f3e8ff" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="290" y="43" text-anchor="middle" fill="#6b21a8" font-size="11">Bà Thứ Hai</text>
+        <!-- Couple bar 1: wife1→husband -->
+        <line x1="90" y1="38" x2="130" y2="38" stroke="#f97316" stroke-width="2.5"/>
+        <!-- Couple bar 2: husband→wife2 -->
+        <line x1="210" y1="38" x2="250" y2="38" stroke="#a855f7" stroke-width="2.5"/>
+        <!-- Descent from bar 1 midpoint (110, 38) -->
+        <line x1="110" y1="56" x2="110" y2="80" stroke="#f97316" stroke-width="1.5"/>
+        <line x1="25" y1="80" x2="195" y2="80" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Descent from bar 2 midpoint (230, 38) -->
+        <line x1="230" y1="56" x2="230" y2="80" stroke="#a855f7" stroke-width="1.5"/>
+        <line x1="205" y1="80" x2="315" y2="80" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Children of wife 1 -->
+        <rect x="10"  y="90" width="60" height="30" rx="5" fill="#e0f2fe"/>
+        <text x="40"  y="110" text-anchor="middle" fill="#0369a1" font-size="10">Con 1</text>
+        <rect x="80"  y="90" width="60" height="30" rx="5" fill="#e0f2fe"/>
+        <text x="110" y="110" text-anchor="middle" fill="#0369a1" font-size="10">Con 2</text>
+        <!-- Children of wife 2 -->
+        <rect x="200" y="90" width="60" height="30" rx="5" fill="#f3e8ff"/>
+        <text x="230" y="110" text-anchor="middle" fill="#7e22ce" font-size="10">Con 3</text>
+        <rect x="270" y="90" width="60" height="30" rx="5" fill="#f3e8ff"/>
+        <text x="300" y="110" text-anchor="middle" fill="#7e22ce" font-size="10">Con 4</text>
+        <!-- Stems -->
+        <line x1="40"  y1="80" x2="40"  y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="110" y1="80" x2="110" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="230" y1="80" x2="230" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+        <line x1="300" y1="80" x2="300" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+        <!-- Note -->
+        <text x="170" y="150" text-anchor="middle" fill="#64748b" font-size="10">(Vợ 3+ sẽ tiếp tục xen kẽ)</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>C — Xen kẽ trái/phải (FamilySearch style)</h3>
+      <p>Ông A ở giữa. Vợ 1 bên trái, vợ 2 bên phải, vợ 3 lại bên trái... Các con của mỗi cặp nối xuống từ điểm giữa của đường nối vợ-chồng.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>✅</h4><ul><li>Cân đối, phổ biến nhất</li><li>Cùng số tầng như 1 vợ</li></ul></div>
+        <div class="cons"><h4>⚠️</h4>  <ul><li>Nhiều vợ thì cây rất rộng</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">👆 Bấm vào phương án bạn thích, hoặc trả lời trong terminal</p>

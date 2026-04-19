@@ -1,0 +1,104 @@
+<h2>Thiết kế chi tiết — Phương án B</h2>
+<p class="subtitle">Xác nhận trước khi triển khai</p>
+
+<div class="section">
+  <h3>Quy tắc layout</h3>
+
+  <div class="split" style="gap:24px; margin-top:12px;">
+
+    <!-- Single marriage -->
+    <div class="mockup">
+      <div class="mockup-header">1 vợ/chồng</div>
+      <div class="mockup-body" style="padding:20px; background:#f8fafc;">
+        <svg width="270" height="200" viewBox="0 0 270 200">
+          <!-- Person LEFT -->
+          <rect x="8" y="30" width="90" height="38" rx="6" fill="#3b82f6" opacity="0.9"/>
+          <text x="53" y="54" text-anchor="middle" fill="white" font-size="11" font-weight="bold">Ông A</text>
+
+          <!-- Marriage trunk -->
+          <line x1="98" y1="49" x2="160" y2="49" stroke="#f97316" stroke-width="2.5"/>
+
+          <!-- Spouse 1 — sits ON the trunk -->
+          <rect x="160" y="30" width="90" height="38" rx="6" fill="#fef3c7" stroke="#f97316" stroke-width="2"/>
+          <text x="205" y="54" text-anchor="middle" fill="#92400e" font-size="11">Bà Nhất</text>
+
+          <!-- Descent from spouse center down -->
+          <line x1="205" y1="68" x2="205" y2="95" stroke="#94a3b8" stroke-width="1.5"/>
+          <line x1="155" y1="95" x2="255" y2="95" stroke="#94a3b8" stroke-width="1.5"/>
+
+          <!-- Children -->
+          <rect x="135" y="105" width="65" height="30" rx="5" fill="#e0f2fe"/>
+          <text x="167" y="125" text-anchor="middle" fill="#0369a1" font-size="10">Con 1</text>
+          <rect x="210" y="105" width="65" height="30" rx="5" fill="#e0f2fe"/>
+          <text x="242" y="125" text-anchor="middle" fill="#0369a1" font-size="10">Con 2</text>
+          <line x1="167" y1="95" x2="167" y2="105" stroke="#94a3b8" stroke-width="1.5"/>
+          <line x1="242" y1="95" x2="242" y2="105" stroke="#94a3b8" stroke-width="1.5"/>
+
+          <!-- Labels -->
+          <text x="129" y="20" text-anchor="middle" fill="#f97316" font-size="9">── đường hôn nhân ──</text>
+          <text x="205" y="165" text-anchor="middle" fill="#64748b" font-size="9">con nối từ dưới bà</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Two marriages -->
+    <div class="mockup">
+      <div class="mockup-header">2 vợ/chồng</div>
+      <div class="mockup-body" style="padding:20px; background:#f8fafc;">
+        <svg width="320" height="200" viewBox="0 0 320 200">
+          <!-- Person LEFT -->
+          <rect x="5" y="28" width="80" height="38" rx="6" fill="#3b82f6" opacity="0.9"/>
+          <text x="45" y="52" text-anchor="middle" fill="white" font-size="11" font-weight="bold">Ông A</text>
+
+          <!-- Long marriage trunk -->
+          <line x1="85" y1="47" x2="300" y2="47" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="none"/>
+
+          <!-- Wife 1 — sits on trunk -->
+          <rect x="95" y="28" width="80" height="38" rx="6" fill="#fef3c7" stroke="#f97316" stroke-width="2"/>
+          <text x="135" y="52" text-anchor="middle" fill="#92400e" font-size="11">Bà Nhất</text>
+
+          <!-- Wife 2 — sits on trunk further right -->
+          <rect x="205" y="28" width="80" height="38" rx="6" fill="#f3e8ff" stroke="#a855f7" stroke-width="2"/>
+          <text x="245" y="52" text-anchor="middle" fill="#6b21a8" font-size="11">Bà Hai</text>
+
+          <!-- Descent wife 1 -->
+          <line x1="135" y1="66" x2="135" y2="90" stroke="#f97316" stroke-width="1.5"/>
+          <line x1="95"  y1="90" x2="175" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+          <rect x="78"  y="100" width="55" height="28" rx="4" fill="#e0f2fe"/>
+          <text x="105" y="119" text-anchor="middle" fill="#0369a1" font-size="10">Con 1</text>
+          <rect x="141" y="100" width="55" height="28" rx="4" fill="#e0f2fe"/>
+          <text x="168" y="119" text-anchor="middle" fill="#0369a1" font-size="10">Con 2</text>
+          <line x1="105" y1="90" x2="105" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
+          <line x1="168" y1="90" x2="168" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
+
+          <!-- Descent wife 2 -->
+          <line x1="245" y1="66" x2="245" y2="90" stroke="#a855f7" stroke-width="1.5"/>
+          <line x1="205" y1="90" x2="285" y2="90" stroke="#94a3b8" stroke-width="1.5"/>
+          <rect x="188" y="100" width="55" height="28" rx="4" fill="#f3e8ff"/>
+          <text x="215" y="119" text-anchor="middle" fill="#7e22ce" font-size="10">Con 3</text>
+          <rect x="251" y="100" width="55" height="28" rx="4" fill="#f3e8ff"/>
+          <text x="278" y="119" text-anchor="middle" fill="#7e22ce" font-size="10">Con 4</text>
+          <line x1="215" y1="90" x2="215" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
+          <line x1="278" y1="90" x2="278" y2="100" stroke="#94a3b8" stroke-width="1.5"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <h3>Quy tắc kỹ thuật</h3>
+  <ul style="line-height:2; color:#374151;">
+    <li>Người <strong>luôn ở bên trái</strong> của subtree, vợ/chồng nối tiếp sang phải</li>
+    <li>Đường hôn nhân: <strong>nằm ngang</strong> tại y + NODE_H/2, màu xám nhạt, nối từ người tới vợ/chồng cuối cùng</li>
+    <li>Từng vợ/chồng <strong>ngồi trên đường này</strong> (SVG ở dưới, card div ở trên che đường)</li>
+    <li>Con cái <strong>nối từ dưới vợ/chồng</strong> của mình (không phải từ điểm giữa như trước)</li>
+    <li>Không có vợ/chồng: con nối từ dưới chính người đó</li>
+    <li>Áp dụng <strong>nhất quán</strong> cho cả 1 vợ lẫn nhiều vợ</li>
+  </ul>
+</div>
+
+<div class="section" style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:12px; margin-top:16px;">
+  <strong style="color:#166534;">Đây có phải thiết kế bạn muốn không?</strong>
+  <p style="color:#15803d; margin:4px 0 0">Trả lời trong terminal để tôi bắt đầu viết code.</p>
+</div>

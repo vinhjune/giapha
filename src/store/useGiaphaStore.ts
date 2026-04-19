@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { GiaphaData, Person, Role } from '../types/giapha'
-import { taoId } from '../utils/id'
+import { nextId } from '../utils/id'
 import { taoSoftLock } from '../utils/conflict'
 
 export type ViewMode = 'tree' | 'list'
@@ -19,6 +19,7 @@ interface GiaphaState {
 
   // Actions
   setData: (data: GiaphaData) => void
+  importData: (data: GiaphaData) => void
   setFileId: (id: string) => void
   setUser: (email: string, role: Role | 'public') => void
   setViewMode: (mode: ViewMode) => void
@@ -39,7 +40,7 @@ interface GiaphaState {
 
 export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   data: null,
-  fileId: import.meta.env.VITE_GIAPHA_FILE_ID || localStorage.getItem('giaphaFileId') || null,
+  fileId: import.meta.env.VITE_GIAPHA_FILE_ID || (() => { try { return localStorage.getItem('giaphaFileId') } catch { return null } })() || null,
   currentUserEmail: null,
   currentRole: 'public',
   viewMode: 'tree',
@@ -50,6 +51,7 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   conflictDetected: false,
 
   setData: (data) => set({ data, isDirty: false }),
+  importData: (data) => set({ data, isDirty: true }),
   setFileId: (id) => {
     localStorage.setItem('giaphaFileId', id)
     set({ fileId: id })
@@ -60,7 +62,7 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   focusPerson: (id) => set({ focusedPersonId: id }),
 
   themNguoi: (personData) => {
-    const id = taoId(get().data?.persons || {})
+    const id = nextId(get().data?.persons ?? {})
     const person: Person = { id, ...personData }
     set(state => {
       if (!state.data) return {}
