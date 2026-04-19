@@ -47,7 +47,7 @@ const COLUMNS: Array<{ key: RowField; label: string }> = [
   { key: 'ghiChu', label: 'Ghi chú' },
 ]
 
-const DEFAULT_COLUMN_WIDTHS: Record<RowField, number> = {
+const DEFAULT_COLUMN_WIDTHS: Partial<Record<RowField, number>> = {
   id: 72,
   hoTen: 160,
   gioiTinh: 120,
@@ -66,11 +66,14 @@ const DEFAULT_COLUMN_WIDTHS: Record<RowField, number> = {
   voChongIds: 140,
   queQuan: 150,
   tieuSu: 180,
-  anhDaiDien: 140,
   email: 170,
   soDienThoai: 120,
   ghiChu: 360,
 }
+
+const FALLBACK_COLUMN_WIDTH = 120
+const MIN_COLUMN_WIDTH = 60
+const MAX_COLUMN_WIDTH = 600
 
 function dateToParts(d?: Person['namSinh']) {
   return {
@@ -155,9 +158,9 @@ export default function MemberManagementView() {
   })
   const [columnWidths, setColumnWidths] = useState(() =>
     COLUMNS.reduce<Record<RowField, number>>((acc, col) => {
-      acc[col.key] = DEFAULT_COLUMN_WIDTHS[col.key]
+      acc[col.key] = DEFAULT_COLUMN_WIDTHS[col.key] ?? FALLBACK_COLUMN_WIDTH
       return acc
-    }, { ...DEFAULT_COLUMN_WIDTHS })
+    }, {} as Record<RowField, number>)
   )
   const [errorMessages, setErrorMessages] = useState<string[]>([])
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
@@ -194,7 +197,8 @@ export default function MemberManagementView() {
   }
 
   function handleColumnWidthChange(field: RowField, width: number) {
-    setColumnWidths(prev => ({ ...prev, [field]: width }))
+    const nextWidth = Math.max(MIN_COLUMN_WIDTH, Math.min(MAX_COLUMN_WIDTH, width))
+    setColumnWidths(prev => ({ ...prev, [field]: nextWidth }))
   }
 
   function handleApplyChanges() {
@@ -286,10 +290,10 @@ export default function MemberManagementView() {
                       <span>W</span>
                       <input
                         type="number"
-                        min={60}
-                        max={600}
+                        min={MIN_COLUMN_WIDTH}
+                        max={MAX_COLUMN_WIDTH}
                         value={columnWidths[col.key]}
-                        onChange={e => handleColumnWidthChange(col.key, Number(e.target.value) || 60)}
+                        onChange={e => handleColumnWidthChange(col.key, Number(e.target.value) || MIN_COLUMN_WIDTH)}
                         aria-label={`Độ rộng cột ${col.label}`}
                         className="w-14 rounded border px-1 py-0.5 text-[10px]"
                       />
@@ -353,9 +357,22 @@ export default function MemberManagementView() {
                     disabled={!canEdit}
                     onClick={() => handleDeleteRow(rowIndex)}
                     aria-label={`Xóa thành viên dòng ${rowIndex + 1}`}
-                    className="rounded p-1 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300"
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300"
                   >
-                    🗑
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      className="h-4 w-4"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 7V5h6v2" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m7 7 1 12h8l1-12" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 11v5m4-5v5" />
+                    </svg>
+                    <span className="text-[11px]">Xóa</span>
                   </button>
                 </td>
               </tr>
