@@ -150,13 +150,13 @@ describe('importSingleCsvToGiapha', () => {
       expect(result.data?.persons[2]?.honNhan.some(h => h.voChongId === 1)).toBe(true)
     })
 
-    it('forces laThanhVienHo=true for males (auto-fix)', () => {
+    it('respects laThanhVienHo=false for males (e.g. external husbands)', () => {
       const result = importSingleCsvToGiapha(
         csv(HEADER, '1,Nguyễn Văn An,nam,false,,,,,,,,,,,,,,,,,, '),
         METADATA
       )
-      expect(result.warnings.some(w => w.code === 'MALE_FORCE_BLOODLINE_TRUE')).toBe(true)
-      expect(result.data?.persons[1]?.laThanhVienHo).toBe(true)
+      expect(result.warnings.some(w => w.code === 'MALE_FORCE_BLOODLINE_TRUE')).toBe(false)
+      expect(result.data?.persons[1]?.laThanhVienHo).toBe(false)
     })
 
     it('parses namSinh correctly', () => {

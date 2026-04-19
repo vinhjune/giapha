@@ -259,16 +259,9 @@ function parseRows(
     }
     const gioiTinh = gioiTinhRaw as GioiTinh
 
-    // laThanhVienHo — default true; will be force-corrected for males later
+    // laThanhVienHo — default true; respect whatever the CSV says for both genders
     const laThanhVienHoRaw = parseBool(get(row, 'laThanhVienHo'))
     const laThanhVienHo = laThanhVienHoRaw ?? true
-
-    // Warn and auto-fix: male with laThanhVienHo=false
-    if (gioiTinh === 'nam' && laThanhVienHo === false) {
-      issues.push({ level: 'auto-fix', code: 'MALE_FORCE_BLOODLINE_TRUE',
-        message: `Dòng ${rowNum} (id=${id}): nam giới luôn thuộc họ — laThanhVienHo đã được đặt thành true.`,
-        rowNumber: rowNum, personId: id, columnName: 'laThanhVienHo' })
-    }
 
     // Optional numeric: thuTuAnhChi
     let thuTuAnhChi: number | undefined
@@ -363,7 +356,7 @@ function parseRows(
       queQuan: str(get(row, 'queQuan')),
       tieuSu: str(get(row, 'tieuSu')),
       anhDaiDien: str(get(row, 'anhDaiDien')),
-      laThanhVienHo: gioiTinh === 'nam' ? true : laThanhVienHo,
+      laThanhVienHo,
       thuTuAnhChi,
       boId,
       meId,
