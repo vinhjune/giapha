@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import SearchBar from './SearchBar'
+import CsvImportModal from './CsvImportModal'
 import { ghiFile } from '../services/googleDrive'
 
 export default function Navbar() {
   const { data, fileId, isDirty, isSaving, currentRole, currentUserEmail, viewMode, setViewMode, setIsSaving, markSaved, setConflictDetected } = useGiaphaStore()
+  const [csvModalOpen, setCsvModalOpen] = useState(false)
 
   async function handleSave() {
     if (!data || !fileId) return
@@ -26,6 +29,7 @@ export default function Navbar() {
   const canEdit = currentRole === 'admin' || currentRole === 'editor'
 
   return (
+    <>
     <nav className="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-4">
       <h1 className="text-lg font-bold text-red-700 mr-4">
         {data?.metadata.tenDongHo || 'Gia Phả'}
@@ -49,6 +53,14 @@ export default function Navbar() {
       <SearchBar />
 
       <div className="ml-auto flex items-center gap-3">
+        {currentRole === 'admin' && (
+          <button
+            onClick={() => setCsvModalOpen(true)}
+            className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+          >
+            Nhập CSV
+          </button>
+        )}
         {canEdit && isDirty && (
           <button
             onClick={handleSave}
@@ -63,5 +75,8 @@ export default function Navbar() {
         )}
       </div>
     </nav>
+
+    {csvModalOpen && <CsvImportModal onClose={() => setCsvModalOpen(false)} />}
+    </>
   )
 }

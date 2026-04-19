@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { GiaphaData, Person, Role } from '../types/giapha'
-import { taoId } from '../utils/id'
+import { nextId } from '../utils/id'
 import { taoSoftLock } from '../utils/conflict'
 
 export type ViewMode = 'tree' | 'list'
@@ -11,21 +11,22 @@ interface GiaphaState {
   currentUserEmail: string | null
   currentRole: Role | 'public'
   viewMode: ViewMode
-  selectedPersonId: string | null
+  selectedPersonId: number | null
   isDirty: boolean
   isSaving: boolean
   conflictDetected: boolean
 
   // Actions
   setData: (data: GiaphaData) => void
+  importData: (data: GiaphaData) => void
   setFileId: (id: string) => void
   setUser: (email: string, role: Role | 'public') => void
   setViewMode: (mode: ViewMode) => void
-  selectPerson: (id: string | null) => void
+  selectPerson: (id: number | null) => void
 
-  themNguoi: (person: Omit<Person, 'id'>) => string
-  suaNguoi: (id: string, updates: Partial<Person>) => void
-  xoaNguoi: (id: string) => void
+  themNguoi: (person: Omit<Person, 'id'>) => number
+  suaNguoi: (id: number, updates: Partial<Person>) => void
+  xoaNguoi: (id: number) => void
 
   setIsSaving: (v: boolean) => void
   setConflictDetected: (v: boolean) => void
@@ -47,13 +48,14 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   conflictDetected: false,
 
   setData: (data) => set({ data, isDirty: false }),
+  importData: (data) => set({ data, isDirty: true }),
   setFileId: (id) => set({ fileId: id }),
   setUser: (email, role) => set({ currentUserEmail: email, currentRole: role }),
   setViewMode: (mode) => set({ viewMode: mode }),
   selectPerson: (id) => set({ selectedPersonId: id }),
 
   themNguoi: (personData) => {
-    const id = taoId()
+    const id = nextId(get().data?.persons ?? {})
     const person: Person = { id, ...personData }
     set(state => {
       if (!state.data) return {}

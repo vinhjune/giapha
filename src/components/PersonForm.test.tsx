@@ -5,17 +5,17 @@ import type { GiaphaData } from '../types/giapha'
 const data: GiaphaData = {
   metadata: {} as any,
   persons: {
-    bo1: { id: 'bo1', hoTen: 'Bố', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: 'me1' }], conCaiIds: [] },
-    me1: { id: 'me1', hoTen: 'Mẹ', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: 'bo1' }], conCaiIds: [] },
+    10: { id: 10, hoTen: 'Bố', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: 20 }], conCaiIds: [] },
+    20: { id: 20, hoTen: 'Mẹ', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: 10 }], conCaiIds: [] },
   },
 }
 
 describe('PersonForm auto-fill', () => {
   it('selecting father with one wife auto-fills mother', () => {
-    expect(tuDongDienMe('bo1', data)).toBe('me1')
+    expect(tuDongDienMe(10, data)).toBe(20)
   })
 
   it('selecting mother with one husband auto-fills father', () => {
-    expect(tuDongDienBo('me1', data)).toBe('bo1')
+    expect(tuDongDienBo(20, data)).toBe(10)
   })
 })

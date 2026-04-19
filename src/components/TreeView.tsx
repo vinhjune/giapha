@@ -48,9 +48,9 @@ interface SvgLine {
 // ─── Build tree ───────────────────────────────────────────────────────────────
 
 function buildTree(
-  personId: string,
+  personId: number,
   persons: Record<string, Person>,
-  visited: Set<string>
+  visited: Set<number>
 ): TreeNode | null {
   if (visited.has(personId)) return null
   visited.add(personId)
@@ -62,7 +62,7 @@ function buildTree(
   for (const h of person.honNhan) visited.add(h.voChongId)
 
   const marriages: Marriage[] = []
-  const matchedChildIds = new Set<string>()
+  const matchedChildIds = new Set<number>()
 
   for (const h of person.honNhan) {
     const spouse = persons[h.voChongId] ?? null
@@ -297,7 +297,7 @@ export default function TreeView() {
       ) ?? Object.values(persons).find(p => !p.boId || !persons[p.boId])
     if (!root) return { cards: [], lines: [], width: 0, height: 0 }
 
-    const visited = new Set<string>()
+    const visited = new Set<number>()
     const tree = buildTree(root.id, persons, visited)
     if (!tree) return { cards: [], lines: [], width: 0, height: 0 }
 

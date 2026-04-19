@@ -5,9 +5,9 @@ import type { Person } from '../types/giapha'
 interface RowProps {
   person: Person
   depth: number
-  onSelect: (id: string) => void
-  selectedId: string | null
-  highlightId: string | null
+  onSelect: (id: number) => void
+  selectedId: number | null
+  highlightId: number | null
 }
 
 function PersonRow({ person, depth, onSelect, selectedId, highlightId }: RowProps) {

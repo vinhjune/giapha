@@ -6,7 +6,7 @@ import type { Person, GioiTinh } from '../types/giapha'
 
 interface Props {
   editPerson?: Person | null
-  defaultBoId?: string
+  defaultBoId?: number
   onClose: () => void
 }
 
@@ -19,15 +19,15 @@ interface FormState {
   tieuSu: string
   laThanhVienHo: boolean
   thuTuAnhChi: string
-  boId: string
-  meId: string
-  voChongIds: string[]
+  boId: number | null
+  meId: number | null
+  voChongIds: number[]
 }
 
 const empty: FormState = {
   hoTen: '', gioiTinh: 'nam', namSinh: '', namMat: '',
   queQuan: '', tieuSu: '', laThanhVienHo: true, thuTuAnhChi: '',
-  boId: '', meId: '', voChongIds: [],
+  boId: null, meId: null, voChongIds: [],
 }
 
 export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) {
@@ -44,18 +44,18 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
         tieuSu: editPerson.tieuSu || '',
         laThanhVienHo: editPerson.laThanhVienHo,
         thuTuAnhChi: editPerson.thuTuAnhChi?.toString() || '',
-        boId: editPerson.boId || '',
-        meId: editPerson.meId || '',
+        boId: editPerson.boId ?? null,
+        meId: editPerson.meId ?? null,
         voChongIds: editPerson.honNhan.map(h => h.voChongId),
       }
-    } else if (defaultBoId) {
+    } else if (defaultBoId != null) {
       return { ...empty, boId: defaultBoId }
     }
     return empty
   })
   
   const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong'>(null)
-  const [multipleWives, setMultipleWives] = useState<string[]>([])
+  const [multipleWives, setMultipleWives] = useState<number[]>([])
 
   useEffect(() => {
     acquireSoftLock()
@@ -98,8 +98,8 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       tieuSu: form.tieuSu || undefined,
       laThanhVienHo: form.gioiTinh === 'nu' ? form.laThanhVienHo : true,
       thuTuAnhChi: form.thuTuAnhChi ? parseInt(form.thuTuAnhChi) : undefined,
-      boId: form.boId || undefined,
-      meId: form.meId || undefined,
+      boId: form.boId ?? undefined,
+      meId: form.meId ?? undefined,
       honNhan: form.voChongIds.map(id => ({ voChongId: id })),
       conCaiIds: editPerson?.conCaiIds || [],
     }
@@ -112,7 +112,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     onClose()
   }
 
-  const getName = (id: string) => data?.persons[id]?.hoTen || ''
+  const getName = (id: number) => data?.persons[id]?.hoTen || ''
 
   return (
     <>
@@ -182,11 +182,11 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
               <label className="text-sm font-medium text-gray-700">Bố</label>
               <div className="mt-1 flex gap-2">
                 <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-700">
-                  {form.boId ? getName(form.boId) : <span className="text-gray-400">Chưa chọn</span>}
+                  {form.boId != null ? getName(form.boId) : <span className="text-gray-400">Chưa chọn</span>}
                 </div>
                 <button type="button" onClick={() => setPickerOpen('bo')}
                   className="px-3 py-1.5 text-sm bg-gray-100 border rounded hover:bg-gray-200">Chọn</button>
-                {form.boId && <button type="button" onClick={() => setForm(f => ({ ...f, boId: '' }))}
+                {form.boId != null && <button type="button" onClick={() => setForm(f => ({ ...f, boId: null }))}
                   className="px-2 text-gray-400 hover:text-red-500">&times;</button>}
               </div>
             </div>
@@ -199,17 +199,17 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                     className="flex-1 px-3 py-1.5 text-sm border rounded">
                     <option value="">-- Chọn mẹ --</option>
                     {multipleWives.map(id => (
-                      <option key={id} value={id}>{getName(id)}</option>
+                      <option key={id} value={String(id)}>{getName(id)}</option>
                     ))}
                   </select>
                 ) : (
                   <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-700">
-                    {form.meId ? getName(form.meId) : <span className="text-gray-400">Chưa chọn</span>}
+                    {form.meId != null ? getName(form.meId) : <span className="text-gray-400">Chưa chọn</span>}
                   </div>
                 )}
                 <button type="button" onClick={() => setPickerOpen('me')}
                   className="px-3 py-1.5 text-sm bg-gray-100 border rounded hover:bg-gray-200">Chọn</button>
-                {form.meId && <button type="button" onClick={() => setForm(f => ({ ...f, meId: '' }))}
+                {form.meId != null && <button type="button" onClick={() => setForm(f => ({ ...f, meId: null }))}
                   className="px-2 text-gray-400 hover:text-red-500">&times;</button>}
               </div>
             </div>
@@ -255,15 +255,15 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       </div>
 
       {pickerOpen === 'bo' && (
-        <PersonPicker title="Chọn bố" excludeIds={[...(form.meId ? [form.meId] : [])]}
+        <PersonPicker title="Chọn bố" excludeIds={[...(form.meId != null ? [form.meId] : [])]}
           onSelect={handleBoSelected} onClose={() => setPickerOpen(null)} />
       )}
       {pickerOpen === 'me' && (
-        <PersonPicker title="Chọn mẹ" excludeIds={[...(form.boId ? [form.boId] : [])]}
+        <PersonPicker title="Chọn mẹ" excludeIds={[...(form.boId != null ? [form.boId] : [])]}
           onSelect={handleMeSelected} onClose={() => setPickerOpen(null)} />
       )}
       {pickerOpen === 'vochong' && (
-        <PersonPicker title="Chọn vợ/chồng" excludeIds={[editPerson?.id || '', ...form.voChongIds].filter(Boolean)}
+        <PersonPicker title="Chọn vợ/chồng" excludeIds={[...(editPerson?.id != null ? [editPerson.id] : []), ...form.voChongIds]}
           onSelect={p => { setForm(f => ({ ...f, voChongIds: [...f.voChongIds, p.id] })); setPickerOpen(null) }}
           onClose={() => setPickerOpen(null)} />
       )}

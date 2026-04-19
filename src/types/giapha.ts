@@ -10,14 +10,14 @@ export interface NgayThang {
 }
 
 export interface HonNhan {
-  voChongId: string
+  voChongId: number
   batDau?: NgayThang
   ketThuc?: NgayThang
   ghiChu?: string
 }
 
 export interface Person {
-  id: string
+  id: number
   hoTen: string                // Full name
   gioiTinh: GioiTinh
   namSinh?: NgayThang
@@ -27,10 +27,10 @@ export interface Person {
   anhDaiDien?: string          // Avatar URL or base64
   laThanhVienHo: boolean       // true = belongs to this clan; false = married in or left the lineage
   thuTuAnhChi?: number         // Sibling order (1-based)
-  boId?: string                // Father ID
-  meId?: string                // Mother ID
+  boId?: number                // Father ID
+  meId?: number                // Mother ID
   honNhan: HonNhan[]           // Marriages (ordered)
-  conCaiIds: string[]          // Children IDs — MUST be kept in sync across both parents; see familyTree.ts
+  conCaiIds: number[]          // Children IDs — MUST be kept in sync across both parents; see familyTree.ts
   ghiChu?: string
 }
 

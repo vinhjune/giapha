@@ -1,19 +1,71 @@
-# React + TypeScript + Vite
+# Gia Phả
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Ứng dụng quản lý gia phả trực tuyến, lưu dữ liệu trên Google Drive, chạy hoàn toàn trên trình duyệt (không cần backend).
 
-Currently, two official plugins are available:
+**Công nghệ:** React 19 · TypeScript · Vite · Tailwind CSS · Zustand · Google Drive API v3
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Chạy thử trên local
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Yêu cầu
 
-## Expanding the ESLint configuration
+- Node.js ≥ 18
+- npm ≥ 9
+- Tài khoản Google (để dùng tính năng Drive; không bắt buộc nếu chỉ xem demo)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 1. Cài đặt phụ thuộc
+
+```bash
+npm install
+```
+
+### 2. Tạo file biến môi trường
+
+Tạo file `.env.local` ở thư mục gốc:
+
+```env
+VITE_GOOGLE_CLIENT_ID=<Google OAuth 2.0 Client ID của bạn>
+VITE_GIAPHA_FILE_ID=<ID file giapha.json trên Google Drive>
+```
+
+> **Lấy `VITE_GOOGLE_CLIENT_ID`:** Vào [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → tạo OAuth 2.0 Client ID (loại *Web application*), thêm `http://localhost:5173` vào *Authorized JavaScript origins*.
+
+> **`VITE_GIAPHA_FILE_ID`:** Là phần ID trong URL khi mở file trên Drive, ví dụ `https://drive.google.com/file/d/<FILE_ID>/view`. Nếu chưa có file, bỏ trống — ứng dụng sẽ hiển thị màn hình Admin Setup để tạo file mới lần đầu.
+
+> **Bỏ qua biến môi trường (chế độ demo):** Nếu không điền `VITE_GOOGLE_CLIENT_ID`, ứng dụng tự chuyển sang chế độ demo với dữ liệu mẫu có sẵn — không cần đăng nhập.
+
+### 3. Khởi động server phát triển
+
+```bash
+npm run dev
+```
+
+Mở trình duyệt tại `http://localhost:5173`.
+
+### 4. Các lệnh khác
+
+| Lệnh | Mô tả |
+|---|---|
+| `npm run dev` | Khởi động dev server (HMR) |
+| `npm run build` | Build production vào thư mục `dist/` |
+| `npm run preview` | Xem trước bản build production |
+| `npm test` | Chạy test ở chế độ watch |
+| `npm run test:run` | Chạy test một lần rồi thoát |
+| `npm run lint` | Kiểm tra lỗi ESLint |
+
+---
+
+## Nhập dữ liệu từ CSV
+
+Đăng nhập với quyền **admin**, bấm nút **Nhập CSV** trên thanh điều hướng. File CSV cần theo định dạng chuẩn — xem file mẫu tại [`docs/giapha-sample.csv`](docs/giapha-sample.csv).
+
+---
+
+## Cấu trúc dữ liệu
+
+Dữ liệu lưu dưới dạng file `giapha.json` trên Google Drive của người dùng. Xem đặc tả đầy đủ tại [`docs/superpowers/specs/2026-04-16-giapha-design.md`](docs/superpowers/specs/2026-04-16-giapha-design.md).
+
 
 ```js
 export default defineConfig([
