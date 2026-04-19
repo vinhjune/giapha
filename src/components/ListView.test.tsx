@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import ListView from './ListView'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { GiaphaData } from '../types/giapha'
@@ -131,5 +131,21 @@ describe('ListView spouse rendering', () => {
     expect(screen.getByText('Ông Nông (#1)')).toBeInTheDocument()
     expect(screen.getByText('Bà Thanh (#1)')).toBeInTheDocument()
     expect(screen.getByText('Vinh (#2)')).toBeInTheDocument()
+  })
+
+  it('renders safely when data changes from empty to loaded', () => {
+    act(() => {
+      useGiaphaStore.setState({ data: null })
+    })
+    const { rerender } = render(<ListView />)
+
+    expect(screen.getByText('Chưa có dữ liệu')).toBeInTheDocument()
+
+    act(() => {
+      useGiaphaStore.setState({ data })
+      rerender(<ListView />)
+    })
+
+    expect(screen.getByText('Ông Nông')).toBeInTheDocument()
   })
 })

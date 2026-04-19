@@ -94,10 +94,10 @@ function PersonRow({
 
 export default function ListView() {
   const { data, selectedPersonId, focusedPersonId, selectPerson } = useGiaphaStore()
+  const generationById = useMemo(() => (data ? tinhThuTuDoi(data) : {}), [data])
   if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
   const highlightedPersonId = focusedPersonId ?? selectedPersonId
   const showGenerationOrder = Boolean(data.metadata.hienThiThuTuDoi)
-  const generationById = useMemo(() => tinhThuTuDoi(data), [data])
 
   const roots = Object.values(data.persons).filter(p => p.laThanhVienHo && (!p.boId || !data.persons[p.boId]))
   const sortedRoots = sapXepAnhChiEm(roots)
