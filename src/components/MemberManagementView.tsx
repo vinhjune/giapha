@@ -293,7 +293,7 @@ export default function MemberManagementView() {
         <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3">
           <p className="text-sm font-medium text-red-700 mb-1">Không thể áp dụng thay đổi:</p>
           <ul className="text-xs text-red-700 list-disc pl-5 space-y-1">
-            {errorMessages.slice(0, 10).map((msg, idx) => <li key={`${msg}-${idx}`}>{msg}</li>)}
+            {errorMessages.slice(0, 10).map((msg, idx) => <li key={idx}>{msg}</li>)}
           </ul>
         </div>
       )}
