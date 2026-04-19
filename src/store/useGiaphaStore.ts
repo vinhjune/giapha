@@ -3,7 +3,7 @@ import type { GiaphaData, Person, Role } from '../types/giapha'
 import { nextId } from '../utils/id'
 import { taoSoftLock } from '../utils/conflict'
 
-export type ViewMode = 'tree' | 'list'
+export type ViewMode = 'tree' | 'list' | 'members'
 
 interface GiaphaState {
   data: GiaphaData | null

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Navbar from '../components/Navbar'
 import TreeView from '../components/TreeView'
 import ListView from '../components/ListView'
+import MemberManagementView from '../components/MemberManagementView'
 import PersonDetail from '../components/PersonDetail'
 import PersonForm from '../components/PersonForm'
 import ConflictBanner from '../components/ConflictBanner'
@@ -33,11 +34,13 @@ export default function HomePage() {
       <ConflictBanner />
 
       <div className="flex flex-1 overflow-hidden">
-        {viewMode === 'tree' ? <TreeView /> : <ListView />}
-        <PersonDetail onEdit={openEdit} />
+        {viewMode === 'tree' && <TreeView />}
+        {viewMode === 'list' && <ListView />}
+        {viewMode === 'members' && <MemberManagementView />}
+        {viewMode !== 'members' && <PersonDetail onEdit={openEdit} />}
       </div>
 
-      {canEdit && (
+      {canEdit && viewMode !== 'members' && (
         <button
           onClick={openAdd}
           className="fixed bottom-6 right-6 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 text-2xl flex items-center justify-center z-30"

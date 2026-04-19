@@ -1,0 +1,302 @@
+import { useMemo, useState } from 'react'
+import { useGiaphaStore } from '../store/useGiaphaStore'
+import { importSingleCsvToGiapha } from '../utils/csvImport'
+import { tinhThuTuDoi } from '../utils/familyTree'
+import type { GioiTinh, Person } from '../types/giapha'
+
+type RowField =
+  | 'id' | 'hoTen' | 'gioiTinh' | 'laThanhVienHo' | 'thuTuAnhChi'
+  | 'namSinh_nam' | 'namSinh_thang' | 'namSinh_ngay' | 'namSinh_amLich'
+  | 'namMat_nam' | 'namMat_thang' | 'namMat_ngay' | 'namMat_amLich'
+  | 'boId' | 'meId' | 'voChongIds'
+  | 'queQuan' | 'tieuSu' | 'anhDaiDien' | 'email' | 'soDienThoai' | 'ghiChu'
+
+interface EditableRow extends Record<RowField, string> {
+  _key: string
+}
+
+const CSV_HEADERS: RowField[] = [
+  'id', 'hoTen', 'gioiTinh', 'laThanhVienHo', 'thuTuAnhChi',
+  'namSinh_nam', 'namSinh_thang', 'namSinh_ngay', 'namSinh_amLich',
+  'namMat_nam', 'namMat_thang', 'namMat_ngay', 'namMat_amLich',
+  'boId', 'meId', 'voChongIds',
+  'queQuan', 'tieuSu', 'anhDaiDien', 'email', 'soDienThoai', 'ghiChu',
+]
+
+const COLUMNS: Array<{ key: RowField; label: string }> = [
+  { key: 'id', label: 'ID' },
+  { key: 'hoTen', label: 'Họ tên' },
+  { key: 'gioiTinh', label: 'Giới tính' },
+  { key: 'laThanhVienHo', label: 'Thành viên họ' },
+  { key: 'thuTuAnhChi', label: 'Thứ tự anh/chị' },
+  { key: 'namSinh_nam', label: 'NS năm' },
+  { key: 'namSinh_thang', label: 'NS tháng' },
+  { key: 'namSinh_ngay', label: 'NS ngày' },
+  { key: 'namSinh_amLich', label: 'NS âm lịch' },
+  { key: 'namMat_nam', label: 'NM năm' },
+  { key: 'namMat_thang', label: 'NM tháng' },
+  { key: 'namMat_ngay', label: 'NM ngày' },
+  { key: 'namMat_amLich', label: 'NM âm lịch' },
+  { key: 'boId', label: 'Bố ID' },
+  { key: 'meId', label: 'Mẹ ID' },
+  { key: 'voChongIds', label: 'Vợ/chồng IDs (;)' },
+  { key: 'queQuan', label: 'Quê quán' },
+  { key: 'tieuSu', label: 'Tiểu sử' },
+  { key: 'anhDaiDien', label: 'Ảnh đại diện' },
+  { key: 'email', label: 'Email' },
+  { key: 'soDienThoai', label: 'SĐT' },
+  { key: 'ghiChu', label: 'Ghi chú' },
+]
+
+function dateToParts(d?: Person['namSinh']) {
+  return {
+    nam: d?.nam != null ? String(d.nam) : '',
+    thang: d?.thang != null ? String(d.thang) : '',
+    ngay: d?.ngay != null ? String(d.ngay) : '',
+    amLich: d?.amLich != null ? String(d.amLich) : '',
+  }
+}
+
+function personToRow(person: Person): EditableRow {
+  const namSinh = dateToParts(person.namSinh)
+  const namMat = dateToParts(person.namMat)
+  return {
+    _key: `existing-${person.id}`,
+    id: String(person.id),
+    hoTen: person.hoTen,
+    gioiTinh: person.gioiTinh,
+    laThanhVienHo: String(person.laThanhVienHo),
+    thuTuAnhChi: person.thuTuAnhChi != null ? String(person.thuTuAnhChi) : '',
+    namSinh_nam: namSinh.nam,
+    namSinh_thang: namSinh.thang,
+    namSinh_ngay: namSinh.ngay,
+    namSinh_amLich: namSinh.amLich,
+    namMat_nam: namMat.nam,
+    namMat_thang: namMat.thang,
+    namMat_ngay: namMat.ngay,
+    namMat_amLich: namMat.amLich,
+    boId: person.boId != null ? String(person.boId) : '',
+    meId: person.meId != null ? String(person.meId) : '',
+    voChongIds: person.honNhan.map(h => h.voChongId).join(';'),
+    queQuan: person.queQuan ?? '',
+    tieuSu: person.tieuSu ?? '',
+    anhDaiDien: person.anhDaiDien ?? '',
+    email: person.email ?? '',
+    soDienThoai: person.soDienThoai ?? '',
+    ghiChu: person.ghiChu ?? '',
+  }
+}
+
+function createEmptyRow(index: number): EditableRow {
+  return {
+    _key: `new-${index}`,
+    id: '',
+    hoTen: '',
+    gioiTinh: 'nam',
+    laThanhVienHo: 'true',
+    thuTuAnhChi: '',
+    namSinh_nam: '',
+    namSinh_thang: '',
+    namSinh_ngay: '',
+    namSinh_amLich: '',
+    namMat_nam: '',
+    namMat_thang: '',
+    namMat_ngay: '',
+    namMat_amLich: '',
+    boId: '',
+    meId: '',
+    voChongIds: '',
+    queQuan: '',
+    tieuSu: '',
+    anhDaiDien: '',
+    email: '',
+    soDienThoai: '',
+    ghiChu: '',
+  }
+}
+
+function escapeCsvField(value: string): string {
+  if (value.includes('"') || value.includes(',') || value.includes('\n') || value.includes('\r')) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+  return value
+}
+
+export default function MemberManagementView() {
+  const { data, currentRole } = useGiaphaStore()
+  const canEdit = currentRole === 'admin' || currentRole === 'editor'
+  const [rows, setRows] = useState<EditableRow[]>(() => {
+    if (!data) return []
+    return Object.values(data.persons).sort((a, b) => a.id - b.id).map(personToRow)
+  })
+  const [errorMessages, setErrorMessages] = useState<string[]>([])
+  const [saveMessage, setSaveMessage] = useState<string | null>(null)
+
+  const generationById = useMemo(() => (data ? tinhThuTuDoi(data) : {}), [data])
+
+  if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
+
+  function handleCellChange(index: number, field: RowField, value: string) {
+    setRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row))
+    setErrorMessages([])
+    setSaveMessage(null)
+  }
+
+  function handleAddRow() {
+    if (!canEdit) return
+    setRows(prev => [...prev, createEmptyRow(prev.length + 1)])
+    setErrorMessages([])
+    setSaveMessage(null)
+  }
+
+  function handleResetRows() {
+    if (!data) return
+    setRows(Object.values(data.persons).sort((a, b) => a.id - b.id).map(personToRow))
+    setErrorMessages([])
+    setSaveMessage(null)
+  }
+
+  function handleApplyChanges() {
+    if (!data || !canEdit) return
+
+    const usedIds = new Set(
+      rows
+        .map(row => Number(row.id.trim()))
+        .filter(id => Number.isInteger(id) && id > 0)
+    )
+    let nextId = usedIds.size > 0 ? Math.max(...usedIds) + 1 : 1
+
+    const rowsWithGeneratedIds = rows.map(row => {
+      if (row.id.trim()) return row
+      while (usedIds.has(nextId)) nextId++
+      const generatedId = nextId
+      usedIds.add(generatedId)
+      nextId++
+      return { ...row, id: String(generatedId) }
+    })
+
+    const csvLines = [
+      CSV_HEADERS.join(','),
+      ...rowsWithGeneratedIds.map(row => CSV_HEADERS.map(key => escapeCsvField(row[key])).join(',')),
+    ]
+    const csvText = csvLines.join('\r\n')
+    const result = importSingleCsvToGiapha(csvText, data.metadata)
+
+    if (result.errors.length > 0 || !result.data) {
+      setErrorMessages(result.errors.map(err => err.message))
+      setSaveMessage(null)
+      return
+    }
+
+    useGiaphaStore.setState({ data: result.data, isDirty: true })
+    setRows(Object.values(result.data.persons).sort((a, b) => a.id - b.id).map(personToRow))
+    setErrorMessages([])
+    setSaveMessage(
+      result.warnings.length > 0
+        ? `Đã cập nhật ${result.stats.personCount} thành viên (có ${result.warnings.length} cảnh báo tự xử lý).`
+        : `Đã cập nhật ${result.stats.personCount} thành viên.`
+    )
+  }
+
+  return (
+    <div className="flex-1 overflow-auto bg-white p-3">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="text-base font-semibold text-gray-800">Quản lý thành viên</h2>
+        <div className="flex items-center gap-2">
+          {canEdit && (
+            <>
+              <button
+                onClick={handleAddRow}
+                className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+              >
+                Thêm dòng mới
+              </button>
+              <button
+                onClick={handleResetRows}
+                className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+              >
+                Hoàn tác
+              </button>
+              <button
+                onClick={handleApplyChanges}
+                className="px-3 py-1.5 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Áp dụng thay đổi
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="overflow-auto border border-gray-200 rounded-lg">
+        <table className="min-w-[2400px] w-full text-xs">
+          <thead className="bg-gray-50 sticky top-0 z-10">
+            <tr>
+              <th className="px-2 py-2 text-left font-semibold text-gray-600 border-b border-r">Đời</th>
+              {COLUMNS.map(col => (
+                <th key={col.key} className="px-2 py-2 text-left font-semibold text-gray-600 border-b border-r last:border-r-0">
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIndex) => (
+              <tr key={row._key} className="hover:bg-blue-50/30">
+                <td className="px-2 py-1 border-b border-r text-gray-700">
+                  {generationById[Number(row.id)] || ''}
+                </td>
+                {COLUMNS.map(col => (
+                  <td key={col.key} className="px-1 py-1 border-b border-r last:border-r-0">
+                    {col.key === 'gioiTinh' ? (
+                      <select
+                        value={row.gioiTinh}
+                        disabled={!canEdit}
+                        onChange={e => handleCellChange(rowIndex, col.key, e.target.value as GioiTinh)}
+                        data-testid={`${col.key}-${rowIndex}`}
+                        className="w-full px-2 py-1 border rounded"
+                      >
+                        <option value="nam">nam</option>
+                        <option value="nu">nu</option>
+                        <option value="khac">khac</option>
+                      </select>
+                    ) : col.key === 'laThanhVienHo' ? (
+                      <select
+                        value={row.laThanhVienHo}
+                        disabled={!canEdit}
+                        onChange={e => handleCellChange(rowIndex, col.key, e.target.value)}
+                        data-testid={`${col.key}-${rowIndex}`}
+                        className="w-full px-2 py-1 border rounded"
+                      >
+                        <option value="true">true</option>
+                        <option value="false">false</option>
+                      </select>
+                    ) : (
+                      <input
+                        value={row[col.key]}
+                        disabled={!canEdit}
+                        onChange={e => handleCellChange(rowIndex, col.key, e.target.value)}
+                        data-testid={`${col.key}-${rowIndex}`}
+                        className="w-full min-w-[96px] px-2 py-1 border rounded"
+                      />
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {saveMessage && <p className="mt-3 text-sm text-green-700">{saveMessage}</p>}
+      {errorMessages.length > 0 && (
+        <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3">
+          <p className="text-sm font-medium text-red-700 mb-1">Không thể áp dụng thay đổi:</p>
+          <ul className="text-xs text-red-700 list-disc pl-5 space-y-1">
+            {errorMessages.slice(0, 10).map((msg, idx) => <li key={`${msg}-${idx}`}>{msg}</li>)}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
