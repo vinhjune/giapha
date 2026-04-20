@@ -18,11 +18,11 @@ interface Props {
 
 export default function PersonDetail({ onEdit }: Props) {
   const { data, selectedPersonId, currentRole, selectPerson, xoaNguoi } = useGiaphaStore()
+  const generationById = useMemo(() => (data ? tinhThuTuDoi(data) : {}), [data])
   if (!selectedPersonId || !data) return null
   const person = data.persons[selectedPersonId]
   if (!person) return null
   const showGenerationOrder = Boolean(data.metadata.hienThiThuTuDoi)
-  const generationById = useMemo(() => tinhThuTuDoi(data), [data])
   const formatName = (p: Person) => dinhDangTenNguoi(p, generationById, showGenerationOrder)
 
   const canEdit = currentRole === 'admin' || currentRole === 'editor'
