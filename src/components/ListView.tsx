@@ -13,6 +13,7 @@ interface RowProps {
   showGenerationOrder: boolean
   isSpouse?: boolean
   hideChildren?: boolean
+  ancestorIds?: Set<number>
 }
 
 function PersonRow({
@@ -25,7 +26,12 @@ function PersonRow({
   showGenerationOrder,
   isSpouse = false,
   hideChildren = false,
+  ancestorIds = new Set<number>(),
 }: RowProps) {
+  if (ancestorIds.has(person.id)) return null
+  const nextAncestorIds = new Set(ancestorIds)
+  nextAncestorIds.add(person.id)
+
   const data = useGiaphaStore(s => s.data)
   const isClan = laThanhVienThuocHo(person)
   const isSelected = person.id === selectedId
@@ -79,12 +85,14 @@ function PersonRow({
               showGenerationOrder={showGenerationOrder}
               isSpouse
               hideChildren
+              ancestorIds={nextAncestorIds}
             />
           ))}
           {children.map(child => (
             <PersonRow key={child.id} person={child} depth={depth + 1}
               onSelect={onSelect} selectedId={selectedId} highlightId={highlightId}
-              generationById={generationById} showGenerationOrder={showGenerationOrder} />
+              generationById={generationById} showGenerationOrder={showGenerationOrder}
+              ancestorIds={nextAncestorIds} />
           ))}
         </>
       )}

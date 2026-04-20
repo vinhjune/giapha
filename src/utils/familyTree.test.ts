@@ -9,6 +9,8 @@ import {
   layBoCMe,
   tinhThuTuDoi,
   dinhDangTenNguoi,
+  timChuTrinhQuanHe,
+  taoCanhBaoQuanHeVongLap,
 } from './familyTree'
 
 const nguoiMau = (ghi: Partial<Person>): Person => ({
@@ -153,5 +155,27 @@ describe('tinhThuTuDoi + dinhDangTenNguoi', () => {
     expect(thuTuDoiById[3]).toBe(2)
     expect(dinhDangTenNguoi(data.persons[3], thuTuDoiById, true)).toBe('Ông Nông (#2)')
     expect(dinhDangTenNguoi(data.persons[3], thuTuDoiById, false)).toBe('Ông Nông')
+  })
+})
+
+describe('timChuTrinhQuanHe + taoCanhBaoQuanHeVongLap', () => {
+  it('detects cyclic parent-child relationships and generates warnings', () => {
+    const data: GiaphaData = {
+      metadata: {} as any,
+      persons: {
+        1: nguoiMau({ id: 1, hoTen: 'A', conCaiIds: [2] }),
+        2: nguoiMau({ id: 2, hoTen: 'B', conCaiIds: [3] }),
+        3: nguoiMau({ id: 3, hoTen: 'C', conCaiIds: [1] }),
+      },
+    }
+
+    const cycles = timChuTrinhQuanHe(data)
+    const warnings = taoCanhBaoQuanHeVongLap(data)
+
+    expect(cycles.length).toBeGreaterThan(0)
+    expect(cycles[0][0]).toBe(cycles[0][cycles[0].length - 1])
+    expect(warnings[0]).toContain('A')
+    expect(warnings[0]).toContain('B')
+    expect(warnings[0]).toContain('C')
   })
 })

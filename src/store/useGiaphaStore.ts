@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { GiaphaData, Person, Role } from '../types/giapha'
 import { nextId } from '../utils/id'
 import { taoSoftLock } from '../utils/conflict'
+import { taoCanhBaoQuanHeVongLap } from '../utils/familyTree'
 
 export type ViewMode = 'tree' | 'list' | 'members'
 
@@ -16,6 +17,7 @@ interface GiaphaState {
   isDirty: boolean
   isSaving: boolean
   conflictDetected: boolean
+  cyclicRelationshipWarnings: string[]
 
   // Actions
   setData: (data: GiaphaData) => void
@@ -32,6 +34,7 @@ interface GiaphaState {
 
   setIsSaving: (v: boolean) => void
   setConflictDetected: (v: boolean) => void
+  dismissCyclicRelationshipWarnings: () => void
   markSaved: () => void
 
   acquireSoftLock: () => void
@@ -49,9 +52,18 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   isDirty: false,
   isSaving: false,
   conflictDetected: false,
+  cyclicRelationshipWarnings: [],
 
-  setData: (data) => set({ data, isDirty: false }),
-  importData: (data) => set({ data, isDirty: true }),
+  setData: (data) => set({
+    data,
+    isDirty: false,
+    cyclicRelationshipWarnings: taoCanhBaoQuanHeVongLap(data),
+  }),
+  importData: (data) => set({
+    data,
+    isDirty: true,
+    cyclicRelationshipWarnings: taoCanhBaoQuanHeVongLap(data),
+  }),
   setFileId: (id) => {
     localStorage.setItem('giaphaFileId', id)
     set({ fileId: id })
@@ -108,6 +120,7 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
       return {
         data: { ...state.data, persons },
         isDirty: true,
+        cyclicRelationshipWarnings: taoCanhBaoQuanHeVongLap({ ...state.data, persons }),
       }
     })
     return id
@@ -216,6 +229,7 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
           persons,
         },
         isDirty: true,
+        cyclicRelationshipWarnings: taoCanhBaoQuanHeVongLap({ ...state.data, persons }),
       }
     })
   },
@@ -239,12 +253,17 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
           }
         }
       })
-      return { data: { ...state.data, persons }, isDirty: true }
+      return {
+        data: { ...state.data, persons },
+        isDirty: true,
+        cyclicRelationshipWarnings: taoCanhBaoQuanHeVongLap({ ...state.data, persons }),
+      }
     })
   },
 
   setIsSaving: (v) => set({ isSaving: v }),
   setConflictDetected: (v) => set({ conflictDetected: v }),
+  dismissCyclicRelationshipWarnings: () => set({ cyclicRelationshipWarnings: [] }),
   markSaved: () => set(state => ({
     isDirty: false,
     data: state.data

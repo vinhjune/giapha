@@ -128,4 +128,21 @@ describe('useGiaphaStore spouse sync', () => {
     useGiaphaStore.getState().suaNguoi(2, { boId: undefined })
     expect(useGiaphaStore.getState().data?.persons[1].conCaiIds).not.toContain(2)
   })
+
+  it('sets cyclic relationship warnings when loading cyclic data', () => {
+    const cyclicData = taoDataMau()
+    cyclicData.persons[1].conCaiIds = [2]
+    cyclicData.persons[2].conCaiIds = [1]
+
+    useGiaphaStore.getState().setData(cyclicData)
+
+    expect(useGiaphaStore.getState().cyclicRelationshipWarnings.length).toBeGreaterThan(0)
+  })
+
+  it('sets cyclic relationship warnings after member update creates cycle', () => {
+    useGiaphaStore.getState().suaNguoi(1, { conCaiIds: [2] })
+    useGiaphaStore.getState().suaNguoi(2, { conCaiIds: [1] })
+
+    expect(useGiaphaStore.getState().cyclicRelationshipWarnings.length).toBeGreaterThan(0)
+  })
 })
