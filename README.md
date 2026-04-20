@@ -59,6 +59,7 @@ Mở trình duyệt tại `http://localhost:5173`.
 ## Nhập dữ liệu từ CSV
 
 Đăng nhập với quyền **admin**, bấm nút **Nhập CSV** trên thanh điều hướng. File CSV cần theo định dạng chuẩn — xem file mẫu tại [`docs/giapha-sample.csv`](docs/giapha-sample.csv).
+Khi lưu file CSV, hãy dùng encoding **UTF-8** để bảo toàn tiếng Việt có dấu.
 
 ## Quản lý thành viên
 
