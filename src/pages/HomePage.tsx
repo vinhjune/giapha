@@ -6,6 +6,7 @@ import MemberManagementView from '../components/MemberManagementView'
 import PersonDetail from '../components/PersonDetail'
 import PersonForm from '../components/PersonForm'
 import ConflictBanner from '../components/ConflictBanner'
+import CyclicRelationshipBanner from '../components/CyclicRelationshipBanner'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { Person } from '../types/giapha'
 
@@ -32,6 +33,7 @@ export default function HomePage() {
     <div className="h-screen flex flex-col overflow-hidden">
       <Navbar />
       <ConflictBanner />
+      <CyclicRelationshipBanner />
 
       <div className="flex flex-1 overflow-hidden">
         {viewMode === 'tree' && <TreeView />}

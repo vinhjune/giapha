@@ -128,6 +128,88 @@ export function dinhDangTenNguoi(person: Person, thuTuDoiById: Record<number, nu
   return `${person.hoTen} (#${thuTuDoi})`
 }
 
+export function timChuTrinhQuanHe(data: GiaphaData): number[][] {
+  const persons = data.persons
+  const ids = Object.keys(persons).map(Number)
+  const adjacency: Record<number, number[]> = Object.fromEntries(ids.map(id => [id, []]))
+  const edgeSet = new Set<string>()
+
+  const themCanh = (fromId: number, toId: number) => {
+    if (!persons[fromId] || !persons[toId]) return
+    const key = `${fromId}->${toId}`
+    if (edgeSet.has(key)) return
+    edgeSet.add(key)
+    adjacency[fromId].push(toId)
+  }
+
+  for (const person of Object.values(persons)) {
+    person.conCaiIds.forEach(childId => themCanh(person.id, childId))
+  }
+
+  for (const person of Object.values(persons)) {
+    if (person.boId) themCanh(person.boId, person.id)
+    if (person.meId) themCanh(person.meId, person.id)
+  }
+
+  const status: Record<number, 0 | 1 | 2> = Object.fromEntries(ids.map(id => [id, 0]))
+  const stack: number[] = []
+  const stackPos = new Map<number, number>()
+  const cycles: number[][] = []
+  const signatures = new Set<string>()
+
+  const themChuTrinh = (chain: number[]) => {
+    if (chain.length < 2) return
+    const uniquePath = chain.slice(0, -1)
+    const minId = Math.min(...uniquePath)
+    const startIdx = uniquePath.indexOf(minId)
+    const normalized = [
+      ...uniquePath.slice(startIdx),
+      ...uniquePath.slice(0, startIdx),
+      minId,
+    ]
+    const signature = normalized.join('>')
+    if (signatures.has(signature)) return
+    signatures.add(signature)
+    cycles.push(chain)
+  }
+
+  const dfs = (id: number) => {
+    status[id] = 1
+    stackPos.set(id, stack.length)
+    stack.push(id)
+
+    for (const nextId of adjacency[id]) {
+      if (status[nextId] === 0) {
+        dfs(nextId)
+      } else if (status[nextId] === 1) {
+        const start = stackPos.get(nextId)
+        if (start != null) {
+          const cycle = [...stack.slice(start), nextId]
+          themChuTrinh(cycle)
+        }
+      }
+    }
+
+    stack.pop()
+    stackPos.delete(id)
+    status[id] = 2
+  }
+
+  for (const id of ids) {
+    if (status[id] === 0) dfs(id)
+  }
+
+  return cycles
+}
+
+export function taoCanhBaoQuanHeVongLap(data: GiaphaData): string[] {
+  const cycles = timChuTrinhQuanHe(data)
+  return cycles.map(cycle => {
+    const names = cycle.map(id => data.persons[id]?.hoTen ?? `#${id}`)
+    return `Phát hiện quan hệ vòng lặp: ${names.join(' → ')}`
+  })
+}
+
 /** Get all children of a person */
 export function layConCai(personId: number, data: GiaphaData): Person[] {
   const person = data.persons[personId]
