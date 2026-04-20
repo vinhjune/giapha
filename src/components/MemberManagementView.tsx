@@ -44,7 +44,6 @@ const COLUMNS: Array<{ key: RowField; label: string }> = [
   { key: 'tieuSu', label: 'Tiểu sử' },
   { key: 'email', label: 'Email' },
   { key: 'soDienThoai', label: 'SĐT' },
-  { key: 'ghiChu', label: 'Ghi chú' },
 ]
 
 const DEFAULT_COLUMN_WIDTHS: Partial<Record<RowField, number>> = {
@@ -72,8 +71,6 @@ const DEFAULT_COLUMN_WIDTHS: Partial<Record<RowField, number>> = {
 }
 
 const FALLBACK_COLUMN_WIDTH = 120
-const MIN_COLUMN_WIDTH = 60
-const MAX_COLUMN_WIDTH = 600
 
 function dateToParts(d?: Person['namSinh']) {
   return {
@@ -156,12 +153,6 @@ export default function MemberManagementView() {
     if (!data) return []
     return Object.values(data.persons).sort((a, b) => a.id - b.id).map(personToRow)
   })
-  const [columnWidths, setColumnWidths] = useState(() =>
-    COLUMNS.reduce<Record<RowField, number>>((acc, col) => {
-      acc[col.key] = DEFAULT_COLUMN_WIDTHS[col.key] ?? FALLBACK_COLUMN_WIDTH
-      return acc
-    }, {} as Record<RowField, number>)
-  )
   const [errorMessages, setErrorMessages] = useState<string[]>([])
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
 
@@ -194,11 +185,6 @@ export default function MemberManagementView() {
     setRows(prev => prev.filter((_, i) => i !== index))
     setErrorMessages([])
     setSaveMessage(null)
-  }
-
-  function handleColumnWidthChange(field: RowField, width: number) {
-    const nextWidth = Math.max(MIN_COLUMN_WIDTH, Math.min(MAX_COLUMN_WIDTH, width))
-    setColumnWidths(prev => ({ ...prev, [field]: nextWidth }))
   }
 
   function handleApplyChanges() {
@@ -273,7 +259,11 @@ export default function MemberManagementView() {
         </div>
       </div>
 
-      <div className="overflow-auto border border-gray-200 rounded-lg">
+      <div className="border border-gray-200 rounded-lg">
+        <div
+          data-testid="member-table-scroll"
+          className="max-h-[calc(100vh-220px)] overflow-auto"
+        >
         <table className="min-w-[2400px] w-full text-xs">
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
@@ -282,23 +272,12 @@ export default function MemberManagementView() {
                 <th
                   key={col.key}
                   className="px-2 py-2 text-left font-semibold text-gray-600 border-b border-r last:border-r-0"
-                  style={{ width: `${columnWidths[col.key]}px`, minWidth: `${columnWidths[col.key]}px` }}
+                  style={{
+                    width: `${DEFAULT_COLUMN_WIDTHS[col.key] ?? FALLBACK_COLUMN_WIDTH}px`,
+                    minWidth: `${DEFAULT_COLUMN_WIDTHS[col.key] ?? FALLBACK_COLUMN_WIDTH}px`,
+                  }}
                 >
-                  <div className="flex flex-col gap-1">
-                    <span>{col.label}</span>
-                    <label className="flex items-center gap-1 text-[10px] font-normal text-gray-500">
-                      <span>W</span>
-                      <input
-                        type="number"
-                        min={MIN_COLUMN_WIDTH}
-                        max={MAX_COLUMN_WIDTH}
-                        value={columnWidths[col.key]}
-                        onChange={e => handleColumnWidthChange(col.key, Number(e.target.value) || MIN_COLUMN_WIDTH)}
-                        aria-label={`Độ rộng cột ${col.label}`}
-                        className="w-14 rounded border px-1 py-0.5 text-[10px]"
-                      />
-                    </label>
-                  </div>
+                  <span>{col.label}</span>
                 </th>
               ))}
               <th className="px-2 py-2 text-left font-semibold text-gray-600 border-b">Xóa</th>
@@ -314,7 +293,10 @@ export default function MemberManagementView() {
                   <td
                     key={col.key}
                     className="px-1 py-1 border-b border-r last:border-r-0"
-                    style={{ width: `${columnWidths[col.key]}px`, minWidth: `${columnWidths[col.key]}px` }}
+                    style={{
+                      width: `${DEFAULT_COLUMN_WIDTHS[col.key] ?? FALLBACK_COLUMN_WIDTH}px`,
+                      minWidth: `${DEFAULT_COLUMN_WIDTHS[col.key] ?? FALLBACK_COLUMN_WIDTH}px`,
+                    }}
                   >
                     {col.key === 'gioiTinh' ? (
                       <select
@@ -357,7 +339,7 @@ export default function MemberManagementView() {
                     disabled={!canEdit}
                     onClick={() => handleDeleteRow(rowIndex)}
                     aria-label={`Xóa thành viên dòng ${rowIndex + 1}`}
-                    className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300"
+                    className="inline-flex items-center rounded px-1.5 py-1 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300"
                   >
                     <svg
                       aria-hidden="true"
@@ -372,13 +354,13 @@ export default function MemberManagementView() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="m7 7 1 12h8l1-12" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10 11v5m4-5v5" />
                     </svg>
-                    <span className="text-[11px]">Xóa</span>
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {saveMessage && <p className="mt-3 text-sm text-green-700">{saveMessage}</p>}
