@@ -60,6 +60,11 @@ describe('MemberManagementView', () => {
     expect(screen.getByText('Đời')).toBeInTheDocument()
     expect(screen.getByText('1')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.getByText('Năm sinh')).toBeInTheDocument()
+    expect(screen.getByText('Năm mất')).toBeInTheDocument()
+    expect(screen.getByText('Địa chỉ')).toBeInTheDocument()
+    expect(screen.queryByText('Ảnh đại diện')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Độ rộng cột ID')).toBeInTheDocument()
   })
 
   it('allows adding a new row and applying changes in one action', async () => {
@@ -80,5 +85,18 @@ describe('MemberManagementView', () => {
     expect(newPerson?.id).toBeGreaterThan(2)
     expect(state!.persons[1].conCaiIds).toContain(newPerson!.id)
     expect(screen.getByText(/Đã cập nhật/)).toBeInTheDocument()
+  })
+
+  it('allows checkbox toggle and deleting a row', async () => {
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    const memberCheckbox = screen.getByTestId('laThanhVienHo-1')
+    expect(memberCheckbox).toBeChecked()
+    await user.click(memberCheckbox)
+    expect(memberCheckbox).not.toBeChecked()
+
+    await user.click(screen.getByRole('button', { name: 'Xóa thành viên dòng 2' }))
+    expect(screen.queryByDisplayValue('Con Trai')).not.toBeInTheDocument()
   })
 })
