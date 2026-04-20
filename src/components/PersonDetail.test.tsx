@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import PersonDetail from './PersonDetail'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { GiaphaData } from '../types/giapha'
@@ -91,5 +91,17 @@ describe('PersonDetail contact info', () => {
     expect(screen.getByText('p1@example.com')).toBeInTheDocument()
     expect(screen.getByText('Điện thoại:')).toBeInTheDocument()
     expect(screen.getByText('0909999999')).toBeInTheDocument()
+  })
+
+  it('renders correctly when selection changes from null to a person', () => {
+    useGiaphaStore.setState({ selectedPersonId: null })
+    render(<PersonDetail onEdit={vi.fn()} />)
+    expect(screen.queryByText('Người Có Liên Hệ')).toBeNull()
+
+    act(() => {
+      useGiaphaStore.setState({ selectedPersonId: 1 })
+    })
+
+    expect(screen.getByText('Người Có Liên Hệ')).toBeInTheDocument()
   })
 })
