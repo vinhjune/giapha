@@ -63,8 +63,11 @@ describe('MemberManagementView', () => {
     expect(screen.getByText('Năm sinh')).toBeInTheDocument()
     expect(screen.getByText('Năm mất')).toBeInTheDocument()
     expect(screen.getByText('Địa chỉ')).toBeInTheDocument()
+    expect(screen.getByText('Tiểu sử')).toBeInTheDocument()
+    expect(screen.queryByText('Ghi chú')).not.toBeInTheDocument()
     expect(screen.queryByText('Ảnh đại diện')).not.toBeInTheDocument()
-    expect(screen.getByLabelText('Độ rộng cột ID')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Độ rộng cột ID')).not.toBeInTheDocument()
+    expect(screen.getByTestId('member-table-scroll')).toBeInTheDocument()
   })
 
   it('allows adding a new row and applying changes in one action', async () => {
@@ -96,7 +99,9 @@ describe('MemberManagementView', () => {
     await user.click(memberCheckbox)
     expect(memberCheckbox).not.toBeChecked()
 
-    await user.click(screen.getByRole('button', { name: 'Xóa thành viên dòng 2' }))
+    const deleteButton = screen.getByRole('button', { name: 'Xóa thành viên dòng 2' })
+    expect(deleteButton).not.toHaveTextContent('Xóa')
+    await user.click(deleteButton)
     expect(screen.queryByDisplayValue('Con Trai')).not.toBeInTheDocument()
   })
 })
