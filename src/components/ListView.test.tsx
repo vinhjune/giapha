@@ -148,4 +148,27 @@ describe('ListView spouse rendering', () => {
 
     expect(screen.getByText('Ông Nông')).toBeInTheDocument()
   })
+
+  it('prevents infinite recursion when child relationships contain a cycle', () => {
+    const cyclicData: GiaphaData = {
+      ...data,
+      persons: {
+        1: {
+          ...data.persons[1],
+          conCaiIds: [3],
+        },
+        2: data.persons[2],
+        3: {
+          ...data.persons[3],
+          conCaiIds: [1],
+        },
+      },
+    }
+
+    useGiaphaStore.setState({ data: cyclicData })
+
+    expect(() => render(<ListView />)).not.toThrow()
+    expect(screen.getAllByText('Ông Nông')).toHaveLength(1)
+    expect(screen.getAllByText('Vinh')).toHaveLength(1)
+  })
 })
