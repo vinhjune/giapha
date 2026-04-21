@@ -4,7 +4,7 @@ import { nextId } from '../utils/id'
 import { taoSoftLock } from '../utils/conflict'
 import { taoCanhBaoQuanHeVongLap } from '../utils/familyTree'
 
-export type ViewMode = 'tree' | 'list' | 'members'
+export type ViewMode = 'tree' | 'list' | 'members' | 'permissions'
 
 interface GiaphaState {
   data: GiaphaData | null
