@@ -117,6 +117,15 @@ export default function Navbar() {
   return (
     <>
     <nav className="relative bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-4">
+      <button
+        type="button"
+        aria-label="Mở menu"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen(v => !v)}
+        className="px-2 py-1.5 text-lg leading-none rounded-md border border-gray-300 hover:bg-gray-50"
+      >
+        ☰
+      </button>
       <div className="min-w-0">
         <h1 className="text-lg font-bold text-red-700 whitespace-nowrap">
           {data?.metadata.tenDongHo || 'Gia Phả'}
@@ -138,15 +147,6 @@ export default function Navbar() {
         {currentUserEmail && (
           <span className="text-sm text-gray-600">{currentUserEmail}</span>
         )}
-        <button
-          type="button"
-          aria-label="Mở menu"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(v => !v)}
-          className="px-2 py-1.5 text-lg leading-none rounded-md border border-gray-300 hover:bg-gray-50"
-        >
-          ☰
-        </button>
       </div>
 
       {menuOpen && (
@@ -156,7 +156,7 @@ export default function Navbar() {
             onClick={() => setMenuOpen(false)}
             className="fixed inset-0 z-30"
           />
-          <div className="absolute top-full right-4 mt-2 z-40 w-72 bg-white border border-gray-200 rounded-lg shadow-lg p-3 space-y-2">
+          <div className="absolute top-full left-4 mt-2 z-40 w-72 bg-white border border-gray-200 rounded-lg shadow-lg p-3 space-y-2">
             <div>
               <label htmlFor="navbar-view-mode" className="block text-xs text-gray-500 mb-1">Chế độ xem</label>
               <select
