@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar'
 import TreeView from '../components/TreeView'
 import ListView from '../components/ListView'
 import MemberManagementView from '../components/MemberManagementView'
+import PermissionManager from '../components/PermissionManager'
 import PersonDetail from '../components/PersonDetail'
 import PersonForm from '../components/PersonForm'
 import ConflictBanner from '../components/ConflictBanner'
@@ -39,10 +40,15 @@ export default function HomePage() {
         {viewMode === 'tree' && <TreeView />}
         {viewMode === 'list' && <ListView />}
         {viewMode === 'members' && <MemberManagementView />}
-        {viewMode !== 'members' && <PersonDetail onEdit={openEdit} />}
+        {viewMode === 'permissions' && (
+          <div className="flex-1 overflow-auto p-4">
+            <PermissionManager />
+          </div>
+        )}
+        {viewMode !== 'members' && viewMode !== 'permissions' && <PersonDetail onEdit={openEdit} />}
       </div>
 
-      {canEdit && viewMode !== 'members' && (
+      {canEdit && viewMode !== 'members' && viewMode !== 'permissions' && (
         <button
           onClick={openAdd}
           className="fixed bottom-6 right-6 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 text-2xl flex items-center justify-center z-30"
