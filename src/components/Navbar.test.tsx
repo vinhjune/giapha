@@ -20,7 +20,7 @@ const data: GiaphaData = {
   },
 }
 
-describe('Navbar breadcrumb actions', () => {
+describe('Navbar hamburger menu actions', () => {
   beforeEach(() => {
     useGiaphaStore.setState({
       data,
@@ -37,8 +37,15 @@ describe('Navbar breadcrumb actions', () => {
     vi.stubGlobal('alert', vi.fn())
   })
 
-  it('shows breadcrumb entries while keeping search bar', () => {
+  it('shows hamburger button and menu entries while keeping search bar', async () => {
+    const user = userEvent.setup()
     render(<Navbar />)
+
+    expect(screen.getByRole('button', { name: 'Mở menu' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Quản lý thành viên' })).toBeNull()
+    expect(screen.getByPlaceholderText('Tìm kiếm theo tên...')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Mở menu' }))
 
     expect(screen.getByLabelText('Chế độ xem')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Quản lý thành viên' })).toBeInTheDocument()
@@ -47,20 +54,23 @@ describe('Navbar breadcrumb actions', () => {
     expect(screen.getByRole('button', { name: 'Xuất CSV' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Chế độ công khai: Tắt' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Thứ tự đời: Tắt' })).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Tìm kiếm theo tên...')).toBeInTheDocument()
   })
 
-  it('switches view modes from breadcrumb entries', async () => {
+  it('switches view modes from hamburger entries', async () => {
     const user = userEvent.setup()
     render(<Navbar />)
 
+    await user.click(screen.getByRole('button', { name: 'Mở menu' }))
     await user.selectOptions(screen.getByLabelText('Chế độ xem'), 'list')
     expect(useGiaphaStore.getState().viewMode).toBe('list')
 
     await user.click(screen.getByRole('button', { name: 'Quản lý thành viên' }))
     expect(useGiaphaStore.getState().viewMode).toBe('members')
+    expect(screen.queryByRole('button', { name: 'Quản lý quyền truy cập' })).toBeNull()
 
+    await user.click(screen.getByRole('button', { name: 'Mở menu' }))
     await user.click(screen.getByRole('button', { name: 'Quản lý quyền truy cập' }))
     expect(useGiaphaStore.getState().viewMode).toBe('permissions')
+    expect(screen.queryByRole('button', { name: 'Quản lý thành viên' })).toBeNull()
   })
 })
