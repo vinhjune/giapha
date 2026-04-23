@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
-import { khoiTaoAuth, layToken, SCOPE_DRIVE } from '../services/googleAuth'
+import { khoiTaoAuth, khoiPhucToken, layToken, SCOPE_DRIVE } from '../services/googleAuth'
 import { docFile, docFileCong } from '../services/googleDrive'
 import LoginPage from '../pages/LoginPage'
 import AdminSetup from './AdminSetup'
@@ -120,12 +120,25 @@ const DEMO_DATA: GiaphaData = {
 }
 
 export default function AuthGate({ children }: Props) {
-  const { fileId, setData, setUser, setFileId } = useGiaphaStore()
+  const { fileId, setData, setUser, setFileId, publicMode, setPublicMode } = useGiaphaStore()
   const [loading, setLoading] = useState(true)
-  const [publicMode, setPublicMode] = useState(false)
 
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY
+
+  async function processLogin(token: AuthToken) {
+    const email = await fetchUserEmail(token)
+    if (fileId) {
+      const d = await docFile(fileId)
+      setData(d)
+      const user = d.metadata.danhSachNguoiDung.find(u => u.email === email)
+      const role = user?.role || (d.metadata.nguoiTao === email ? 'admin' : 'viewer')
+      setUser(email, role)
+    } else {
+      // No file yet — mark user as admin so AdminSetup is shown
+      setUser(email, 'admin')
+    }
+  }
 
   useEffect(() => {
     // GIS script loads with async defer — wait for it before initializing
@@ -143,23 +156,22 @@ export default function AuthGate({ children }: Props) {
         if (!token) return
 
         try {
-          const email = await fetchUserEmail(token)
-          if (fileId) {
-            const d = await docFile(fileId)
-            setData(d)
-            const user = d.metadata.danhSachNguoiDung.find(u => u.email === email)
-            const role = user?.role || (d.metadata.nguoiTao === email ? 'admin' : 'viewer')
-            setUser(email, role)
-          } else {
-            // No file yet — mark user as admin so AdminSetup is shown
-            setUser(email, 'admin')
-          }
+          await processLogin(token)
         } catch {
           // ignore load errors — show login page
         }
       })
-      // khoiTaoAuth only initialises the token client; callback fires on login
-      setLoading(false)
+
+      // Try to restore a saved session so users don't need to log in after refresh
+      const savedToken = khoiPhucToken()
+      if (savedToken) {
+        processLogin(savedToken)
+          .catch(() => {})
+          .finally(() => setLoading(false))
+      } else {
+        // khoiTaoAuth only initialises the token client; callback fires on login
+        setLoading(false)
+      }
     }
 
     initWhenReady()
