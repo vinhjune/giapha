@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import Navbar from './Navbar'
 import { useGiaphaStore } from '../store/useGiaphaStore'
+import * as googleAuth from '../services/googleAuth'
 import type { GiaphaData } from '../types/giapha'
 
 const data: GiaphaData = {
@@ -54,6 +55,43 @@ describe('Navbar hamburger menu actions', () => {
     expect(screen.getByRole('button', { name: 'Xuất CSV' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Chế độ công khai: Tắt' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Thứ tự đời: Tắt' })).toBeInTheDocument()
+  })
+
+  it('shows Đăng xuất button when user email is set', async () => {
+    const user = userEvent.setup()
+    render(<Navbar />)
+
+    await user.click(screen.getByRole('button', { name: 'Mở menu' }))
+
+    expect(screen.getByRole('button', { name: 'Đăng xuất' })).toBeInTheDocument()
+  })
+
+  it('shows Đăng xuất button when Google token exists even if email is empty', async () => {
+    useGiaphaStore.setState({ currentUserEmail: null })
+    vi.spyOn(googleAuth, 'layToken').mockReturnValue({
+      access_token: 'fake-token',
+      expires_in: 3600,
+      expiresAt: Date.now() + 3600 * 1000,
+    })
+    const user = userEvent.setup()
+    render(<Navbar />)
+
+    await user.click(screen.getByRole('button', { name: 'Mở menu' }))
+
+    expect(screen.getByRole('button', { name: 'Đăng xuất' })).toBeInTheDocument()
+    vi.restoreAllMocks()
+  })
+
+  it('hides Đăng xuất button when not logged in', async () => {
+    useGiaphaStore.setState({ currentUserEmail: null })
+    vi.spyOn(googleAuth, 'layToken').mockReturnValue(null)
+    const user = userEvent.setup()
+    render(<Navbar />)
+
+    await user.click(screen.getByRole('button', { name: 'Mở menu' }))
+
+    expect(screen.queryByRole('button', { name: 'Đăng xuất' })).toBeNull()
+    vi.restoreAllMocks()
   })
 
   it('switches view modes from hamburger entries', async () => {

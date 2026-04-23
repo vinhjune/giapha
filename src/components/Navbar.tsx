@@ -4,7 +4,7 @@ import SearchBar from './SearchBar'
 import CsvImportModal from './CsvImportModal'
 import { chiaSeCong, docFileCong, ghiFile, xoaChiaSeCong } from '../services/googleDrive'
 import { exportGiaphaToCSV, downloadCsv } from '../utils/csvExport'
-import { dangXuat } from '../services/googleAuth'
+import { dangXuat, layToken } from '../services/googleAuth'
 
 export default function Navbar() {
   const { data, fileId, isDirty, isSaving, currentRole, currentUserEmail, viewMode, setViewMode, setData, setIsSaving, markSaved, setConflictDetected, logout } = useGiaphaStore()
@@ -244,7 +244,7 @@ export default function Navbar() {
                 </button>
               </>
             )}
-            {currentUserEmail && (
+            {(currentUserEmail || layToken()) && (
               <button
                 onClick={() => {
                   dangXuat()
