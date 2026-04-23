@@ -18,6 +18,7 @@ interface GiaphaState {
   isSaving: boolean
   conflictDetected: boolean
   cyclicRelationshipWarnings: string[]
+  publicMode: boolean
 
   // Actions
   setData: (data: GiaphaData) => void
@@ -27,6 +28,8 @@ interface GiaphaState {
   setViewMode: (mode: ViewMode) => void
   selectPerson: (id: number | null) => void
   focusPerson: (id: number | null) => void
+  setPublicMode: (v: boolean) => void
+  logout: () => void
 
   themNguoi: (person: Omit<Person, 'id'>) => number
   suaNguoi: (id: number, updates: Partial<Person>) => void
@@ -53,6 +56,7 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   isSaving: false,
   conflictDetected: false,
   cyclicRelationshipWarnings: [],
+  publicMode: false,
 
   setData: (data) => set({
     data,
@@ -72,6 +76,20 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   setViewMode: (mode) => set({ viewMode: mode }),
   selectPerson: (id) => set({ selectedPersonId: id, focusedPersonId: id }),
   focusPerson: (id) => set({ focusedPersonId: id }),
+  setPublicMode: (v) => set({ publicMode: v }),
+  logout: () => set({
+    currentUserEmail: null,
+    currentRole: 'public',
+    data: null,
+    publicMode: false,
+    isDirty: false,
+    isSaving: false,
+    viewMode: 'tree',
+    selectedPersonId: null,
+    focusedPersonId: null,
+    conflictDetected: false,
+    cyclicRelationshipWarnings: [],
+  }),
 
   themNguoi: (personData) => {
     const id = nextId(get().data?.persons ?? {})

@@ -4,9 +4,10 @@ import SearchBar from './SearchBar'
 import CsvImportModal from './CsvImportModal'
 import { chiaSeCong, docFileCong, ghiFile, xoaChiaSeCong } from '../services/googleDrive'
 import { exportGiaphaToCSV, downloadCsv } from '../utils/csvExport'
+import { dangXuat } from '../services/googleAuth'
 
 export default function Navbar() {
-  const { data, fileId, isDirty, isSaving, currentRole, currentUserEmail, viewMode, setViewMode, setData, setIsSaving, markSaved, setConflictDetected } = useGiaphaStore()
+  const { data, fileId, isDirty, isSaving, currentRole, currentUserEmail, viewMode, setViewMode, setData, setIsSaving, markSaved, setConflictDetected, logout } = useGiaphaStore()
   const [csvModalOpen, setCsvModalOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [togglingPublic, setTogglingPublic] = useState(false)
@@ -242,6 +243,18 @@ export default function Navbar() {
                   Thứ tự đời: {showGenerationOrder ? 'Bật' : 'Tắt'}
                 </button>
               </>
+            )}
+            {currentUserEmail && (
+              <button
+                onClick={() => {
+                  dangXuat()
+                  logout()
+                  setMenuOpen(false)
+                }}
+                className="w-full px-3 py-1.5 text-sm rounded-md border border-red-200 text-red-600 hover:bg-red-50 text-left"
+              >
+                Đăng xuất
+              </button>
             )}
           </div>
         </>
