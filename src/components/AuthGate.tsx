@@ -129,6 +129,8 @@ export default function AuthGate({ children }: Props) {
   async function processLogin(token: AuthToken) {
     const email = await fetchUserEmail(token)
     if (fileId) {
+      // Set the user immediately so the logout button is visible even if file loading fails
+      setUser(email, 'viewer')
       const d = await docFile(fileId)
       setData(d)
       const user = d.metadata.danhSachNguoiDung.find(u => u.email === email)
