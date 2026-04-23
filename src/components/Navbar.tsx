@@ -158,7 +158,7 @@ export default function Navbar() {
         {currentUserEmail && (
           <span className="text-sm text-gray-600 hidden sm:inline">{currentUserEmail}</span>
         )}
-        {(currentUserEmail || currentRole !== 'public') && currentRole !== 'public' && (
+        {currentRole !== 'public' && (
           <button
             onClick={handleLogout}
             title="Đăng xuất"

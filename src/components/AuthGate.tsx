@@ -256,9 +256,9 @@ export default function AuthGate({ children }: Props) {
     )
   }
 
-  const isLoggedIn = Boolean(currentUserEmail) || publicMode
+  const hasAccess = Boolean(currentUserEmail) || publicMode
 
-  if (!isLoggedIn) {
+  if (!hasAccess) {
     async function handlePublicMode() {
       if (!fileId) {
         alert('Chưa cấu hình file gia phả để xem công khai')
