@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
-import { khoiTaoAuth, layToken, SCOPE_DRIVE } from '../services/googleAuth'
+import { khoiTaoAuth, SCOPE_DRIVE, LOGIN_PREF_KEY } from '../services/googleAuth'
+import { xuLyCallbackZalo, khoiPhucPhienZalo } from '../services/zaloAuth'
 import { docFile, docFileCong } from '../services/googleDrive'
 import LoginPage from '../pages/LoginPage'
 import AdminSetup from './AdminSetup'
@@ -120,49 +121,131 @@ const DEMO_DATA: GiaphaData = {
 }
 
 export default function AuthGate({ children }: Props) {
-  const { fileId, setData, setUser, setFileId } = useGiaphaStore()
+  const { fileId, setData, setUser, setFileId, setPublicMode, publicMode, currentUserEmail } = useGiaphaStore()
   const [loading, setLoading] = useState(true)
-  const [publicMode, setPublicMode] = useState(false)
 
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  const zaloAppId = import.meta.env.VITE_ZALO_APP_ID as string | undefined
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY
 
   useEffect(() => {
-    // GIS script loads with async defer — wait for it before initializing
-    if (!clientId) {
-      setLoading(false)
-      return
+    let settled = false
+
+    async function handleGoogleToken(token: AuthToken) {
+      try {
+        const email = await fetchUserEmail(token)
+        if (fileId) {
+          const d = await docFile(fileId)
+          setData(d)
+          const user = d.metadata.danhSachNguoiDung.find(u => u.email === email)
+          const role = user?.role || (d.metadata.nguoiTao === email ? 'admin' : 'viewer')
+          setUser(email, role, 'google')
+        } else {
+          // No file yet — mark user as admin so AdminSetup is shown
+          setUser(email, 'admin', 'google')
+        }
+      } catch {
+        // ignore load errors — show login page
+      }
     }
 
-    function initWhenReady() {
-      if (typeof (window as any).google === 'undefined') {
-        setTimeout(initWhenReady, 100)
+    async function init() {
+      // ── 1. Handle Zalo OAuth redirect callback ──────────────────────────────
+      if (zaloAppId && new URLSearchParams(window.location.search).has('code')) {
+        try {
+          const zaloUser = await xuLyCallbackZalo(zaloAppId)
+          if (zaloUser) {
+            if (fileId && apiKey) {
+              try {
+                const d = await docFileCong(fileId, apiKey)
+                setData(d)
+                const userEmail = `zalo:${zaloUser.id}`
+                const member = d.metadata.danhSachNguoiDung.find(
+                  u => u.email === userEmail || u.email === zaloUser.id
+                )
+                const role = member?.role ?? 'viewer'
+                setUser(userEmail, role, 'zalo')
+              } catch {
+                setUser(`zalo:${zaloUser.id}`, 'viewer', 'zalo')
+              }
+            } else {
+              setUser(`zalo:${zaloUser.id}`, 'viewer', 'zalo')
+            }
+            settled = true
+            setLoading(false)
+            return
+          }
+        } catch (e: unknown) {
+          alert('Đăng nhập Zalo thất bại: ' + (e as Error).message)
+        }
+      }
+
+      // ── 2. Restore saved Zalo session ───────────────────────────────────────
+      const savedPref = (() => { try { return localStorage.getItem(LOGIN_PREF_KEY) } catch { return null } })()
+      if (savedPref === 'zalo' && zaloAppId) {
+        try {
+          const zaloUser = await khoiPhucPhienZalo()
+          if (zaloUser) {
+            if (fileId && apiKey) {
+              try {
+                const d = await docFileCong(fileId, apiKey)
+                setData(d)
+                const userEmail = `zalo:${zaloUser.id}`
+                const member = d.metadata.danhSachNguoiDung.find(
+                  u => u.email === userEmail || u.email === zaloUser.id
+                )
+                const role = member?.role ?? 'viewer'
+                setUser(userEmail, role, 'zalo')
+              } catch {
+                setUser(`zalo:${zaloUser.id}`, 'viewer', 'zalo')
+              }
+            } else {
+              setUser(`zalo:${zaloUser.id}`, 'viewer', 'zalo')
+            }
+            settled = true
+            setLoading(false)
+            return
+          }
+        } catch { /* fallthrough to Google auth */ }
+      }
+
+      // ── 3. Google auth setup ────────────────────────────────────────────────
+      if (!clientId) {
+        setLoading(false)
         return
       }
-      khoiTaoAuth(clientId, SCOPE_DRIVE, async (token) => {
-        if (!token) return
 
-        try {
-          const email = await fetchUserEmail(token)
-          if (fileId) {
-            const d = await docFile(fileId)
-            setData(d)
-            const user = d.metadata.danhSachNguoiDung.find(u => u.email === email)
-            const role = user?.role || (d.metadata.nguoiTao === email ? 'admin' : 'viewer')
-            setUser(email, role)
-          } else {
-            // No file yet — mark user as admin so AdminSetup is shown
-            setUser(email, 'admin')
-          }
-        } catch {
-          // ignore load errors — show login page
+      function initWhenReady() {
+        if (typeof (window as any).google === 'undefined') {
+          setTimeout(initWhenReady, 100)
+          return
         }
-      })
-      // khoiTaoAuth only initialises the token client; callback fires on login
-      setLoading(false)
+        khoiTaoAuth(clientId, SCOPE_DRIVE, async (token) => {
+          if (!token) {
+            if (!settled) setLoading(false)
+            return
+          }
+          if (!settled) {
+            settled = true
+            await handleGoogleToken(token)
+            setLoading(false)
+          } else {
+            // Token refreshed silently later — update state
+            await handleGoogleToken(token)
+          }
+        })
+
+        // If token was restored from sessionStorage, the callback already fired
+        // (async via setTimeout). Give it a moment; if nothing resolves, stop loading.
+        setTimeout(() => {
+          if (!settled) setLoading(false)
+        }, 200)
+      }
+
+      initWhenReady()
     }
 
-    initWhenReady()
+    void init()
   }, [])
 
   if (loading) {
@@ -173,7 +256,9 @@ export default function AuthGate({ children }: Props) {
     )
   }
 
-  if (!layToken() && !publicMode) {
+  const hasAccess = Boolean(currentUserEmail) || publicMode
+
+  if (!hasAccess) {
     async function handlePublicMode() {
       if (!fileId) {
         alert('Chưa cấu hình file gia phả để xem công khai')
@@ -205,6 +290,7 @@ export default function AuthGate({ children }: Props) {
         publicModeAvailable={true}
         onPublicMode={handlePublicMode}
         onDemo={!clientId ? handleDemo : undefined}
+        zaloAppId={zaloAppId}
       />
     )
   }
