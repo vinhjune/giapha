@@ -38,6 +38,10 @@ describe('Navbar hamburger menu actions', () => {
     vi.stubGlobal('alert', vi.fn())
   })
 
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('shows hamburger button and menu entries while keeping search bar', async () => {
     const user = userEvent.setup()
     render(<Navbar />)
@@ -79,7 +83,6 @@ describe('Navbar hamburger menu actions', () => {
     await user.click(screen.getByRole('button', { name: 'Mở menu' }))
 
     expect(screen.getByRole('button', { name: 'Đăng xuất' })).toBeInTheDocument()
-    vi.restoreAllMocks()
   })
 
   it('hides Đăng xuất button when not logged in', async () => {
@@ -91,7 +94,6 @@ describe('Navbar hamburger menu actions', () => {
     await user.click(screen.getByRole('button', { name: 'Mở menu' }))
 
     expect(screen.queryByRole('button', { name: 'Đăng xuất' })).toBeNull()
-    vi.restoreAllMocks()
   })
 
   it('switches view modes from hamburger entries', async () => {
