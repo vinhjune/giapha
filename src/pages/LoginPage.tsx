@@ -1,28 +1,17 @@
 import { dangNhap } from '../services/googleAuth'
-import { dangNhapZalo } from '../services/zaloAuth'
 
 interface Props {
   publicModeAvailable: boolean
   onPublicMode: () => void | Promise<void>
   onDemo?: () => void
-  zaloAppId?: string
 }
 
-export default function LoginPage({ publicModeAvailable, onPublicMode, onDemo, zaloAppId }: Props) {
+export default function LoginPage({ publicModeAvailable, onPublicMode, onDemo }: Props) {
   function handleGoogleLogin() {
     try {
       dangNhap()
     } catch (e: unknown) {
       alert('Lỗi đăng nhập: ' + (e as Error).message)
-    }
-  }
-
-  async function handleZaloLogin() {
-    if (!zaloAppId) return
-    try {
-      await dangNhapZalo(zaloAppId)
-    } catch (e: unknown) {
-      alert('Lỗi đăng nhập Zalo: ' + (e as Error).message)
     }
   }
 
@@ -40,16 +29,6 @@ export default function LoginPage({ publicModeAvailable, onPublicMode, onDemo, z
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />
           <span className="text-sm font-medium text-gray-700">Đăng nhập bằng Google</span>
         </button>
-
-        {zaloAppId && (
-          <button
-            onClick={() => { void handleZaloLogin() }}
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors mb-3"
-          >
-            <span className="text-lg leading-none font-bold text-blue-600">Z</span>
-            <span className="text-sm font-medium text-blue-700">Đăng nhập bằng Zalo</span>
-          </button>
-        )}
 
         {publicModeAvailable && (
           <button onClick={onPublicMode} className="w-full py-2 text-sm text-gray-500 hover:text-gray-700">

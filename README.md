@@ -27,8 +27,6 @@ Tạo file `.env.local` ở thư mục gốc:
 ```env
 VITE_GOOGLE_CLIENT_ID=<Google OAuth 2.0 Client ID của bạn>
 VITE_GIAPHA_FILE_ID=<ID file giapha.json trên Google Drive>
-VITE_GOOGLE_API_KEY=<Google API Key (tuỳ chọn — cần để xem công khai không đăng nhập)>
-VITE_ZALO_APP_ID=<Zalo App ID (tuỳ chọn — cần để bật đăng nhập bằng Zalo)>
 ```
 
 > **Lấy `VITE_GOOGLE_CLIENT_ID`:** Vào [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → Credentials → tạo OAuth 2.0 Client ID (loại *Web application*), thêm `http://localhost:5173` vào *Authorized JavaScript origins*.
@@ -55,49 +53,6 @@ Mở trình duyệt tại `http://localhost:5173`.
 | `npm test` | Chạy test ở chế độ watch |
 | `npm run test:run` | Chạy test một lần rồi thoát |
 | `npm run lint` | Kiểm tra lỗi ESLint |
-
----
-
-## Đăng nhập bằng Zalo
-
-Để cho phép người dùng đăng nhập bằng tài khoản Zalo, quản trị viên cần thực hiện các bước sau:
-
-### 1. Tạo Zalo App
-
-1. Truy cập [Zalo Developers](https://developers.zalo.me/) và đăng nhập bằng tài khoản Zalo.
-2. Vào **My Apps** → **Create App**, điền tên ứng dụng và chọn loại *Website*.
-3. Sau khi tạo xong, ghi lại **App ID** (hiển thị trong trang cài đặt app).
-
-### 2. Cấu hình OAuth Redirect URI
-
-Trong trang cài đặt Zalo App:
-
-1. Vào tab **Đăng nhập với Zalo**.
-2. Bật tính năng **Đăng nhập với Zalo**.
-3. Thêm các URL cho phép vào mục **Redirect URI**:
-   - Development: `http://localhost:5173`
-   - Production: URL thực tế của ứng dụng, ví dụ `https://giapha.example.com`
-4. Lưu thay đổi.
-
-### 3. Thêm biến môi trường
-
-Thêm `VITE_ZALO_APP_ID` vào file `.env.local`:
-
-```env
-VITE_ZALO_APP_ID=<App ID của Zalo App>
-```
-
-Khi triển khai production, thêm biến này vào cấu hình hosting (Vercel, Netlify, v.v.).
-
-### 4. Thêm người dùng Zalo vào danh sách quyền truy cập
-
-Người dùng đăng nhập bằng Zalo được định danh bằng email dạng `zalo:<ZaloUserID>` trong hệ thống. Để cấp quyền cho người dùng Zalo:
-
-1. Đăng nhập bằng tài khoản **admin** (Google).
-2. Vào **Quản lý quyền truy cập** trong menu.
-3. Thêm người dùng với email `zalo:<ID>` và chọn vai trò phù hợp.
-
-> **Lưu ý:** Đăng nhập bằng Zalo sử dụng PKCE (Proof Key for Code Exchange) — không cần backend và không lưu `App Secret` ở phía client. Dữ liệu gia phả vẫn được lưu trên Google Drive; người dùng Zalo truy cập thông qua chế độ công khai (cần `VITE_GOOGLE_API_KEY`).
 
 ---
 
