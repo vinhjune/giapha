@@ -5,15 +5,12 @@ import { taoSoftLock } from '../utils/conflict'
 import { taoCanhBaoQuanHeVongLap } from '../utils/familyTree'
 
 export type ViewMode = 'tree' | 'list' | 'members' | 'permissions'
-export type LoginType = 'google' | 'zalo' | null
 
 interface GiaphaState {
   data: GiaphaData | null
   fileId: string | null
   currentUserEmail: string | null
   currentRole: Role | 'public'
-  loginType: LoginType
-  publicMode: boolean
   viewMode: ViewMode
   selectedPersonId: number | null
   focusedPersonId: number | null
@@ -26,9 +23,7 @@ interface GiaphaState {
   setData: (data: GiaphaData) => void
   importData: (data: GiaphaData) => void
   setFileId: (id: string) => void
-  setUser: (email: string, role: Role | 'public', loginType?: LoginType) => void
-  setPublicMode: (v: boolean) => void
-  logout: () => void
+  setUser: (email: string, role: Role | 'public') => void
   setViewMode: (mode: ViewMode) => void
   selectPerson: (id: number | null) => void
   focusPerson: (id: number | null) => void
@@ -51,8 +46,6 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   fileId: import.meta.env.VITE_GIAPHA_FILE_ID || (() => { try { return localStorage.getItem('giaphaFileId') } catch { return null } })() || null,
   currentUserEmail: null,
   currentRole: 'public',
-  loginType: null,
-  publicMode: false,
   viewMode: 'tree',
   selectedPersonId: null,
   focusedPersonId: null,
@@ -75,16 +68,7 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
     localStorage.setItem('giaphaFileId', id)
     set({ fileId: id })
   },
-  setUser: (email, role, loginType = null) => set({ currentUserEmail: email, currentRole: role, loginType }),
-  setPublicMode: (v) => set({ publicMode: v }),
-  logout: () => set({
-    data: null,
-    currentUserEmail: null,
-    currentRole: 'public',
-    loginType: null,
-    publicMode: false,
-    isDirty: false,
-  }),
+  setUser: (email, role) => set({ currentUserEmail: email, currentRole: role }),
   setViewMode: (mode) => set({ viewMode: mode }),
   selectPerson: (id) => set({ selectedPersonId: id, focusedPersonId: id }),
   focusPerson: (id) => set({ focusedPersonId: id }),

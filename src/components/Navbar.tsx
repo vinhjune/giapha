@@ -4,11 +4,9 @@ import SearchBar from './SearchBar'
 import CsvImportModal from './CsvImportModal'
 import { chiaSeCong, docFileCong, ghiFile, xoaChiaSeCong } from '../services/googleDrive'
 import { exportGiaphaToCSV, downloadCsv } from '../utils/csvExport'
-import { dangXuat } from '../services/googleAuth'
-import { dangXuatZalo } from '../services/zaloAuth'
 
 export default function Navbar() {
-  const { data, fileId, isDirty, isSaving, currentRole, currentUserEmail, loginType, viewMode, setViewMode, setData, setIsSaving, markSaved, setConflictDetected, logout } = useGiaphaStore()
+  const { data, fileId, isDirty, isSaving, currentRole, currentUserEmail, viewMode, setViewMode, setData, setIsSaving, markSaved, setConflictDetected } = useGiaphaStore()
   const [csvModalOpen, setCsvModalOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [togglingPublic, setTogglingPublic] = useState(false)
@@ -37,15 +35,6 @@ export default function Navbar() {
   const isPublic = Boolean(data?.metadata.cheDoCong)
   const showGenerationOrder = Boolean(data?.metadata.hienThiThuTuDoi)
   const selectableViewMode = viewMode === 'list' || viewMode === 'tree' ? viewMode : ''
-
-  function handleLogout() {
-    if (loginType === 'zalo') {
-      dangXuatZalo()
-    } else {
-      dangXuat()
-    }
-    logout()
-  }
 
   function handleExportCsv() {
     if (!data) return
@@ -156,16 +145,7 @@ export default function Navbar() {
           </button>
         )}
         {currentUserEmail && (
-          <span className="text-sm text-gray-600 hidden sm:inline">{currentUserEmail}</span>
-        )}
-        {currentRole !== 'public' && (
-          <button
-            onClick={handleLogout}
-            title="Đăng xuất"
-            className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-          >
-            Đăng xuất
-          </button>
+          <span className="text-sm text-gray-600">{currentUserEmail}</span>
         )}
       </div>
 
