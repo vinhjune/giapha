@@ -44,6 +44,10 @@ export default function LoginPage({ publicModeAvailable, onPublicMode, onDemo }:
             🧪 Dùng thử với dữ liệu mẫu (Demo)
           </button>
         )}
+
+        <p className="text-xs text-gray-400 mt-6">
+          <a href="/giapha/privacy" className="hover:underline">Chính sách bảo mật</a>
+        </p>
       </div>
     </div>
   )
