@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { dangNhap } from '../services/googleAuth'
 
 interface Props {
@@ -46,7 +47,7 @@ export default function LoginPage({ publicModeAvailable, onPublicMode, onDemo }:
         )}
 
         <p className="text-xs text-gray-400 mt-6">
-          <a href="/giapha/privacy" className="hover:underline">Chính sách bảo mật</a>
+          <Link to="/privacy" className="hover:underline">Chính sách bảo mật</Link>
         </p>
       </div>
     </div>
