@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { act, fireEvent, render } from '@testing-library/react'
+import { act, fireEvent, render, waitFor } from '@testing-library/react'
 import { tuDongDienMe, tuDongDienBo } from '../utils/familyTree'
 import type { GiaphaData } from '../types/giapha'
 import type { Person } from '../types/giapha'
@@ -9,18 +9,18 @@ import PersonForm from './PersonForm'
 const data: GiaphaData = {
   metadata: {} as any,
   persons: {
-    1: { id: 1, hoTen: 'Bố', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: 2 }], conCaiIds: [] },
-    2: { id: 2, hoTen: 'Mẹ', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: 1 }], conCaiIds: [] },
+    '1': { id: '1', hoTen: 'Bố', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: '2' }], conCaiIds: [] },
+    '2': { id: '2', hoTen: 'Mẹ', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: [] },
   },
 }
 
 describe('PersonForm auto-fill', () => {
   it('selecting father with one wife auto-fills mother', () => {
-    expect(tuDongDienMe(1, data)).toBe(2)
+    expect(tuDongDienMe('1', data)).toBe('2')
   })
 
   it('selecting mother with one husband auto-fills father', () => {
-    expect(tuDongDienBo(2, data)).toBe(1)
+    expect(tuDongDienBo('2', data)).toBe('1')
   })
 })
 
@@ -34,19 +34,14 @@ describe('PersonForm responsive layout', () => {
   })
 
   it('modal container has responsive width and max-width classes', () => {
-    useGiaphaStore.setState({
-      data,
-      currentUserEmail: null,
-      acquireSoftLock: () => {},
-      releaseSoftLock: () => {},
-    })
+    useGiaphaStore.setState({ data })
 
     const editPerson: Person = {
-      id: 1,
+      id: '1',
       hoTen: 'Bố',
       gioiTinh: 'nam',
       laThanhVienHo: true,
-      honNhan: [{ voChongId: 2 }],
+      honNhan: [{ voChongId: '2' }],
       conCaiIds: [],
     }
 
@@ -70,18 +65,12 @@ describe('PersonForm parent confirmation on add', () => {
     vi.restoreAllMocks()
   })
 
-  it('asks for confirmation and stops saving when user cancels', () => {
+  it('asks for confirmation and stops saving when user cancels', async () => {
     const themNguoi = vi.fn()
     const onClose = vi.fn()
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
 
-    useGiaphaStore.setState({
-      data,
-      themNguoi,
-      suaNguoi: vi.fn(),
-      acquireSoftLock: () => {},
-      releaseSoftLock: () => {},
-    })
+    useGiaphaStore.setState({ data, themNguoi, suaNguoi: vi.fn() })
 
     const { container } = render(<PersonForm onClose={onClose} />)
     const formEl = container.querySelector('form')
@@ -89,25 +78,19 @@ describe('PersonForm parent confirmation on add', () => {
     expect(formEl).toBeTruthy()
 
     fireEvent.change(nameInput, { target: { value: 'Ông Nông' } })
-    fireEvent.submit(formEl!)
+    await act(async () => { fireEvent.submit(formEl!) })
 
     expect(confirmSpy).toHaveBeenCalledWith('Chưa nhập đủ thông tin bố và mẹ thành viên. Bạn có thể bổ sung sau. Bạn có chắc muốn lưu không?')
     expect(themNguoi).not.toHaveBeenCalled()
     expect(onClose).not.toHaveBeenCalled()
   })
 
-  it('continues saving when user confirms', () => {
-    const themNguoi = vi.fn()
+  it('continues saving when user confirms', async () => {
+    const themNguoi = vi.fn().mockResolvedValue('new-id')
     const onClose = vi.fn()
     vi.spyOn(window, 'confirm').mockReturnValue(true)
 
-    useGiaphaStore.setState({
-      data,
-      themNguoi,
-      suaNguoi: vi.fn(),
-      acquireSoftLock: () => {},
-      releaseSoftLock: () => {},
-    })
+    useGiaphaStore.setState({ data, themNguoi, suaNguoi: vi.fn() })
 
     const { container } = render(<PersonForm onClose={onClose} />)
     const formEl = container.querySelector('form')
@@ -115,10 +98,10 @@ describe('PersonForm parent confirmation on add', () => {
     expect(formEl).toBeTruthy()
 
     fireEvent.change(nameInput, { target: { value: 'Bà Thanh' } })
-    fireEvent.submit(formEl!)
+    await act(async () => { fireEvent.submit(formEl!) })
 
     expect(themNguoi).toHaveBeenCalledTimes(1)
-    expect(onClose).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
   })
 })
 
@@ -133,11 +116,7 @@ describe('PersonForm outside-clan marker', () => {
   })
 
   it('shows outside-clan checkbox unchecked by default for new person', () => {
-    useGiaphaStore.setState({
-      data,
-      acquireSoftLock: () => {},
-      releaseSoftLock: () => {},
-    })
+    useGiaphaStore.setState({ data })
 
     const { getByLabelText } = render(<PersonForm onClose={() => {}} />)
     const outsideCheckbox = getByLabelText('Người ngoài họ') as HTMLInputElement
@@ -146,11 +125,7 @@ describe('PersonForm outside-clan marker', () => {
   })
 
   it('auto-checks outside-clan when selecting an in-clan spouse while adding', () => {
-    useGiaphaStore.setState({
-      data,
-      acquireSoftLock: () => {},
-      releaseSoftLock: () => {},
-    })
+    useGiaphaStore.setState({ data })
 
     const { getByText, getByLabelText, getAllByText } = render(<PersonForm onClose={() => {}} />)
 
@@ -162,17 +137,11 @@ describe('PersonForm outside-clan marker', () => {
     expect(outsideCheckbox.checked).toBe(true)
   })
 
-  it('allows user to uncheck outside-clan after auto-check before saving', () => {
-    const themNguoi = vi.fn()
+  it('allows user to uncheck outside-clan after auto-check before saving', async () => {
+    const themNguoi = vi.fn().mockResolvedValue('new-id')
     vi.spyOn(window, 'confirm').mockReturnValue(true)
 
-    useGiaphaStore.setState({
-      data,
-      themNguoi,
-      suaNguoi: vi.fn(),
-      acquireSoftLock: () => {},
-      releaseSoftLock: () => {},
-    })
+    useGiaphaStore.setState({ data, themNguoi, suaNguoi: vi.fn() })
 
     const { container, getByText, getByLabelText, getAllByText } = render(<PersonForm onClose={() => {}} />)
     const nameInput = container.querySelector('input[required]') as HTMLInputElement
@@ -187,24 +156,20 @@ describe('PersonForm outside-clan marker', () => {
     fireEvent.click(outsideCheckbox)
     expect(outsideCheckbox.checked).toBe(false)
 
-    fireEvent.submit(container.querySelector('form')!)
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) })
 
     expect(themNguoi).toHaveBeenCalledWith(expect.objectContaining({ laThanhVienHo: true }))
   })
 
   it('shows current outside-clan state when editing', () => {
-    useGiaphaStore.setState({
-      data,
-      acquireSoftLock: () => {},
-      releaseSoftLock: () => {},
-    })
+    useGiaphaStore.setState({ data })
 
     const editPerson: Person = {
-      id: 2,
+      id: '2',
       hoTen: 'Mẹ',
       gioiTinh: 'nu',
       laThanhVienHo: false,
-      honNhan: [{ voChongId: 1 }],
+      honNhan: [{ voChongId: '1' }],
       conCaiIds: [],
     }
 

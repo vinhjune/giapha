@@ -1,7 +1,6 @@
-import { useMemo } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { Person } from '../types/giapha'
-import { dinhDangTenNguoi, tinhThuTuDoi } from '../utils/familyTree'
+import { dinhDangTenNguoi } from '../utils/familyTree'
 
 function formatNgay(d?: { nam?: number; thang?: number; ngay?: number }) {
   if (!d) return '—'
@@ -17,15 +16,12 @@ interface Props {
 }
 
 export default function PersonDetail({ onEdit }: Props) {
-  const { data, selectedPersonId, currentRole, selectPerson, xoaNguoi } = useGiaphaStore()
-  const generationById = useMemo(() => (data ? tinhThuTuDoi(data) : {}), [data])
+  const { data, selectedPersonId, hienThiThuTuDoi, selectPerson, xoaNguoi } = useGiaphaStore()
   if (!selectedPersonId || !data) return null
   const person = data.persons[selectedPersonId]
   if (!person) return null
-  const showGenerationOrder = Boolean(data.metadata.hienThiThuTuDoi)
-  const formatName = (p: Person) => dinhDangTenNguoi(p, generationById, showGenerationOrder)
+  const formatName = (p: Person) => dinhDangTenNguoi(p, hienThiThuTuDoi)
 
-  const canEdit = currentRole === 'admin' || currentRole === 'editor'
   const personId = selectedPersonId // capture non-null value for closure
 
   const bo = person.boId ? data.persons[person.boId] : null
@@ -33,10 +29,14 @@ export default function PersonDetail({ onEdit }: Props) {
   const voChong = person.honNhan.map(h => data.persons[h.voChongId]).filter(Boolean)
   const conCai = person.conCaiIds.map(id => data.persons[id]).filter(Boolean)
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!confirm(`Xóa ${formatName(person)}?`)) return
-    xoaNguoi(personId)
-    selectPerson(null)
+    try {
+      await xoaNguoi(personId)
+      selectPerson(null)
+    } catch (e) {
+      alert('Không thể xóa: ' + (e as Error).message)
+    }
   }
 
   return (
@@ -119,22 +119,20 @@ export default function PersonDetail({ onEdit }: Props) {
         )}
       </dl>
 
-      {canEdit && (
-        <div className="mt-4 flex gap-2">
-          <button
-            onClick={() => onEdit(person)}
-            className="flex-1 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-          >
-            Sửa
-          </button>
-          <button
-            onClick={handleDelete}
-            className="flex-1 py-1.5 bg-red-50 text-red-600 text-sm rounded border border-red-200 hover:bg-red-100"
-          >
-            Xóa
-          </button>
-        </div>
-      )}
+      <div className="mt-4 flex gap-2">
+        <button
+          onClick={() => onEdit(person)}
+          className="flex-1 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+        >
+          Sửa
+        </button>
+        <button
+          onClick={handleDelete}
+          className="flex-1 py-1.5 bg-red-50 text-red-600 text-sm rounded border border-red-200 hover:bg-red-100"
+        >
+          Xóa
+        </button>
+      </div>
     </aside>
   )
 }

@@ -1,148 +1,107 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GiaphaData } from '../types/giapha'
+
+vi.mock('../services/api', () => ({
+  getTree: vi.fn(),
+  createPerson: vi.fn(),
+  updatePerson: vi.fn(),
+  deletePerson: vi.fn(),
+}))
+
+import * as api from '../services/api'
 import { useGiaphaStore } from './useGiaphaStore'
 
 function taoDataMau(): GiaphaData {
   return {
-    metadata: {
-      tenDongHo: 'Dòng họ mẫu',
-      ngayTao: '2026-01-01T00:00:00.000Z',
-      nguoiTao: 'admin@example.com',
-      phienBan: 1,
-      cheDoCong: false,
-      danhSachNguoiDung: [],
-    },
+    metadata: { tenDongHo: 'Dòng họ mẫu' },
     persons: {
-      1: {
-        id: 1,
-        hoTen: 'Người A',
-        gioiTinh: 'nam',
-        laThanhVienHo: true,
-        honNhan: [],
-        conCaiIds: [],
-      },
-      2: {
-        id: 2,
-        hoTen: 'Người B',
-        gioiTinh: 'nu',
-        laThanhVienHo: false,
-        honNhan: [],
-        conCaiIds: [],
-      },
-      3: {
-        id: 3,
-        hoTen: 'Người C',
-        gioiTinh: 'nam',
-        laThanhVienHo: true,
-        honNhan: [],
-        conCaiIds: [],
-      },
+      '1': { id: '1', hoTen: 'Người A', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+      '2': { id: '2', hoTen: 'Người B', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [], conCaiIds: [] },
     },
   }
 }
 
-describe('useGiaphaStore spouse sync', () => {
+describe('useGiaphaStore', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     useGiaphaStore.setState({
-      data: taoDataMau(),
-      isDirty: false,
+      data: null,
+      loading: false,
+      error: null,
       selectedPersonId: null,
-      fileId: null,
-      currentUserEmail: null,
-      currentRole: 'public',
+      focusedPersonId: null,
       viewMode: 'tree',
-      isSaving: false,
-      conflictDetected: false,
+      cyclicRelationshipWarnings: [],
     })
   })
 
-  it('updates reverse spouse link when editing a person', () => {
-    useGiaphaStore.getState().suaNguoi(1, {
-      honNhan: [{ voChongId: 2 }],
-    })
+  it('loadData fetches the tree and populates state', async () => {
+    vi.mocked(api.getTree).mockResolvedValue(taoDataMau())
 
-    const b = useGiaphaStore.getState().data?.persons[2]
-    expect(b?.honNhan).toEqual([{ voChongId: 1 }])
+    await useGiaphaStore.getState().loadData()
+
+    expect(api.getTree).toHaveBeenCalled()
+    expect(useGiaphaStore.getState().data?.persons['1'].hoTen).toBe('Người A')
+    expect(useGiaphaStore.getState().loading).toBe(false)
   })
 
-  it('removes reverse spouse link when spouse is removed', () => {
-    useGiaphaStore.getState().suaNguoi(1, {
-      honNhan: [{ voChongId: 2 }],
-    })
+  it('loadData sets an error message when the request fails', async () => {
+    vi.mocked(api.getTree).mockRejectedValue(new Error('network down'))
 
-    useGiaphaStore.getState().suaNguoi(1, { honNhan: [] })
+    await useGiaphaStore.getState().loadData()
 
-    const b = useGiaphaStore.getState().data?.persons[2]
-    expect(b?.honNhan).toEqual([])
+    expect(useGiaphaStore.getState().error).toBe('network down')
   })
 
-  it('stores optional email and phone when adding a person', () => {
-    const id = useGiaphaStore.getState().themNguoi({
-      hoTen: 'Người C',
-      gioiTinh: 'khac',
-      email: 'c@example.com',
-      soDienThoai: '0901234567',
-      laThanhVienHo: true,
-      honNhan: [],
-      conCaiIds: [],
-    })
-
-    const c = useGiaphaStore.getState().data?.persons[id]
-    expect(c?.email).toBe('c@example.com')
-    expect(c?.soDienThoai).toBe('0901234567')
-  })
-
-  it('allows email and phone to be empty', () => {
-    const id = useGiaphaStore.getState().themNguoi({
-      hoTen: 'Người D',
-      gioiTinh: 'nu',
-      laThanhVienHo: false,
-      honNhan: [],
-      conCaiIds: [],
-    })
-
-    const d = useGiaphaStore.getState().data?.persons[id]
-    expect(d?.email).toBeUndefined()
-    expect(d?.soDienThoai).toBeUndefined()
-  })
-
-  it('updates child father when adding a new father with children', () => {
-    const newFatherId = useGiaphaStore.getState().themNguoi({
-      hoTen: 'Ông Nông',
-      gioiTinh: 'nam',
-      laThanhVienHo: true,
-      honNhan: [],
-      conCaiIds: [2],
-    })
-
-    const child = useGiaphaStore.getState().data?.persons[2]
-    const father = useGiaphaStore.getState().data?.persons[newFatherId]
-    expect(child?.boId).toBe(newFatherId)
-    expect(father?.conCaiIds).toContain(2)
-  })
-
-  it('keeps parent conCaiIds in sync when editing boId', () => {
-    useGiaphaStore.getState().suaNguoi(2, { boId: 1 })
-    expect(useGiaphaStore.getState().data?.persons[1].conCaiIds).toContain(2)
-
-    useGiaphaStore.getState().suaNguoi(2, { boId: undefined })
-    expect(useGiaphaStore.getState().data?.persons[1].conCaiIds).not.toContain(2)
-  })
-
-  it('sets cyclic relationship warnings when loading cyclic data', () => {
+  it('sets cyclic relationship warnings when loaded data has a cycle', async () => {
     const cyclicData = taoDataMau()
-    cyclicData.persons[1].conCaiIds = [2]
-    cyclicData.persons[2].conCaiIds = [1]
+    cyclicData.persons['1'].conCaiIds = ['2']
+    cyclicData.persons['2'].conCaiIds = ['1']
+    vi.mocked(api.getTree).mockResolvedValue(cyclicData)
 
-    useGiaphaStore.getState().setData(cyclicData)
+    await useGiaphaStore.getState().loadData()
 
     expect(useGiaphaStore.getState().cyclicRelationshipWarnings.length).toBeGreaterThan(0)
   })
 
-  it('sets cyclic relationship warnings after member update creates cycle', () => {
-    useGiaphaStore.getState().suaNguoi(1, { conCaiIds: [2] })
-    useGiaphaStore.getState().suaNguoi(2, { conCaiIds: [1] })
+  it('themNguoi creates a person via the API then refetches', async () => {
+    vi.mocked(api.createPerson).mockResolvedValue({ id: 'new-1' })
+    vi.mocked(api.getTree).mockResolvedValue(taoDataMau())
 
-    expect(useGiaphaStore.getState().cyclicRelationshipWarnings.length).toBeGreaterThan(0)
+    const id = await useGiaphaStore.getState().themNguoi({
+      hoTen: 'Người C', gioiTinh: 'khac', laThanhVienHo: true, honNhan: [], conCaiIds: [],
+    })
+
+    expect(id).toBe('new-1')
+    expect(api.createPerson).toHaveBeenCalled()
+    expect(api.getTree).toHaveBeenCalled()
+  })
+
+  it('suaNguoi updates a person via the API then refetches', async () => {
+    vi.mocked(api.updatePerson).mockResolvedValue({ ok: true })
+    vi.mocked(api.getTree).mockResolvedValue(taoDataMau())
+
+    await useGiaphaStore.getState().suaNguoi('1', {
+      hoTen: 'Người A', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [],
+    })
+
+    expect(api.updatePerson).toHaveBeenCalledWith('1', expect.objectContaining({ hoTen: 'Người A' }))
+    expect(api.getTree).toHaveBeenCalled()
+  })
+
+  it('xoaNguoi deletes a person via the API then refetches', async () => {
+    vi.mocked(api.deletePerson).mockResolvedValue({ ok: true })
+    vi.mocked(api.getTree).mockResolvedValue(taoDataMau())
+
+    await useGiaphaStore.getState().xoaNguoi('1')
+
+    expect(api.deletePerson).toHaveBeenCalledWith('1')
+    expect(api.getTree).toHaveBeenCalled()
+  })
+
+  it('toggleGenerationOrder flips the local display preference', () => {
+    const before = useGiaphaStore.getState().hienThiThuTuDoi
+    useGiaphaStore.getState().toggleGenerationOrder()
+    expect(useGiaphaStore.getState().hienThiThuTuDoi).toBe(!before)
   })
 })

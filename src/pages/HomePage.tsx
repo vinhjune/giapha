@@ -3,29 +3,23 @@ import Navbar from '../components/Navbar'
 import TreeView from '../components/TreeView'
 import ListView from '../components/ListView'
 import MemberManagementView from '../components/MemberManagementView'
-import PermissionManager from '../components/PermissionManager'
 import PersonDetail from '../components/PersonDetail'
 import PersonForm from '../components/PersonForm'
-import ConflictBanner from '../components/ConflictBanner'
 import CyclicRelationshipBanner from '../components/CyclicRelationshipBanner'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { Person } from '../types/giapha'
 
 export default function HomePage() {
-  const { viewMode, currentRole } = useGiaphaStore()
+  const { viewMode } = useGiaphaStore()
   const [formOpen, setFormOpen] = useState(false)
   const [editPerson, setEditPerson] = useState<Person | null>(null)
 
-  const canEdit = currentRole === 'admin' || currentRole === 'editor'
-
   function openAdd() {
-    if (!canEdit) return
     setEditPerson(null)
     setFormOpen(true)
   }
 
   function openEdit(person: Person) {
-    if (!canEdit) return
     setEditPerson(person)
     setFormOpen(true)
   }
@@ -33,22 +27,16 @@ export default function HomePage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Navbar />
-      <ConflictBanner />
       <CyclicRelationshipBanner />
 
       <div className="flex flex-1 overflow-hidden">
         {viewMode === 'tree' && <TreeView />}
         {viewMode === 'list' && <ListView />}
         {viewMode === 'members' && <MemberManagementView />}
-        {viewMode === 'permissions' && (
-          <div className="flex-1 overflow-auto p-4">
-            <PermissionManager />
-          </div>
-        )}
-        {viewMode !== 'members' && viewMode !== 'permissions' && <PersonDetail onEdit={openEdit} />}
+        {viewMode !== 'members' && <PersonDetail onEdit={openEdit} />}
       </div>
 
-      {canEdit && viewMode !== 'members' && viewMode !== 'permissions' && (
+      {viewMode !== 'members' && (
         <button
           onClick={openAdd}
           className="fixed bottom-6 right-6 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 text-2xl flex items-center justify-center z-30"
@@ -58,7 +46,7 @@ export default function HomePage() {
         </button>
       )}
 
-      {canEdit && formOpen && (
+      {formOpen && (
         <PersonForm editPerson={editPerson} onClose={() => setFormOpen(false)} />
       )}
     </div>

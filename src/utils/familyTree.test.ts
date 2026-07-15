@@ -7,14 +7,13 @@ import {
   laThanhVienThuocHo,
   layConCai,
   layBoCMe,
-  tinhThuTuDoi,
   dinhDangTenNguoi,
   timChuTrinhQuanHe,
   taoCanhBaoQuanHeVongLap,
 } from './familyTree'
 
 const nguoiMau = (ghi: Partial<Person>): Person => ({
-  id: 0,
+  id: '0',
   hoTen: 'Test',
   gioiTinh: 'nam',
   laThanhVienHo: true,
@@ -28,11 +27,11 @@ describe('timVoChong', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        1: nguoiMau({ id: 1, gioiTinh: 'nam', honNhan: [{ voChongId: 2 }] }),
-        2: nguoiMau({ id: 2, gioiTinh: 'nu' }),
+        '1': nguoiMau({ id: '1', gioiTinh: 'nam', honNhan: [{ voChongId: '2' }] }),
+        '2': nguoiMau({ id: '2', gioiTinh: 'nu' }),
       },
     }
-    expect(timVoChong(1, data)).toEqual([2])
+    expect(timVoChong('1', data)).toEqual(['2'])
   })
 })
 
@@ -41,32 +40,32 @@ describe('tuDongDienMe', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        1: nguoiMau({ id: 1, honNhan: [{ voChongId: 2 }] }),
-        2: nguoiMau({ id: 2 }),
+        '1': nguoiMau({ id: '1', honNhan: [{ voChongId: '2' }] }),
+        '2': nguoiMau({ id: '2' }),
       },
     }
-    expect(tuDongDienMe(1, data)).toBe(2)
+    expect(tuDongDienMe('1', data)).toBe('2')
   })
 
   it('returns null when father has multiple wives', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        1: nguoiMau({ id: 1, honNhan: [{ voChongId: 2 }, { voChongId: 3 }] }),
-        2: nguoiMau({ id: 2 }),
-        3: nguoiMau({ id: 3 }),
+        '1': nguoiMau({ id: '1', honNhan: [{ voChongId: '2' }, { voChongId: '3' }] }),
+        '2': nguoiMau({ id: '2' }),
+        '3': nguoiMau({ id: '3' }),
       },
     }
-    expect(tuDongDienMe(1, data)).toBeNull()
+    expect(tuDongDienMe('1', data)).toBeNull()
   })
 })
 
 describe('sapXepAnhChiEm', () => {
   it('sorts siblings by thuTuAnhChi ascending, undeclared last', () => {
-    const a = nguoiMau({ id: 1, thuTuAnhChi: 2 })
-    const b = nguoiMau({ id: 2, thuTuAnhChi: 1 })
-    const c = nguoiMau({ id: 3 }) // no order
-    expect(sapXepAnhChiEm([a, b, c]).map(p => p.id)).toEqual([2, 1, 3])
+    const a = nguoiMau({ id: '1', thuTuAnhChi: 2 })
+    const b = nguoiMau({ id: '2', thuTuAnhChi: 1 })
+    const c = nguoiMau({ id: '3' }) // no order
+    expect(sapXepAnhChiEm([a, b, c]).map(p => p.id)).toEqual(['2', '1', '3'])
   })
 })
 
@@ -89,29 +88,29 @@ describe('layConCai', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        1: nguoiMau({ id: 1, conCaiIds: [2, 3] }),
-        2: nguoiMau({ id: 2 }),
-        3: nguoiMau({ id: 3 }),
+        '1': nguoiMau({ id: '1', conCaiIds: ['2', '3'] }),
+        '2': nguoiMau({ id: '2' }),
+        '3': nguoiMau({ id: '3' }),
       },
     }
-    const result = layConCai(1, data)
-    expect(result.map(p => p.id)).toEqual([2, 3])
+    const result = layConCai('1', data)
+    expect(result.map(p => p.id)).toEqual(['2', '3'])
   })
 
   it('returns empty array for unknown personId', () => {
     const data: GiaphaData = { metadata: {} as any, persons: {} }
-    expect(layConCai(999, data)).toEqual([])
+    expect(layConCai('999', data)).toEqual([])
   })
 
   it('skips stale child references not present in data', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        1: nguoiMau({ id: 1, conCaiIds: [2, 999] }),
-        2: nguoiMau({ id: 2 }),
+        '1': nguoiMau({ id: '1', conCaiIds: ['2', '999'] }),
+        '2': nguoiMau({ id: '2' }),
       },
     }
-    expect(layConCai(1, data).map(p => p.id)).toEqual([2])
+    expect(layConCai('1', data).map(p => p.id)).toEqual(['2'])
   })
 })
 
@@ -120,41 +119,34 @@ describe('layBoCMe', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        1: nguoiMau({ id: 1, boId: 2, meId: 3 }),
-        2: nguoiMau({ id: 2 }),
-        3: nguoiMau({ id: 3 }),
+        '1': nguoiMau({ id: '1', boId: '2', meId: '3' }),
+        '2': nguoiMau({ id: '2' }),
+        '3': nguoiMau({ id: '3' }),
       },
     }
-    const { bo, me } = layBoCMe(data.persons[1], data)
-    expect(bo?.id).toBe(2)
-    expect(me?.id).toBe(3)
+    const { bo, me } = layBoCMe(data.persons['1'], data)
+    expect(bo?.id).toBe('2')
+    expect(me?.id).toBe('3')
   })
 
   it('returns undefined for unset parent IDs', () => {
     const data: GiaphaData = { metadata: {} as any, persons: {} }
-    const { bo, me } = layBoCMe(nguoiMau({ id: 999 }), data)
+    const { bo, me } = layBoCMe(nguoiMau({ id: '999' }), data)
     expect(bo).toBeUndefined()
     expect(me).toBeUndefined()
   })
 })
 
-describe('tinhThuTuDoi + dinhDangTenNguoi', () => {
-  it('calculates generation order and formats person name with generation', () => {
-    const data: GiaphaData = {
-      metadata: {} as any,
-      persons: {
-        1: nguoiMau({ id: 1, hoTen: 'Cụ Tổ', gioiTinh: 'nam', honNhan: [{ voChongId: 2 }], conCaiIds: [3] }),
-        2: nguoiMau({ id: 2, hoTen: 'Bà Tổ', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: 1 }], conCaiIds: [3] }),
-        3: nguoiMau({ id: 3, hoTen: 'Ông Nông', gioiTinh: 'nam', boId: 1, meId: 2, honNhan: [], conCaiIds: [] }),
-      },
-    }
+describe('dinhDangTenNguoi', () => {
+  it('formats person name with generation order when enabled', () => {
+    const person = nguoiMau({ id: '3', hoTen: 'Ông Nông', thuTuDoi: 2 })
+    expect(dinhDangTenNguoi(person, true)).toBe('Ông Nông (#2)')
+    expect(dinhDangTenNguoi(person, false)).toBe('Ông Nông')
+  })
 
-    const thuTuDoiById = tinhThuTuDoi(data)
-    expect(thuTuDoiById[1]).toBe(1)
-    expect(thuTuDoiById[2]).toBe(1)
-    expect(thuTuDoiById[3]).toBe(2)
-    expect(dinhDangTenNguoi(data.persons[3], thuTuDoiById, true)).toBe('Ông Nông (#2)')
-    expect(dinhDangTenNguoi(data.persons[3], thuTuDoiById, false)).toBe('Ông Nông')
+  it('falls back to plain name when thuTuDoi is unset', () => {
+    const person = nguoiMau({ id: '3', hoTen: 'Ông Nông' })
+    expect(dinhDangTenNguoi(person, true)).toBe('Ông Nông')
   })
 })
 
@@ -163,9 +155,9 @@ describe('timChuTrinhQuanHe + taoCanhBaoQuanHeVongLap', () => {
     const data: GiaphaData = {
       metadata: {} as any,
       persons: {
-        1: nguoiMau({ id: 1, hoTen: 'A', conCaiIds: [2] }),
-        2: nguoiMau({ id: 2, hoTen: 'B', conCaiIds: [3] }),
-        3: nguoiMau({ id: 3, hoTen: 'C', conCaiIds: [1] }),
+        '1': nguoiMau({ id: '1', hoTen: 'A', conCaiIds: ['2'] }),
+        '2': nguoiMau({ id: '2', hoTen: 'B', conCaiIds: ['3'] }),
+        '3': nguoiMau({ id: '3', hoTen: 'C', conCaiIds: ['1'] }),
       },
     }
 

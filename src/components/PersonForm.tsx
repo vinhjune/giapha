@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonPicker from './PersonPicker'
 import { timVoChong } from '../utils/familyTree'
@@ -6,7 +6,7 @@ import type { Person, GioiTinh, NgayThang } from '../types/giapha'
 
 interface Props {
   editPerson?: Person | null
-  defaultBoId?: number
+  defaultBoId?: string
   onClose: () => void
 }
 
@@ -21,9 +21,9 @@ interface FormState {
   tieuSu: string
   laThanhVienHo: boolean
   thuTuAnhChi: string
-  boId?: number
-  meId?: number
-  voChongIds: number[]
+  boId?: string
+  meId?: string
+  voChongIds: string[]
 }
 
 // Convert NgayThang → "dd/mm/yyyy" | "mm/yyyy" | "yyyy" | ""
@@ -55,8 +55,8 @@ const empty: FormState = {
 }
 
 export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) {
-  const { data, themNguoi, suaNguoi, acquireSoftLock, releaseSoftLock } = useGiaphaStore()
-  
+  const { data, themNguoi, suaNguoi } = useGiaphaStore()
+
   const [form, setForm] = useState<FormState>(() => {
     if (editPerson) {
       return {
@@ -79,15 +79,10 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     }
     return empty
   })
-  
-  const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong'>(null)
-  const [multipleWives, setMultipleWives] = useState<number[]>([])
 
-  useEffect(() => {
-    acquireSoftLock()
-    return () => releaseSoftLock()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong'>(null)
+  const [multipleWives, setMultipleWives] = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
 
   function handleBoSelected(person: Person) {
     if (!data) return
@@ -124,7 +119,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     setPickerOpen(null)
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.hoTen.trim()) return
     if (!editPerson && (!form.boId || !form.meId)) {
@@ -149,15 +144,22 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       conCaiIds: editPerson?.conCaiIds || [],
     }
 
-    if (editPerson) {
-      suaNguoi(editPerson.id, personData)
-    } else {
-      themNguoi(personData)
+    setSaving(true)
+    try {
+      if (editPerson) {
+        await suaNguoi(editPerson.id, personData)
+      } else {
+        await themNguoi(personData)
+      }
+      onClose()
+    } catch (err) {
+      alert('Không thể lưu: ' + (err as Error).message)
+    } finally {
+      setSaving(false)
     }
-    onClose()
   }
 
-  const getName = (id: number) => data?.persons[id]?.hoTen || ''
+  const getName = (id: string) => data?.persons[id]?.hoTen || ''
 
   return (
     <>
@@ -261,7 +263,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
               <label className="text-sm font-medium text-gray-700">Mẹ</label>
               <div className="mt-1 flex flex-wrap gap-2">
                 {multipleWives.length > 1 && !form.meId ? (
-                  <select onChange={e => setForm(f => ({ ...f, meId: e.target.value ? Number(e.target.value) : undefined }))}
+                  <select onChange={e => setForm(f => ({ ...f, meId: e.target.value || undefined }))}
                     className="flex-1 px-3 py-1.5 text-sm border rounded">
                     <option value="">-- Chọn mẹ --</option>
                     {multipleWives.map(id => (
@@ -307,9 +309,9 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
             </div>
 
             <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-              <button type="submit"
-                className="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700">
-                {editPerson ? 'Lưu thay đổi' : 'Thêm'}
+              <button type="submit" disabled={saving}
+                className="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 disabled:opacity-50">
+                {saving ? 'Đang lưu...' : editPerson ? 'Lưu thay đổi' : 'Thêm'}
               </button>
               <button type="button" onClick={onClose}
                 className="flex-1 py-2 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200">

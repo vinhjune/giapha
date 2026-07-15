@@ -1,316 +1,86 @@
 import { create } from 'zustand'
-import type { GiaphaData, Person, Role } from '../types/giapha'
-import { nextId } from '../utils/id'
-import { taoSoftLock } from '../utils/conflict'
+import type { GiaphaData, Person } from '../types/giapha'
+import * as api from '../services/api'
 import { taoCanhBaoQuanHeVongLap } from '../utils/familyTree'
 
-export type ViewMode = 'tree' | 'list' | 'members' | 'permissions'
+export type ViewMode = 'tree' | 'list' | 'members'
+
+const HIEN_THI_THU_TU_DOI_KEY = 'giaphaHienThiThuTuDoi'
+
+function docHienThiThuTuDoi(): boolean {
+  try {
+    const saved = localStorage.getItem(HIEN_THI_THU_TU_DOI_KEY)
+    return saved === null ? true : saved === 'true'
+  } catch {
+    return true
+  }
+}
 
 interface GiaphaState {
   data: GiaphaData | null
-  fileId: string | null
-  currentUserEmail: string | null
-  currentRole: Role | 'public'
+  loading: boolean
+  error: string | null
   viewMode: ViewMode
-  selectedPersonId: number | null
-  focusedPersonId: number | null
-  isDirty: boolean
-  isSaving: boolean
-  conflictDetected: boolean
+  selectedPersonId: string | null
+  focusedPersonId: string | null
   cyclicRelationshipWarnings: string[]
-  publicMode: boolean
+  hienThiThuTuDoi: boolean
 
-  // Actions
-  setData: (data: GiaphaData) => void
-  importData: (data: GiaphaData) => void
-  setFileId: (id: string) => void
-  setUser: (email: string, role: Role | 'public') => void
+  loadData: () => Promise<void>
   setViewMode: (mode: ViewMode) => void
-  selectPerson: (id: number | null) => void
-  focusPerson: (id: number | null) => void
-  setPublicMode: (v: boolean) => void
-  logout: () => void
-
-  themNguoi: (person: Omit<Person, 'id'>) => number
-  suaNguoi: (id: number, updates: Partial<Person>) => void
-  xoaNguoi: (id: number) => void
-
-  setIsSaving: (v: boolean) => void
-  setConflictDetected: (v: boolean) => void
+  selectPerson: (id: string | null) => void
+  focusPerson: (id: string | null) => void
+  toggleGenerationOrder: () => void
   dismissCyclicRelationshipWarnings: () => void
-  markSaved: () => void
 
-  acquireSoftLock: () => void
-  releaseSoftLock: () => void
+  themNguoi: (person: Omit<Person, 'id'>) => Promise<string>
+  suaNguoi: (id: string, updates: Omit<Person, 'id'>) => Promise<void>
+  xoaNguoi: (id: string) => Promise<void>
 }
 
 export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   data: null,
-  fileId: import.meta.env.VITE_GIAPHA_FILE_ID || (() => { try { return localStorage.getItem('giaphaFileId') } catch { return null } })() || null,
-  currentUserEmail: null,
-  currentRole: 'public',
+  loading: false,
+  error: null,
   viewMode: 'tree',
   selectedPersonId: null,
   focusedPersonId: null,
-  isDirty: false,
-  isSaving: false,
-  conflictDetected: false,
   cyclicRelationshipWarnings: [],
-  publicMode: false,
+  hienThiThuTuDoi: docHienThiThuTuDoi(),
 
-  setData: (data) => set({
-    data,
-    isDirty: false,
-    cyclicRelationshipWarnings: taoCanhBaoQuanHeVongLap(data),
-  }),
-  importData: (data) => set({
-    data,
-    isDirty: true,
-    cyclicRelationshipWarnings: taoCanhBaoQuanHeVongLap(data),
-  }),
-  setFileId: (id) => {
-    localStorage.setItem('giaphaFileId', id)
-    set({ fileId: id })
+  loadData: async () => {
+    set({ loading: true, error: null })
+    try {
+      const data = await api.getTree()
+      set({ data, loading: false, cyclicRelationshipWarnings: taoCanhBaoQuanHeVongLap(data) })
+    } catch (e) {
+      set({ loading: false, error: (e as Error).message })
+    }
   },
-  setUser: (email, role) => set({ currentUserEmail: email, currentRole: role }),
+
   setViewMode: (mode) => set({ viewMode: mode }),
   selectPerson: (id) => set({ selectedPersonId: id, focusedPersonId: id }),
   focusPerson: (id) => set({ focusedPersonId: id }),
-  setPublicMode: (v) => set({ publicMode: v }),
-  logout: () => set({
-    currentUserEmail: null,
-    currentRole: 'public',
-    data: null,
-    publicMode: false,
-    isDirty: false,
-    isSaving: false,
-    viewMode: 'tree',
-    selectedPersonId: null,
-    focusedPersonId: null,
-    conflictDetected: false,
-    cyclicRelationshipWarnings: [],
+  toggleGenerationOrder: () => set(state => {
+    const next = !state.hienThiThuTuDoi
+    try { localStorage.setItem(HIEN_THI_THU_TU_DOI_KEY, String(next)) } catch { /* ignore */ }
+    return { hienThiThuTuDoi: next }
   }),
+  dismissCyclicRelationshipWarnings: () => set({ cyclicRelationshipWarnings: [] }),
 
-  themNguoi: (personData) => {
-    const id = nextId(get().data?.persons ?? {})
-    const person: Person = { id, ...personData }
-    set(state => {
-      if (!state.data) return {}
-      const persons: Record<number, Person> = { ...state.data.persons, [id]: person }
-      // Sync spouse links (A -> B also means B -> A)
-      person.honNhan.forEach(h => {
-        const spouse = persons[h.voChongId]
-        if (!spouse) return
-        if (!spouse.honNhan.some(m => m.voChongId === id)) {
-          persons[h.voChongId] = {
-            ...spouse,
-            honNhan: [...spouse.honNhan, { voChongId: id }],
-          }
-        }
-      })
-      // Sync conCaiIds for both parents
-      if (personData.boId && persons[personData.boId]) {
-        const bo = persons[personData.boId]
-        persons[personData.boId] = {
-          ...bo,
-          conCaiIds: bo.conCaiIds.includes(id) ? bo.conCaiIds : [...bo.conCaiIds, id],
-        }
-      }
-      if (personData.meId && persons[personData.meId]) {
-        const me = persons[personData.meId]
-        persons[personData.meId] = {
-          ...me,
-          conCaiIds: me.conCaiIds.includes(id) ? me.conCaiIds : [...me.conCaiIds, id],
-        }
-      }
-
-      // Sync child->parent links when this new person is added as a parent of existing children
-      personData.conCaiIds.forEach(childId => {
-        const child = persons[childId]
-        if (!child) return
-        if (person.gioiTinh === 'nam' && child.boId !== id) {
-          persons[childId] = { ...child, boId: id }
-        }
-        if (person.gioiTinh === 'nu' && child.meId !== id) {
-          persons[childId] = { ...child, meId: id }
-        }
-      })
-      return {
-        data: { ...state.data, persons },
-        isDirty: true,
-        cyclicRelationshipWarnings: taoCanhBaoQuanHeVongLap({ ...state.data, persons }),
-      }
-    })
+  themNguoi: async (person) => {
+    const { id } = await api.createPerson(person)
+    await get().loadData()
     return id
   },
 
-  suaNguoi: (id, updates) => {
-    set(state => {
-      if (!state.data) return {}
-      const existing = state.data.persons[id]
-      if (!existing) return {}
-      const updated = { ...existing, ...updates }
-      const persons: Record<number, Person> = { ...state.data.persons, [id]: updated }
-
-      const oldSpouseIds = new Set(existing.honNhan.map(h => h.voChongId))
-      const newSpouseIds = new Set(updated.honNhan.map(h => h.voChongId))
-      const oldChildrenIds = new Set(existing.conCaiIds)
-      const newChildrenIds = new Set(updated.conCaiIds)
-
-      // Remove reverse spouse links that were removed from this person
-      oldSpouseIds.forEach(spouseId => {
-        if (newSpouseIds.has(spouseId)) return
-        const spouse = persons[spouseId]
-        if (!spouse) return
-        persons[spouseId] = {
-          ...spouse,
-          honNhan: spouse.honNhan.filter(h => h.voChongId !== id),
-        }
-      })
-
-      // Ensure reverse spouse links exist for current spouses
-      newSpouseIds.forEach(spouseId => {
-        const spouse = persons[spouseId]
-        if (!spouse) return
-        if (!spouse.honNhan.some(h => h.voChongId === id)) {
-          persons[spouseId] = {
-            ...spouse,
-            honNhan: [...spouse.honNhan, { voChongId: id }],
-          }
-        }
-      })
-
-      // Sync this person's own parent links <-> parent.conCaiIds
-      if (existing.boId && existing.boId !== updated.boId) {
-        const oldBo = persons[existing.boId]
-        if (oldBo) {
-          persons[existing.boId] = {
-            ...oldBo,
-            conCaiIds: oldBo.conCaiIds.filter(childId => childId !== id),
-          }
-        }
-      }
-      if (existing.meId && existing.meId !== updated.meId) {
-        const oldMe = persons[existing.meId]
-        if (oldMe) {
-          persons[existing.meId] = {
-            ...oldMe,
-            conCaiIds: oldMe.conCaiIds.filter(childId => childId !== id),
-          }
-        }
-      }
-      if (updated.boId) {
-        const bo = persons[updated.boId]
-        if (bo && !bo.conCaiIds.includes(id)) {
-          persons[updated.boId] = {
-            ...bo,
-            conCaiIds: [...bo.conCaiIds, id],
-          }
-        }
-      }
-      if (updated.meId) {
-        const me = persons[updated.meId]
-        if (me && !me.conCaiIds.includes(id)) {
-          persons[updated.meId] = {
-            ...me,
-            conCaiIds: [...me.conCaiIds, id],
-          }
-        }
-      }
-
-      // Sync this person's conCaiIds <-> child.boId/meId
-      const oldParentKey = existing.gioiTinh === 'nam' ? 'boId' : existing.gioiTinh === 'nu' ? 'meId' : null
-      const newParentKey = updated.gioiTinh === 'nam' ? 'boId' : updated.gioiTinh === 'nu' ? 'meId' : null
-
-      oldChildrenIds.forEach(childId => {
-        if (newChildrenIds.has(childId)) return
-        if (!oldParentKey) return
-        const child = persons[childId]
-        if (!child || child[oldParentKey] !== id) return
-        persons[childId] = { ...child, [oldParentKey]: undefined }
-      })
-
-      newChildrenIds.forEach(childId => {
-        const child = persons[childId]
-        if (!child || !newParentKey) return
-
-        const nextChild: Person = { ...child, [newParentKey]: id }
-        if (oldParentKey && oldParentKey !== newParentKey && nextChild[oldParentKey] === id) {
-          nextChild[oldParentKey] = undefined
-        }
-        persons[childId] = nextChild
-      })
-
-      return {
-        data: {
-          ...state.data,
-          persons,
-        },
-        isDirty: true,
-        cyclicRelationshipWarnings: taoCanhBaoQuanHeVongLap({ ...state.data, persons }),
-      }
-    })
+  suaNguoi: async (id, updates) => {
+    await api.updatePerson(id, updates)
+    await get().loadData()
   },
 
-  xoaNguoi: (id) => {
-    set(state => {
-      if (!state.data) return {}
-      const persons = { ...state.data.persons }
-      delete persons[id]
-      // Rebuild any person that references the deleted id
-      Object.values(persons).forEach(p => {
-        const needsUpdate = p.boId === id || p.meId === id ||
-          p.conCaiIds.includes(id) || p.honNhan.some(h => h.voChongId === id)
-        if (needsUpdate) {
-          persons[p.id] = {
-            ...p,
-            boId: p.boId === id ? undefined : p.boId,
-            meId: p.meId === id ? undefined : p.meId,
-            conCaiIds: p.conCaiIds.filter(c => c !== id),
-            honNhan: p.honNhan.filter(h => h.voChongId !== id),
-          }
-        }
-      })
-      return {
-        data: { ...state.data, persons },
-        isDirty: true,
-        cyclicRelationshipWarnings: taoCanhBaoQuanHeVongLap({ ...state.data, persons }),
-      }
-    })
-  },
-
-  setIsSaving: (v) => set({ isSaving: v }),
-  setConflictDetected: (v) => set({ conflictDetected: v }),
-  dismissCyclicRelationshipWarnings: () => set({ cyclicRelationshipWarnings: [] }),
-  markSaved: () => set(state => ({
-    isDirty: false,
-    data: state.data
-      ? { ...state.data, metadata: { ...state.data.metadata, phienBan: state.data.metadata.phienBan + 1 } }
-      : null,
-  })),
-
-  acquireSoftLock: () => {
-    if (!get().data || !get().currentUserEmail) return
-    set(state => {
-      if (!state.data || !state.currentUserEmail) return {}
-      return {
-        data: {
-          ...state.data,
-          metadata: {
-            ...state.data.metadata,
-            dangChinhSua: taoSoftLock(state.currentUserEmail, state.currentUserEmail),
-          },
-        },
-      }
-    })
-  },
-
-  releaseSoftLock: () => {
-    set(state => ({
-      data: state.data ? {
-        ...state.data,
-        metadata: { ...state.data.metadata, dangChinhSua: undefined },
-      } : null,
-    }))
+  xoaNguoi: async (id) => {
+    await api.deletePerson(id)
+    await get().loadData()
   },
 }))

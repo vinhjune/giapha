@@ -5,24 +5,6 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gia Phả</title>
-    <script>
-      // Restore path encoded by 404.html for GitHub Pages SPA routing.
-      (function() {
-        var params = new URLSearchParams(window.location.search);
-        var p = params.get('p');
-        if (p) {
-          var h = params.get('h');
-          params.delete('p');
-          params.delete('h');
-          var qs = params.toString();
-          window.history.replaceState(
-            null, null,
-            window.location.pathname + p + (qs ? '?' + qs : '') + (h ? '#' + h : '')
-          );
-        }
-      })();
-    </script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <div id="root"></div>

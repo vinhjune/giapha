@@ -1,53 +1,35 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import MemberManagementView from './MemberManagementView'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { GiaphaData } from '../types/giapha'
 
+vi.mock('../services/api', () => ({
+  createPerson: vi.fn(),
+  updatePerson: vi.fn(),
+  deletePerson: vi.fn(),
+  getTree: vi.fn(),
+}))
+
+import * as api from '../services/api'
+
 const data: GiaphaData = {
-  metadata: {
-    tenDongHo: 'Dòng họ mẫu',
-    ngayTao: '2026-01-01T00:00:00.000Z',
-    nguoiTao: 'admin@example.com',
-    phienBan: 1,
-    cheDoCong: true,
-    danhSachNguoiDung: [],
-  },
+  metadata: { tenDongHo: 'Dòng họ mẫu' },
   persons: {
-    1: {
-      id: 1,
-      hoTen: 'Ông Tổ',
-      gioiTinh: 'nam',
-      laThanhVienHo: true,
-      honNhan: [],
-      conCaiIds: [2],
-    },
-    2: {
-      id: 2,
-      hoTen: 'Con Trai',
-      gioiTinh: 'nam',
-      laThanhVienHo: true,
-      boId: 1,
-      honNhan: [],
-      conCaiIds: [],
-    },
+    '1': { id: '1', hoTen: 'Ông Tổ', gioiTinh: 'nam', laThanhVienHo: true, thuTuDoi: 1, honNhan: [], conCaiIds: ['2'] },
+    '2': { id: '2', hoTen: 'Con Trai', gioiTinh: 'nam', laThanhVienHo: true, boId: '1', thuTuDoi: 2, honNhan: [], conCaiIds: [] },
   },
 }
 
 describe('MemberManagementView', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     useGiaphaStore.setState({
       data,
-      fileId: 'file-id',
-      currentUserEmail: 'admin@example.com',
-      currentRole: 'admin',
       viewMode: 'members',
       selectedPersonId: null,
       focusedPersonId: null,
-      isDirty: false,
-      isSaving: false,
-      conflictDetected: false,
     })
   })
 
@@ -64,13 +46,19 @@ describe('MemberManagementView', () => {
     expect(screen.getByText('Năm mất')).toBeInTheDocument()
     expect(screen.getByText('Địa chỉ')).toBeInTheDocument()
     expect(screen.getByText('Tiểu sử')).toBeInTheDocument()
-    expect(screen.queryByText('Ghi chú')).not.toBeInTheDocument()
-    expect(screen.queryByText('Ảnh đại diện')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Độ rộng cột ID')).not.toBeInTheDocument()
     expect(screen.getByTestId('member-table-scroll')).toBeInTheDocument()
   })
 
   it('allows adding a new row and applying changes in one action', async () => {
+    vi.mocked(api.createPerson).mockResolvedValue({ id: 'new-1' })
+    vi.mocked(api.getTree).mockResolvedValue({
+      metadata: data.metadata,
+      persons: {
+        ...data.persons,
+        'new-1': { id: 'new-1', hoTen: 'Thành viên mới', gioiTinh: 'nam', laThanhVienHo: true, boId: '1', honNhan: [], conCaiIds: [] },
+      },
+    })
+
     const user = userEvent.setup()
     render(<MemberManagementView />)
 
@@ -80,14 +68,8 @@ describe('MemberManagementView', () => {
 
     await user.click(screen.getByRole('button', { name: 'Áp dụng thay đổi' }))
 
-    const state = useGiaphaStore.getState().data
-    expect(state).toBeTruthy()
-    const newPerson = Object.values(state!.persons).find(person => person.hoTen === 'Thành viên mới')
-    expect(newPerson).toBeTruthy()
-    expect(newPerson?.boId).toBe(1)
-    expect(newPerson?.id).toBeGreaterThan(2)
-    expect(state!.persons[1].conCaiIds).toContain(newPerson!.id)
-    expect(screen.getByText(/Đã cập nhật/)).toBeInTheDocument()
+    expect(api.createPerson).toHaveBeenCalledWith(expect.objectContaining({ hoTen: 'Thành viên mới', boId: '1' }))
+    expect(await screen.findByText(/Đã cập nhật/)).toBeInTheDocument()
   })
 
   it('allows checkbox toggle and deleting a row', async () => {
@@ -100,8 +82,8 @@ describe('MemberManagementView', () => {
     expect(memberCheckbox).not.toBeChecked()
 
     const deleteButton = screen.getByRole('button', { name: 'Xóa thành viên dòng 2' })
-    expect(deleteButton).not.toHaveTextContent('Xóa')
     await user.click(deleteButton)
     expect(screen.queryByDisplayValue('Con Trai')).not.toBeInTheDocument()
+    expect(api.deletePerson).not.toHaveBeenCalled()
   })
 })

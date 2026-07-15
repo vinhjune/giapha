@@ -2,108 +2,24 @@ import { useEffect, useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import SearchBar from './SearchBar'
 import CsvImportModal from './CsvImportModal'
-import { chiaSeCong, docFileCong, ghiFile, xoaChiaSeCong } from '../services/googleDrive'
-import { exportGiaphaToCSV, downloadCsv } from '../utils/csvExport'
-import { dangXuat, layToken } from '../services/googleAuth'
+import { exportCsv } from '../services/api'
 
 export default function Navbar() {
-  const { data, fileId, isDirty, isSaving, currentRole, currentUserEmail, viewMode, setViewMode, setData, setIsSaving, markSaved, setConflictDetected, logout } = useGiaphaStore()
+  const { data, viewMode, setViewMode, hienThiThuTuDoi, toggleGenerationOrder } = useGiaphaStore()
   const [csvModalOpen, setCsvModalOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [togglingPublic, setTogglingPublic] = useState(false)
-  const [togglingGenerationOrder, setTogglingGenerationOrder] = useState(false)
 
-  async function handleSave() {
-    if (!data || !fileId) return
-    setIsSaving(true)
-    try {
-      await ghiFile(fileId, data)
-      markSaved()
-    } catch (e: unknown) {
-      const err = e as Error
-      if (err.message.includes('412') || err.message.includes('conflict')) {
-        setConflictDetected(true)
-      } else {
-        alert('Lưu thất bại: ' + err.message)
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const canEdit = currentRole === 'admin' || currentRole === 'editor'
-  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY
-  const isPublic = Boolean(data?.metadata.cheDoCong)
-  const showGenerationOrder = Boolean(data?.metadata.hienThiThuTuDoi)
   const selectableViewMode = viewMode === 'list' || viewMode === 'tree' ? viewMode : ''
 
-  function handleExportCsv() {
-    if (!data) return
-    const csv = exportGiaphaToCSV(data)
-    const tenDongHo = data.metadata.tenDongHo.replace(/\s+/g, '_')
+  async function handleExportCsv() {
+    const blob = await exportCsv()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
     const date = new Date().toISOString().slice(0, 10)
-    downloadCsv(`giaphaHo${tenDongHo}_${date}.csv`, csv)
-  }
-
-  async function handleTogglePublic() {
-    if (!data || !fileId) return false
-    setTogglingPublic(true)
-    try {
-      if (isPublic) {
-        const inherited = await xoaChiaSeCong(fileId)
-        if (inherited) {
-          alert(
-            'Quyền công khai được thừa kế từ thư mục cha — không thể tắt qua API. ' +
-            'Hãy vào Google Drive và tắt chia sẻ cho thư mục giapha thủ công.'
-          )
-        }
-      } else {
-        await chiaSeCong(fileId)
-        if (apiKey) {
-          try {
-            await docFileCong(fileId, apiKey)
-          } catch (e: unknown) {
-            const msg = (e as Error).message
-            alert(
-              `Đã chia sẻ Drive nhưng đọc bằng API key thất bại:\n${msg}\n\n` +
-              'Kiểm tra Drive API và giới hạn API key.'
-            )
-          }
-        }
-      }
-
-      const updated = {
-        ...data,
-        metadata: { ...data.metadata, cheDoCong: !isPublic },
-      }
-      await ghiFile(fileId, updated)
-      setData(updated)
-      return true
-    } catch (e: unknown) {
-      alert('Lỗi: ' + (e as Error).message)
-      return false
-    } finally {
-      setTogglingPublic(false)
-    }
-  }
-
-  async function handleToggleGenerationOrder() {
-    if (!data || !fileId) return false
-    setTogglingGenerationOrder(true)
-    try {
-      const updated = {
-        ...data,
-        metadata: { ...data.metadata, hienThiThuTuDoi: !showGenerationOrder },
-      }
-      await ghiFile(fileId, updated)
-      setData(updated)
-      return true
-    } catch (e: unknown) {
-      alert('Lỗi: ' + (e as Error).message)
-      return false
-    } finally {
-      setTogglingGenerationOrder(false)
-    }
+    a.href = url
+    a.download = `gia-pha-export-${date}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   useEffect(() => {
@@ -135,21 +51,6 @@ export default function Navbar() {
 
       <SearchBar />
 
-      <div className="ml-auto flex items-center gap-3">
-        {canEdit && isDirty && (
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
-            {isSaving ? 'Đang lưu...' : 'Lưu'}
-          </button>
-        )}
-        {currentUserEmail && (
-          <span className="text-sm text-gray-600">{currentUserEmail}</span>
-        )}
-      </div>
-
       {menuOpen && (
         <>
           <div
@@ -168,11 +69,7 @@ export default function Navbar() {
                 className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md bg-white"
               >
                 <option value="" disabled>
-                  {viewMode === 'members'
-                    ? 'Quản lý thành viên'
-                    : viewMode === 'permissions'
-                      ? 'Quản lý quyền truy cập'
-                      : 'Chế độ xem'}
+                  {viewMode === 'members' ? 'Quản lý thành viên' : 'Chế độ xem'}
                 </option>
                 <option value="tree">Cây</option>
                 <option value="list">Danh sách</option>
@@ -187,75 +84,33 @@ export default function Navbar() {
             >
               Quản lý thành viên
             </button>
-            {currentRole === 'admin' && (
-              <button
-                onClick={() => {
-                  setViewMode('permissions')
-                  setMenuOpen(false)
-                }}
-                className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 text-left"
-              >
-                Quản lý quyền truy cập
-              </button>
-            )}
-            {currentRole === 'admin' && (
-              <button
-                onClick={() => {
-                  setCsvModalOpen(true)
-                  setMenuOpen(false)
-                }}
-                className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 text-left"
-              >
-                Nhập CSV
-              </button>
-            )}
-            {canEdit && data && (
-              <button
-                onClick={() => {
-                  handleExportCsv()
-                  setMenuOpen(false)
-                }}
-                className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 text-left"
-              >
-                Xuất CSV
-              </button>
-            )}
-            {currentRole === 'admin' && (
-              <>
-                <button
-                  onClick={async () => {
-                    const ok = await handleTogglePublic()
-                    if (ok) setMenuOpen(false)
-                  }}
-                  disabled={togglingPublic}
-                  className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 text-left"
-                >
-                  Chế độ công khai: {isPublic ? 'Bật' : 'Tắt'}
-                </button>
-                <button
-                  onClick={async () => {
-                    const ok = await handleToggleGenerationOrder()
-                    if (ok) setMenuOpen(false)
-                  }}
-                  disabled={togglingGenerationOrder}
-                  className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-50 text-left"
-                >
-                  Thứ tự đời: {showGenerationOrder ? 'Bật' : 'Tắt'}
-                </button>
-              </>
-            )}
-            {(currentUserEmail || layToken()) && (
-              <button
-                onClick={() => {
-                  dangXuat()
-                  logout()
-                  setMenuOpen(false)
-                }}
-                className="w-full px-3 py-1.5 text-sm rounded-md border border-red-200 text-red-600 hover:bg-red-50 text-left"
-              >
-                Đăng xuất
-              </button>
-            )}
+            <button
+              onClick={() => {
+                setCsvModalOpen(true)
+                setMenuOpen(false)
+              }}
+              className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 text-left"
+            >
+              Nhập CSV
+            </button>
+            <button
+              onClick={() => {
+                handleExportCsv()
+                setMenuOpen(false)
+              }}
+              className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 text-left"
+            >
+              Xuất CSV
+            </button>
+            <button
+              onClick={() => {
+                toggleGenerationOrder()
+                setMenuOpen(false)
+              }}
+              className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 text-left"
+            >
+              Thứ tự đời: {hienThiThuTuDoi ? 'Bật' : 'Tắt'}
+            </button>
           </div>
         </>
       )}

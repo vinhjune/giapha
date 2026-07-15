@@ -5,22 +5,15 @@ import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { GiaphaData } from '../types/giapha'
 
 const data: GiaphaData = {
-  metadata: {
-    tenDongHo: 'Dòng họ mẫu',
-    ngayTao: '2026-01-01T00:00:00.000Z',
-    nguoiTao: 'admin@example.com',
-    phienBan: 1,
-    cheDoCong: false,
-    danhSachNguoiDung: [],
-  },
+  metadata: { tenDongHo: 'Dòng họ mẫu' },
   persons: {
-    1: { id: 1, hoTen: 'Tổ', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: 2 }], conCaiIds: [3] },
-    2: { id: 2, hoTen: 'Bà', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: 1 }], conCaiIds: [3] },
-    3: { id: 3, hoTen: 'Con gái', gioiTinh: 'nu', laThanhVienHo: true, boId: 1, meId: 2, honNhan: [{ voChongId: 4 }], conCaiIds: [5] },
-    4: { id: 4, hoTen: 'Con rể', gioiTinh: 'nam', laThanhVienHo: false, honNhan: [{ voChongId: 3 }], conCaiIds: [5] },
-    5: { id: 5, hoTen: 'Cháu gái', gioiTinh: 'nu', laThanhVienHo: false, boId: 4, meId: 3, honNhan: [{ voChongId: 6 }], conCaiIds: [] },
-    6: { id: 6, hoTen: 'Chồng cháu gái', gioiTinh: 'nam', laThanhVienHo: false, honNhan: [{ voChongId: 5 }], conCaiIds: [7] },
-    7: { id: 7, hoTen: 'Chắt', gioiTinh: 'nam', laThanhVienHo: false, boId: 6, meId: 5, honNhan: [], conCaiIds: [] },
+    '1': { id: '1', hoTen: 'Tổ', gioiTinh: 'nam', laThanhVienHo: true, thuTuDoi: 1, honNhan: [{ voChongId: '2' }], conCaiIds: ['3'] },
+    '2': { id: '2', hoTen: 'Bà', gioiTinh: 'nu', laThanhVienHo: false, thuTuDoi: 1, honNhan: [{ voChongId: '1' }], conCaiIds: ['3'] },
+    '3': { id: '3', hoTen: 'Con gái', gioiTinh: 'nu', laThanhVienHo: true, thuTuDoi: 2, boId: '1', meId: '2', honNhan: [{ voChongId: '4' }], conCaiIds: ['5'] },
+    '4': { id: '4', hoTen: 'Con rể', gioiTinh: 'nam', laThanhVienHo: false, honNhan: [{ voChongId: '3' }], conCaiIds: ['5'] },
+    '5': { id: '5', hoTen: 'Cháu gái', gioiTinh: 'nu', laThanhVienHo: false, boId: '4', meId: '3', honNhan: [{ voChongId: '6' }], conCaiIds: [] },
+    '6': { id: '6', hoTen: 'Chồng cháu gái', gioiTinh: 'nam', laThanhVienHo: false, honNhan: [{ voChongId: '5' }], conCaiIds: ['7'] },
+    '7': { id: '7', hoTen: 'Chắt', gioiTinh: 'nam', laThanhVienHo: false, boId: '6', meId: '5', honNhan: [], conCaiIds: [] },
   },
 }
 
@@ -28,14 +21,9 @@ describe('TreeView', () => {
   beforeEach(() => {
     useGiaphaStore.setState({
       data,
-      fileId: null,
-      currentUserEmail: null,
-      currentRole: 'viewer',
       viewMode: 'tree',
       selectedPersonId: null,
-      isDirty: false,
-      isSaving: false,
-      conflictDetected: false,
+      hienThiThuTuDoi: false,
     })
   })
 
@@ -45,12 +33,7 @@ describe('TreeView', () => {
   })
 
   it('shows generation order suffix when setting is enabled', () => {
-    useGiaphaStore.setState({
-      data: {
-        ...data,
-        metadata: { ...data.metadata, hienThiThuTuDoi: true },
-      },
-    })
+    useGiaphaStore.setState({ hienThiThuTuDoi: true })
 
     render(<TreeView />)
     expect(screen.getByText('Tổ (#1)')).toBeInTheDocument()
@@ -122,16 +105,16 @@ describe('TreeView', () => {
       ...data,
       persons: {
         ...data.persons,
-        1: { ...data.persons[1], conCaiIds: [3, 8] },
-        2: { ...data.persons[2], conCaiIds: [3, 8] },
-        3: { ...data.persons[3], thuTuAnhChi: 2 },
-        8: {
-          id: 8,
+        '1': { ...data.persons['1'], conCaiIds: ['3', '8'] },
+        '2': { ...data.persons['2'], conCaiIds: ['3', '8'] },
+        '3': { ...data.persons['3'], thuTuAnhChi: 2 },
+        '8': {
+          id: '8',
           hoTen: 'Con cả',
           gioiTinh: 'nam',
           laThanhVienHo: true,
-          boId: 1,
-          meId: 2,
+          boId: '1',
+          meId: '2',
           thuTuAnhChi: 1,
           honNhan: [],
           conCaiIds: [],
@@ -155,7 +138,7 @@ describe('TreeView', () => {
       ...data,
       persons: {
         ...data.persons,
-        1: { ...data.persons[1], hoTen: longName },
+        '1': { ...data.persons['1'], hoTen: longName },
       },
     }
     useGiaphaStore.setState({ data: longNameData })

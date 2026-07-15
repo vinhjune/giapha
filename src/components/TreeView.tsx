@@ -2,7 +2,7 @@ import { useMemo, useRef, useEffect, useState, useCallback } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonCard from './PersonCard'
 import type { Person } from '../types/giapha'
-import { sapXepAnhChiEm, dinhDangTenNguoi, tinhThuTuDoi } from '../utils/familyTree'
+import { sapXepAnhChiEm, dinhDangTenNguoi } from '../utils/familyTree'
 
 const MIN_NODE_W = 120
 const NODE_H = 64
@@ -55,15 +55,15 @@ interface SvgLine {
   isCouple: boolean
 }
 
-function taoChiMucCon(persons: Record<number, Person>): Record<number, number[]> {
-  const index: Record<number, number[]> = {}
-  const daThem: Record<number, Set<number>> = {}
+function taoChiMucCon(persons: Record<string, Person>): Record<string, string[]> {
+  const index: Record<string, string[]> = {}
+  const daThem: Record<string, Set<string>> = {}
 
-  const themCon = (parentId: number, childId: number) => {
+  const themCon = (parentId: string, childId: string) => {
     if (!persons[parentId] || !persons[childId]) return
     if (!index[parentId]) {
       index[parentId] = []
-      daThem[parentId] = new Set<number>()
+      daThem[parentId] = new Set<string>()
     }
     if (daThem[parentId].has(childId)) return
     daThem[parentId].add(childId)
@@ -85,10 +85,10 @@ function taoChiMucCon(persons: Record<number, Person>): Record<number, number[]>
 // ─── Build tree ───────────────────────────────────────────────────────────────
 
 function buildTree(
-  personId: number,
-  persons: Record<number, Person>,
-  childrenIndex: Record<number, number[]>,
-  visited: Set<number>
+  personId: string,
+  persons: Record<string, Person>,
+  childrenIndex: Record<string, string[]>,
+  visited: Set<string>
 ): TreeNode | null {
   if (visited.has(personId)) return null
   visited.add(personId)
@@ -100,7 +100,7 @@ function buildTree(
   for (const h of person.honNhan) visited.add(h.voChongId)
 
   const marriages: Marriage[] = []
-  const matchedChildIds = new Set<number>()
+  const matchedChildIds = new Set<string>()
   const orderedChildIds = sapXepAnhChiEm(
     (childrenIndex[person.id] ?? []).map(id => persons[id]).filter(Boolean) as Person[]
   ).map(child => child.id)
@@ -174,7 +174,7 @@ function measureNameWidth(name: string, textMeasureContext: CanvasRenderingConte
   return Math.ceil(textMeasureContext.measureText(normalized).width)
 }
 
-function calcNodeWidth(persons: Record<number, Person>, displayNameById: Record<number, string>): number {
+function calcNodeWidth(persons: Record<string, Person>, displayNameById: Record<string, string>): number {
   const textMeasureContext =
     typeof document !== 'undefined' && !(typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent))
       ? document.createElement('canvas').getContext('2d')
@@ -369,17 +369,16 @@ export default function TreeView() {
   const [isDragging, setIsDragging] = useState(false)
   const [zoom, setZoom] = useState(1)
   const highlightedPersonId = focusedPersonId ?? selectedPersonId
-  const showGenerationOrder = Boolean(data?.metadata.hienThiThuTuDoi)
-  const generationById = useMemo(() => (data ? tinhThuTuDoi(data) : {}), [data])
+  const showGenerationOrder = useGiaphaStore(s => s.hienThiThuTuDoi)
   const displayNameById = useMemo(() => {
     if (!data) return {}
     return Object.fromEntries(
       Object.values(data.persons).map(person => [
         person.id,
-        dinhDangTenNguoi(person, generationById, showGenerationOrder),
+        dinhDangTenNguoi(person, showGenerationOrder),
       ])
     )
-  }, [data, generationById, showGenerationOrder])
+  }, [data, showGenerationOrder])
 
   const { cards, lines, width, height } = useMemo(() => {
     if (!data) return { cards: [], lines: [], width: 0, height: 0 }
@@ -393,7 +392,7 @@ export default function TreeView() {
         p => p.laThanhVienHo && (!p.boId || !persons[p.boId])
       ) ?? Object.values(persons).find(p => !p.boId || !persons[p.boId])
 
-    const visited = new Set<number>()
+    const visited = new Set<string>()
     const trees: TreeNode[] = []
 
     if (root) {

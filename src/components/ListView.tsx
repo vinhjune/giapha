@@ -1,19 +1,17 @@
-import { useMemo } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
-import { sapXepAnhChiEm, laThanhVienThuocHo, tinhThuTuDoi, dinhDangTenNguoi } from '../utils/familyTree'
+import { sapXepAnhChiEm, laThanhVienThuocHo, dinhDangTenNguoi } from '../utils/familyTree'
 import type { Person } from '../types/giapha'
 
 interface RowProps {
   person: Person
   depth: number
-  onSelect: (id: number) => void
-  selectedId: number | null
-  highlightId: number | null
-  generationById: Record<number, number>
+  onSelect: (id: string) => void
+  selectedId: string | null
+  highlightId: string | null
   showGenerationOrder: boolean
   isSpouse?: boolean
   hideChildren?: boolean
-  ancestorIds?: Set<number>
+  ancestorIds?: Set<string>
 }
 
 function PersonRow({
@@ -22,11 +20,10 @@ function PersonRow({
   onSelect,
   selectedId,
   highlightId,
-  generationById,
   showGenerationOrder,
   isSpouse = false,
   hideChildren = false,
-  ancestorIds = new Set<number>(),
+  ancestorIds = new Set<string>(),
 }: RowProps) {
   if (ancestorIds.has(person.id)) return null
   const nextAncestorIds = new Set(ancestorIds)
@@ -62,7 +59,7 @@ function PersonRow({
           <span aria-label="Vợ/chồng" className="text-xs text-amber-500">💍</span>
         )}
         <span className={`text-sm ${isClan ? 'text-gray-900' : 'text-gray-400'}`}>
-          {dinhDangTenNguoi(person, generationById, showGenerationOrder)}
+          {dinhDangTenNguoi(person, showGenerationOrder)}
         </span>
         {person.namSinh?.nam && (
           <span className="text-xs text-gray-400">({person.namSinh.nam})</span>
@@ -81,7 +78,6 @@ function PersonRow({
               onSelect={onSelect}
               selectedId={selectedId}
               highlightId={highlightId}
-              generationById={generationById}
               showGenerationOrder={showGenerationOrder}
               isSpouse
               hideChildren
@@ -91,7 +87,7 @@ function PersonRow({
           {children.map(child => (
             <PersonRow key={child.id} person={child} depth={depth + 1}
               onSelect={onSelect} selectedId={selectedId} highlightId={highlightId}
-              generationById={generationById} showGenerationOrder={showGenerationOrder}
+              showGenerationOrder={showGenerationOrder}
               ancestorIds={nextAncestorIds} />
           ))}
         </>
@@ -101,11 +97,9 @@ function PersonRow({
 }
 
 export default function ListView() {
-  const { data, selectedPersonId, focusedPersonId, selectPerson } = useGiaphaStore()
-  const generationById = useMemo(() => (data ? tinhThuTuDoi(data) : {}), [data])
+  const { data, selectedPersonId, focusedPersonId, selectPerson, hienThiThuTuDoi } = useGiaphaStore()
   if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
   const highlightedPersonId = focusedPersonId ?? selectedPersonId
-  const showGenerationOrder = Boolean(data.metadata.hienThiThuTuDoi)
 
   const roots = Object.values(data.persons).filter(p => p.laThanhVienHo && (!p.boId || !data.persons[p.boId]))
   const sortedRoots = sapXepAnhChiEm(roots)
@@ -115,7 +109,7 @@ export default function ListView() {
       {sortedRoots.map(root => (
         <PersonRow key={root.id} person={root} depth={0}
           onSelect={selectPerson} selectedId={selectedPersonId} highlightId={highlightedPersonId}
-          generationById={generationById} showGenerationOrder={showGenerationOrder} />
+          showGenerationOrder={hienThiThuTuDoi} />
       ))}
       {sortedRoots.length === 0 && (
         <p className="text-center text-gray-400 py-8">Chưa có người nào. Hãy thêm người đầu tiên.</p>

@@ -5,80 +5,35 @@ import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { GiaphaData } from '../types/giapha'
 
 const data: GiaphaData = {
-  metadata: {
-    tenDongHo: 'Dòng họ mẫu',
-    ngayTao: '2026-01-01T00:00:00.000Z',
-    nguoiTao: 'admin@example.com',
-    phienBan: 1,
-    cheDoCong: true,
-    danhSachNguoiDung: [],
-  },
+  metadata: { tenDongHo: 'Dòng họ mẫu' },
   persons: {
-    1: {
-      id: 1,
-      hoTen: 'Ông Nông',
-      gioiTinh: 'nam',
-      laThanhVienHo: true,
-      honNhan: [{ voChongId: 2 }],
-      conCaiIds: [3, 4],
+    '1': {
+      id: '1', hoTen: 'Ông Nông', gioiTinh: 'nam', laThanhVienHo: true,
+      thuTuDoi: 1, honNhan: [{ voChongId: '2' }], conCaiIds: ['3', '4'],
     },
-    2: {
-      id: 2,
-      hoTen: 'Bà Thanh',
-      gioiTinh: 'nu',
-      laThanhVienHo: false,
-      honNhan: [{ voChongId: 1 }],
-      conCaiIds: [3, 4],
+    '2': {
+      id: '2', hoTen: 'Bà Thanh', gioiTinh: 'nu', laThanhVienHo: false,
+      thuTuDoi: 1, honNhan: [{ voChongId: '1' }], conCaiIds: ['3', '4'],
     },
-    3: {
-      id: 3,
-      hoTen: 'Vinh',
-      gioiTinh: 'nam',
-      laThanhVienHo: true,
-      boId: 1,
-      meId: 2,
-      thuTuAnhChi: 2,
-      honNhan: [],
-      conCaiIds: [],
+    '3': {
+      id: '3', hoTen: 'Vinh', gioiTinh: 'nam', laThanhVienHo: true,
+      boId: '1', meId: '2', thuTuAnhChi: 2, thuTuDoi: 2, honNhan: [], conCaiIds: [],
     },
-    4: {
-      id: 4,
-      hoTen: 'Nga',
-      gioiTinh: 'nu',
-      laThanhVienHo: true,
-      boId: 1,
-      meId: 2,
-      thuTuAnhChi: 1,
-      honNhan: [],
-      conCaiIds: [],
+    '4': {
+      id: '4', hoTen: 'Nga', gioiTinh: 'nu', laThanhVienHo: true,
+      boId: '1', meId: '2', thuTuAnhChi: 1, thuTuDoi: 2, honNhan: [], conCaiIds: [],
     },
-    5: {
-      id: 5,
-      hoTen: 'Hương',
-      gioiTinh: 'nu',
-      laThanhVienHo: true,
-      thuTuAnhChi: 3,
-      honNhan: [{ voChongId: 6 }],
-      conCaiIds: [7],
+    '5': {
+      id: '5', hoTen: 'Hương', gioiTinh: 'nu', laThanhVienHo: true,
+      thuTuAnhChi: 3, honNhan: [{ voChongId: '6' }], conCaiIds: ['7'],
     },
-    6: {
-      id: 6,
-      hoTen: 'Khánh',
-      gioiTinh: 'nam',
-      laThanhVienHo: false,
-      honNhan: [{ voChongId: 5 }],
-      conCaiIds: [7],
+    '6': {
+      id: '6', hoTen: 'Khánh', gioiTinh: 'nam', laThanhVienHo: false,
+      honNhan: [{ voChongId: '5' }], conCaiIds: ['7'],
     },
-    7: {
-      id: 7,
-      hoTen: 'Phúc',
-      gioiTinh: 'nam',
-      laThanhVienHo: false,
-      boId: 6,
-      meId: 5,
-      thuTuAnhChi: 1,
-      honNhan: [],
-      conCaiIds: [],
+    '7': {
+      id: '7', hoTen: 'Phúc', gioiTinh: 'nam', laThanhVienHo: false,
+      boId: '6', meId: '5', thuTuAnhChi: 1, honNhan: [], conCaiIds: [],
     },
   },
 }
@@ -87,14 +42,9 @@ describe('ListView spouse rendering', () => {
   beforeEach(() => {
     useGiaphaStore.setState({
       data,
-      fileId: 'file-id',
-      currentUserEmail: null,
-      currentRole: 'public',
       viewMode: 'list',
       selectedPersonId: null,
-      isDirty: false,
-      isSaving: false,
-      conflictDetected: false,
+      hienThiThuTuDoi: false,
     })
   })
 
@@ -119,12 +69,7 @@ describe('ListView spouse rendering', () => {
   })
 
   it('shows generation order suffix when setting is enabled', () => {
-    useGiaphaStore.setState({
-      data: {
-        ...data,
-        metadata: { ...data.metadata, hienThiThuTuDoi: true },
-      },
-    })
+    useGiaphaStore.setState({ hienThiThuTuDoi: true })
 
     render(<ListView />)
 
@@ -153,15 +98,9 @@ describe('ListView spouse rendering', () => {
     const cyclicData: GiaphaData = {
       ...data,
       persons: {
-        1: {
-          ...data.persons[1],
-          conCaiIds: [3],
-        },
-        2: data.persons[2],
-        3: {
-          ...data.persons[3],
-          conCaiIds: [1],
-        },
+        '1': { ...data.persons['1'], conCaiIds: ['3'] },
+        '2': data.persons['2'],
+        '3': { ...data.persons['3'], conCaiIds: ['1'] },
       },
     }
 

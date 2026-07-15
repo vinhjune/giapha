@@ -5,46 +5,26 @@ import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { GiaphaData } from '../types/giapha'
 
 const data: GiaphaData = {
-  metadata: {
-    tenDongHo: 'Dòng họ mẫu',
-    ngayTao: '2026-01-01T00:00:00.000Z',
-    nguoiTao: 'admin@example.com',
-    phienBan: 1,
-    cheDoCong: true,
-    danhSachNguoiDung: [],
-  },
+  metadata: { tenDongHo: 'Dòng họ mẫu' },
   persons: {
-    1: {
-      id: 1,
-      hoTen: 'Nguyễn Văn A',
-      gioiTinh: 'nam',
-      laThanhVienHo: true,
-      honNhan: [],
-      conCaiIds: [],
-    },
+    '1': { id: '1', hoTen: 'Nguyễn Văn A', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
   },
 }
 
-describe('PersonDetail permissions', () => {
+describe('PersonDetail edit/delete actions', () => {
   beforeEach(() => {
     useGiaphaStore.setState({
       data,
-      fileId: 'file-id',
-      currentUserEmail: null,
-      currentRole: 'public',
       viewMode: 'tree',
-      selectedPersonId: 1,
-      isDirty: false,
-      isSaving: false,
-      conflictDetected: false,
+      selectedPersonId: '1',
     })
   })
 
-  it('hides edit and delete buttons in public mode', () => {
+  it('always shows edit and delete buttons', () => {
     render(<PersonDetail onEdit={vi.fn()} />)
 
-    expect(screen.queryByRole('button', { name: 'Sửa' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Xóa' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Sửa' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Xóa' })).toBeInTheDocument()
   })
 })
 
@@ -52,17 +32,10 @@ describe('PersonDetail contact info', () => {
   beforeEach(() => {
     useGiaphaStore.setState({
       data: {
-        metadata: {
-          tenDongHo: 'Dòng họ mẫu',
-          ngayTao: '2026-01-01T00:00:00.000Z',
-          nguoiTao: 'admin@example.com',
-          phienBan: 1,
-          cheDoCong: false,
-          danhSachNguoiDung: [],
-        },
+        metadata: { tenDongHo: 'Dòng họ mẫu' },
         persons: {
-          1: {
-            id: 1,
+          '1': {
+            id: '1',
             hoTen: 'Người Có Liên Hệ',
             gioiTinh: 'nam',
             email: 'p1@example.com',
@@ -73,14 +46,8 @@ describe('PersonDetail contact info', () => {
           },
         },
       },
-      selectedPersonId: 1,
-      currentRole: 'viewer',
-      fileId: null,
-      currentUserEmail: null,
+      selectedPersonId: '1',
       viewMode: 'tree',
-      isDirty: false,
-      isSaving: false,
-      conflictDetected: false,
     })
   })
 
@@ -99,7 +66,7 @@ describe('PersonDetail contact info', () => {
     expect(screen.queryByText('Người Có Liên Hệ')).toBeNull()
 
     act(() => {
-      useGiaphaStore.setState({ selectedPersonId: 1 })
+      useGiaphaStore.setState({ selectedPersonId: '1' })
     })
 
     expect(screen.getByText('Người Có Liên Hệ')).toBeInTheDocument()

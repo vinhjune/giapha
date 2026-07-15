@@ -1,0 +1,26 @@
+{
+	// Shares the same D1 database (and R2 avatar bucket) as the sibling
+	// giaphadongho project's worker ("giapha") — see worker/src/db/schema.ts
+	// for details. Never add a "migrations_dir" here: this worker must not
+	// run schema migrations against that shared database.
+	"name": "giaphahohoang",
+	"main": "worker/src/index.ts",
+	"compatibility_date": "2026-07-01",
+	"assets": {
+		"directory": "dist",
+		"not_found_handling": "single-page-application"
+	},
+	"d1_databases": [
+		{
+			"binding": "giapha_db",
+			"database_name": "giapha-db",
+			"database_id": "b9c92ebd-e993-4c82-95d2-66ed5cf306d2"
+		}
+	],
+	"r2_buckets": [
+		{
+			"bucket_name": "giapha-avatars",
+			"binding": "giapha_avatars"
+		}
+	]
+}
