@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import { sapXepAnhChiEm, laThanhVienThuocHo, dinhDangTenNguoi } from '../utils/familyTree'
 import type { Person } from '../types/giapha'
@@ -34,15 +35,25 @@ function PersonRow({
   const isSelected = person.id === selectedId
   const isHighlighted = person.id === highlightId
 
-  const spouses = data
-    ? person.honNhan
-      .map(h => data.persons[h.voChongId])
-      .filter((p): p is Person => Boolean(p) && !p.laThanhVienHo)
-    : []
-
-  const children = data
+  const orderedChildren = data
     ? sapXepAnhChiEm(person.conCaiIds.map(id => data.persons[id]).filter(Boolean) as Person[])
     : []
+
+  const matchedChildIds = new Set<string>()
+  const marriageGroups = data
+    ? person.honNhan.map(h => {
+      const spouse = data.persons[h.voChongId]
+      const childrenOfMarriage = orderedChildren.filter(c =>
+        person.gioiTinh === 'nam'
+          ? c.boId === person.id && c.meId === h.voChongId
+          : c.meId === person.id && c.boId === h.voChongId
+      )
+      childrenOfMarriage.forEach(c => matchedChildIds.add(c.id))
+      return { spouse: spouse && !spouse.laThanhVienHo ? spouse : null, voChongId: h.voChongId, childrenOfMarriage }
+    })
+    : []
+
+  const unmatchedChildren = orderedChildren.filter(c => !matchedChildIds.has(c.id))
 
   return (
     <>
@@ -70,21 +81,31 @@ function PersonRow({
       </div>
       {!hideChildren && (
         <>
-          {spouses.map(spouse => (
-            <PersonRow
-              key={`spouse-${person.id}-${spouse.id}`}
-              person={spouse}
-              depth={depth + 1}
-              onSelect={onSelect}
-              selectedId={selectedId}
-              highlightId={highlightId}
-              showGenerationOrder={showGenerationOrder}
-              isSpouse
-              hideChildren
-              ancestorIds={nextAncestorIds}
-            />
+          {marriageGroups.map(group => (
+            <Fragment key={`marriage-${person.id}-${group.voChongId}`}>
+              {group.spouse && (
+                <PersonRow
+                  key={`spouse-${person.id}-${group.spouse.id}`}
+                  person={group.spouse}
+                  depth={depth + 1}
+                  onSelect={onSelect}
+                  selectedId={selectedId}
+                  highlightId={highlightId}
+                  showGenerationOrder={showGenerationOrder}
+                  isSpouse
+                  hideChildren
+                  ancestorIds={nextAncestorIds}
+                />
+              )}
+              {group.childrenOfMarriage.map(child => (
+                <PersonRow key={child.id} person={child} depth={depth + 1}
+                  onSelect={onSelect} selectedId={selectedId} highlightId={highlightId}
+                  showGenerationOrder={showGenerationOrder}
+                  ancestorIds={nextAncestorIds} />
+              ))}
+            </Fragment>
           ))}
-          {children.map(child => (
+          {unmatchedChildren.map(child => (
             <PersonRow key={child.id} person={child} depth={depth + 1}
               onSelect={onSelect} selectedId={selectedId} highlightId={highlightId}
               showGenerationOrder={showGenerationOrder}

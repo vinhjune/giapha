@@ -110,4 +110,55 @@ describe('ListView spouse rendering', () => {
     expect(screen.getAllByText('Ông Nông')).toHaveLength(1)
     expect(screen.getAllByText('Vinh')).toHaveLength(1)
   })
+
+  it('groups each spouse with only their own children, in marriage order', () => {
+    const multiSpouseData: GiaphaData = {
+      metadata: { tenDongHo: 'Dòng họ mẫu' },
+      persons: {
+        '10': {
+          id: '10', hoTen: 'Ông Đa', gioiTinh: 'nam', laThanhVienHo: true,
+          honNhan: [{ voChongId: '11' }, { voChongId: '12' }], conCaiIds: ['13', '14', '15'],
+        },
+        '11': {
+          id: '11', hoTen: 'Bà Một', gioiTinh: 'nu', laThanhVienHo: false,
+          honNhan: [{ voChongId: '10' }], conCaiIds: ['13', '14'],
+        },
+        '12': {
+          id: '12', hoTen: 'Bà Hai', gioiTinh: 'nu', laThanhVienHo: false,
+          honNhan: [{ voChongId: '10' }], conCaiIds: ['15'],
+        },
+        '13': {
+          id: '13', hoTen: 'Con D', gioiTinh: 'nam', laThanhVienHo: true,
+          boId: '10', meId: '11', thuTuAnhChi: 1, honNhan: [], conCaiIds: [],
+        },
+        '14': {
+          id: '14', hoTen: 'Con E', gioiTinh: 'nam', laThanhVienHo: true,
+          boId: '10', meId: '11', thuTuAnhChi: 2, honNhan: [], conCaiIds: [],
+        },
+        '15': {
+          id: '15', hoTen: 'Con J', gioiTinh: 'nam', laThanhVienHo: true,
+          boId: '10', meId: '12', thuTuAnhChi: 1, honNhan: [], conCaiIds: [],
+        },
+      },
+    }
+
+    useGiaphaStore.setState({ data: multiSpouseData })
+    render(<ListView />)
+
+    const da = screen.getByText('Ông Đa')
+    const mot = screen.getByText('Bà Một')
+    const d = screen.getByText('Con D')
+    const e = screen.getByText('Con E')
+    const hai = screen.getByText('Bà Hai')
+    const j = screen.getByText('Con J')
+
+    const isBefore = (a: HTMLElement, b: HTMLElement) =>
+      Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+
+    expect(isBefore(da, mot)).toBe(true)
+    expect(isBefore(mot, d)).toBe(true)
+    expect(isBefore(d, e)).toBe(true)
+    expect(isBefore(e, hai)).toBe(true)
+    expect(isBefore(hai, j)).toBe(true)
+  })
 })
