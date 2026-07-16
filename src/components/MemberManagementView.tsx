@@ -25,9 +25,9 @@ interface PickerState { rowIndex: number; field: PickerField }
 const COLUMNS: Array<{ key: RowField; label: string }> = [
   { key: 'id', label: 'ID' },
   { key: 'hoTen', label: 'Họ tên' },
+  { key: 'thuTuDoi', label: 'Đời' },
   { key: 'gioiTinh', label: 'Giới tính' },
   { key: 'laThanhVienHo', label: 'Ngoại tộc' },
-  { key: 'thuTuDoi', label: 'Đời' },
   { key: 'thuTuAnhChi', label: 'Thứ tự anh/chị' },
   { key: 'namSinh', label: 'Ngày sinh' },
   { key: 'namMat', label: 'Ngày mất' },
