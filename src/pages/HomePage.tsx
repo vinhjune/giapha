@@ -3,25 +3,26 @@ import Navbar from '../components/Navbar'
 import TreeView from '../components/TreeView'
 import ListView from '../components/ListView'
 import MemberManagementView from '../components/MemberManagementView'
-import PersonDetail from '../components/PersonDetail'
 import PersonForm from '../components/PersonForm'
 import CyclicRelationshipBanner from '../components/CyclicRelationshipBanner'
 import { useGiaphaStore } from '../store/useGiaphaStore'
-import type { Person } from '../types/giapha'
 
 export default function HomePage() {
-  const { viewMode } = useGiaphaStore()
-  const [formOpen, setFormOpen] = useState(false)
-  const [editPerson, setEditPerson] = useState<Person | null>(null)
+  const { viewMode, data, selectedPersonId, selectPerson } = useGiaphaStore()
+  const [isAddOpen, setIsAddOpen] = useState(false)
+
+  // Clicking a person card in Tree/List selects them; that alone opens the edit
+  // modal directly, skipping the old view-only detail panel step.
+  const editPerson = !isAddOpen && selectedPersonId && data ? data.persons[selectedPersonId] ?? null : null
+  const formOpen = isAddOpen || !!editPerson
 
   function openAdd() {
-    setEditPerson(null)
-    setFormOpen(true)
+    setIsAddOpen(true)
   }
 
-  function openEdit(person: Person) {
-    setEditPerson(person)
-    setFormOpen(true)
+  function closeForm() {
+    setIsAddOpen(false)
+    if (selectedPersonId) selectPerson(null)
   }
 
   return (
@@ -33,7 +34,6 @@ export default function HomePage() {
         {viewMode === 'tree' && <TreeView />}
         {viewMode === 'list' && <ListView />}
         {viewMode === 'members' && <MemberManagementView />}
-        {viewMode !== 'members' && <PersonDetail onEdit={openEdit} />}
       </div>
 
       {viewMode !== 'members' && (
@@ -47,7 +47,7 @@ export default function HomePage() {
       )}
 
       {formOpen && (
-        <PersonForm editPerson={editPerson} onClose={() => setFormOpen(false)} />
+        <PersonForm editPerson={editPerson} onClose={closeForm} />
       )}
     </div>
   )

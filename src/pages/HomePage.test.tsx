@@ -1,0 +1,60 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import HomePage from './HomePage'
+import { useGiaphaStore } from '../store/useGiaphaStore'
+import type { GiaphaData } from '../types/giapha'
+
+const data: GiaphaData = {
+  metadata: { tenDongHo: 'Dòng họ mẫu' },
+  persons: {
+    '1': { id: '1', hoTen: 'Tổ', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+  },
+}
+
+describe('HomePage person click flow', () => {
+  beforeEach(() => {
+    // jsdom doesn't implement Element.scrollTo; TreeView's scroll-to-highlighted effect calls it.
+    Element.prototype.scrollTo = vi.fn()
+    useGiaphaStore.setState({
+      data,
+      viewMode: 'tree',
+      selectedPersonId: null,
+      focusedPersonId: null,
+      hienThiThuTuDoi: false,
+      cyclicRelationshipWarnings: [],
+    })
+  })
+
+  it('opens the edit modal directly when a tree card is clicked, without an intermediate detail panel', () => {
+    render(<HomePage />)
+
+    expect(screen.queryByTestId('person-form-modal')).toBeNull()
+
+    fireEvent.click(screen.getByText('Tổ'))
+
+    expect(screen.getByTestId('person-form-modal')).toBeInTheDocument()
+    expect(screen.getByText('Sửa thông tin')).toBeInTheDocument()
+    // The old view-only detail panel's own "Sửa" trigger button no longer exists.
+    expect(screen.queryByRole('button', { name: 'Sửa' })).toBeNull()
+  })
+
+  it('closing the edit modal clears the selection', () => {
+    render(<HomePage />)
+
+    fireEvent.click(screen.getByText('Tổ'))
+    expect(screen.getByTestId('person-form-modal')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hủy' }))
+
+    expect(screen.queryByTestId('person-form-modal')).toBeNull()
+    expect(useGiaphaStore.getState().selectedPersonId).toBeNull()
+  })
+
+  it('opens a blank add-person modal from the + button, unaffected by any selection', () => {
+    render(<HomePage />)
+
+    fireEvent.click(screen.getByTitle('Thêm người mới'))
+
+    expect(screen.getByText('Thêm người mới')).toBeInTheDocument()
+  })
+})
