@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gia Phả — Redesign Mockups</title>
+<style>
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f8fafc;color:#0f172a;padding:40px 20px}
+  .wrap{max-width:720px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 6px}
+  p.sub{color:#64748b;margin:0 0 28px;font-size:14px}
+  .card{display:block;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px 20px;margin-bottom:14px;
+    text-decoration:none;color:inherit;transition:box-shadow .15s,transform .15s}
+  .card:hover{box-shadow:0 6px 16px rgba(15,23,42,.08);transform:translateY(-1px)}
+  .card h2{font-size:16px;margin:0 0 4px}
+  .card p{font-size:13px;color:#64748b;margin:0;line-height:1.5}
+  .swatch-row{display:flex;gap:6px;margin-top:10px}
+  .sw{width:20px;height:20px;border-radius:5px;border:1px solid rgba(0,0,0,.08)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Gia Phả — Frontend Redesign Mockups</h1>
+    <p class="sub">Same sample family tree, three visual directions for the node/card style, connectors, and navbar. Tree layout/algorithm is unchanged — only the skin differs.</p>
+
+    <a class="card" href="./1-clean-minimal.html">
+      <h2>A — Clean Minimal</h2>
+      <p>White cards, soft shadow, avatar-ring gender accent, indigo selection, slate connectors. Neutral and highly legible for dense trees.</p>
+      <div class="swatch-row">
+        <div class="sw" style="background:#ffffff;border-color:#e2e8f0"></div>
+        <div class="sw" style="background:#0ea5e9"></div>
+        <div class="sw" style="background:#f43f5e"></div>
+        <div class="sw" style="background:#4f46e5"></div>
+      </div>
+    </a>
+
+    <a class="card" href="./2-heritage-editorial.html">
+      <h2>B — Heritage Editorial</h2>
+      <p>Warm parchment tones, maroon + gold accents (extends current red-700 brand), serif type, monogram avatars. Distinctive, ancestry-appropriate.</p>
+      <div class="swatch-row">
+        <div class="sw" style="background:#fbf6ea;border-color:#d9c9a3"></div>
+        <div class="sw" style="background:#7a1f2b"></div>
+        <div class="sw" style="background:#b8860b"></div>
+      </div>
+    </a>
+
+    <a class="card" href="./3-vibrant-generational.html">
+      <h2>C — Vibrant Generational</h2>
+      <p>Cards colored by generation depth rather than gender, so each tree row reads as a band. Best for parsing large/deep trees at a glance.</p>
+      <div class="swatch-row">
+        <div class="sw" style="background:#334155"></div>
+        <div class="sw" style="background:#0d9488"></div>
+        <div class="sw" style="background:#4338ca"></div>
+      </div>
+    </a>
+  </div>
+</body>
+</html>

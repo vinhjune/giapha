@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup C — Vibrant Generational</title>
+<style>
+  :root{
+    --canvas:#f1f5f9;
+    --card-bg:#ffffff;
+    --card-border:#e2e8f0;
+    --ink:#0f172a;
+    --muted:#64748b;
+    --gen0:#334155;
+    --gen1:#0d9488;
+    --gen2:#4338ca;
+    --gen1-soft:#ccfbf1;
+    --gen2-soft:#e0e7ff;
+    --gen0-soft:#e2e8f0;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:var(--canvas);color:var(--ink)}
+  header{background:#fff;border-bottom:1px solid var(--card-border);padding:10px 16px;display:flex;align-items:center;gap:14px}
+  header .burger{width:34px;height:34px;border-radius:10px;background:var(--gen0);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
+  header h1{font-size:17px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-0.02em}
+  header .search{flex:1;max-width:320px;height:36px;border:1px solid var(--card-border);border-radius:10px;background:#f8fafc;display:flex;align-items:center;padding:0 12px;color:var(--muted);font-size:13px}
+  .label{max-width:1080px;margin:14px auto 0;padding:0 16px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .canvas-wrap{max-width:1080px;margin:8px auto 40px;padding:0 16px}
+  .canvas{position:relative;background:var(--canvas);border-radius:16px;overflow:auto;min-height:600px}
+  .zoom{position:absolute;top:10px;right:10px;z-index:5;display:flex;gap:6px;background:rgba(255,255,255,.95);border:1px solid var(--card-border);border-radius:14px;padding:6px;box-shadow:0 2px 6px rgba(15,23,42,.08)}
+  .zoom button{width:28px;height:28px;border:1px solid var(--card-border);border-radius:8px;background:#fff;color:var(--muted);font-size:14px;cursor:pointer}
+  .stage{position:relative;width:1080px;height:560px}
+  svg.lines{position:absolute;top:0;left:0}
+  .card{
+    position:absolute;width:150px;min-height:72px;background:var(--card-bg);
+    border:1px solid var(--card-border);border-radius:16px;padding:12px 12px 10px;
+    box-shadow:0 2px 6px rgba(15,23,42,.06);cursor:pointer;transition:box-shadow .15s,transform .15s;
+    border-top:6px solid var(--gen0);
+  }
+  .card:hover{box-shadow:0 8px 16px rgba(15,23,42,.12);transform:translateY(-2px)}
+  .card.gen1{border-top-color:var(--gen1)}
+  .card.gen2{border-top-color:var(--gen2)}
+  .card .row{display:flex;align-items:center;gap:8px}
+  .avatar{width:28px;height:28px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;color:#fff;background:var(--gen0)}
+  .card.gen1 .avatar{background:var(--gen1)}
+  .card.gen2 .avatar{background:var(--gen2)}
+  .name{font-size:12.5px;font-weight:700;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta{font-size:10.5px;color:var(--muted);margin-top:5px;padding-left:36px;display:flex;align-items:center;gap:5px}
+  .gender-chip{width:14px;height:14px;border-radius:4px;font-size:8px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+  .gender-chip.nam{background:#0284c7}
+  .gender-chip.nu{background:#e11d48}
+  .card.non-clan{border-top-color:#cbd5e1;background:#fdfdfe}
+  .ribbon{position:absolute;top:6px;right:-6px;background:#475569;color:#fff;font-size:8.5px;font-weight:700;
+    padding:2px 8px;border-radius:4px 4px 4px 0;letter-spacing:.03em}
+  .card.selected.gen0{outline:3px solid var(--gen0);box-shadow:0 0 0 6px var(--gen0-soft)}
+  .card.selected.gen1{outline:3px solid var(--gen1);box-shadow:0 0 0 6px var(--gen1-soft)}
+  .card.selected.gen2{outline:3px solid var(--gen2);box-shadow:0 0 0 6px var(--gen2-soft)}
+  .deceased-mark{color:#94a3b8;font-size:10px}
+  .lines line{stroke-width:2.5;stroke-linecap:round}
+  .lines line.gen0{stroke:var(--gen0)}
+  .lines line.gen1{stroke:var(--gen1)}
+  .lines line.gen2{stroke:var(--gen2)}
+  .legend{max-width:1080px;margin:0 auto 40px;padding:0 16px;font-size:12px;color:var(--muted);line-height:1.7}
+  .legend b{color:var(--ink)}
+  .swatches{display:flex;gap:16px;margin-top:6px;flex-wrap:wrap}
+  .swatch{display:flex;align-items:center;gap:6px}
+  .sw{width:14px;height:14px;border-radius:4px}
+</style>
+</head>
+<body>
+  <header>
+    <div class="burger">☰</div>
+    <h1>Nguyễn Tộc Gia Phả</h1>
+    <div class="search">Tìm kiếm thành viên…</div>
+  </header>
+
+  <div class="label">Mockup C — Vibrant Generational</div>
+  <div class="canvas-wrap">
+    <div class="canvas">
+      <div class="zoom">
+        <button>−</button><button style="width:auto;padding:0 8px;font-size:11px;">100%</button><button>+</button>
+      </div>
+      <div class="stage" id="stage">
+        <svg class="lines" id="lines" width="1080" height="560"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div><b>Tokens:</b> canvas <code>#f1f5f9</code> · card <code>#ffffff</code> · gen0 <code>#334155</code> · gen1 <code>#0d9488</code> · gen2 <code>#4338ca</code></div>
+    <div style="margin-top:6px"><b>Node language:</b> each generation row gets a bold top-bar + avatar color band so the tree reads visually by depth; gender moves to a small corner chip instead of driving the palette; married-in members get a neutral gray top-bar plus a "kết hôn" corner ribbon instead of a dashed border; connectors use rounded line caps and are tinted to the generation they descend from; selection = thick colored ring + soft glow matching that row's color.</div>
+    <div class="swatches">
+      <div class="swatch"><div class="sw" style="background:var(--gen0)"></div>gen 0</div>
+      <div class="swatch"><div class="sw" style="background:var(--gen1)"></div>gen 1</div>
+      <div class="swatch"><div class="sw" style="background:var(--gen2)"></div>gen 2</div>
+    </div>
+  </div>
+
+<script>
+const CARDS = [
+  {id:'an',x:60,y:40,gender:'nam',clan:true,gen:0,name:'Nguyễn Văn An',birth:'1948',isSpouse:false},
+  {id:'binh',x:234,y:124,gender:'nu',clan:false,gen:0,name:'Trần Thị Bình',birth:'1950',isSpouse:true},
+  {id:'cuong',x:140,y:240,gender:'nam',clan:true,gen:1,name:'Nguyễn Văn Cường',birth:'1972',isSpouse:false},
+  {id:'dung',x:314,y:324,gender:'nu',clan:false,gen:1,name:'Lê Thị Dung',birth:'1974',isSpouse:true},
+  {id:'em',x:650,y:240,gender:'nu',clan:true,gen:1,name:'Nguyễn Thị Em',birth:'1975',isSpouse:false},
+  {id:'phuc',x:824,y:324,gender:'nam',clan:false,gen:1,name:'Phạm Văn Phúc',birth:'1973',isSpouse:true},
+  {id:'giang',x:80,y:440,gender:'nam',clan:true,gen:2,name:'Nguyễn Văn Giang',birth:'1998',isSpouse:false},
+  {id:'hoa',x:270,y:440,gender:'nu',clan:true,gen:2,name:'Nguyễn Thị Hoa',birth:'2001',death:'2019',isSpouse:false},
+  {id:'long',x:700,y:440,gender:'nam',clan:true,gen:2,name:'Nguyễn Văn Long',birth:'2000',isSpouse:false,selected:true},
+  {id:'mai',x:890,y:440,gender:'nu',clan:true,gen:2,name:'Phạm Thị Mai',birth:'2003',isSpouse:false},
+];
+// Same coordinates as sibling mockups; each segment tinted by the generation it descends from.
+const LINES = [
+  {x1:135,y1:110,x2:135,y2:159,gen:0},{x1:135,y1:159,x2:309,y2:159,gen:0},
+  {x1:309,y1:194,x2:309,y2:217,gen:0},{x1:215,y1:217,x2:725,y2:217,gen:0},
+  {x1:215,y1:217,x2:215,y2:240,gen:0},{x1:725,y1:217,x2:725,y2:240,gen:0},
+  {x1:215,y1:310,x2:215,y2:359,gen:1},{x1:215,y1:359,x2:389,y2:359,gen:1},
+  {x1:389,y1:394,x2:389,y2:417,gen:1},{x1:155,y1:417,x2:389,y2:417,gen:1},
+  {x1:155,y1:417,x2:155,y2:440,gen:1},{x1:345,y1:417,x2:345,y2:440,gen:1},
+  {x1:725,y1:310,x2:725,y2:359,gen:1},{x1:725,y1:359,x2:899,y2:359,gen:1},
+  {x1:899,y1:394,x2:899,y2:417,gen:1},{x1:775,y1:417,x2:965,y2:417,gen:1},
+  {x1:775,y1:417,x2:775,y2:440,gen:1},{x1:965,y1:417,x2:965,y2:440,gen:1},
+];
+const svg = document.getElementById('lines');
+for (const l of LINES) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg','line');
+  el.setAttribute('x1',l.x1);el.setAttribute('y1',l.y1);el.setAttribute('x2',l.x2);el.setAttribute('y2',l.y2);
+  el.setAttribute('class','gen'+l.gen);
+  svg.appendChild(el);
+}
+const stage = document.getElementById('stage');
+for (const c of CARDS) {
+  const div = document.createElement('div');
+  div.className = `card gen${c.gen} ${c.clan ? 'clan' : 'non-clan'} ${c.selected ? 'selected' : ''}`;
+  div.style.left = c.x+'px'; div.style.top = c.y+'px';
+  div.innerHTML = `
+    ${!c.clan ? '<div class="ribbon">kết hôn</div>' : ''}
+    <div class="row">
+      <div class="avatar">${c.name.split(' ').slice(-1)[0][0]}</div>
+      <div class="name">${c.name}</div>
+    </div>
+    <div class="meta">
+      <span class="gender-chip ${c.gender}">${c.gender === 'nam' ? 'N' : 'F'}</span>
+      ${c.birth}${c.death ? ' – ' + c.death + '<span class="deceased-mark">✝</span>' : ''}
+    </div>
+  `;
+  stage.appendChild(div);
+}
+</script>
+</body>
+</html>

@@ -144,6 +144,7 @@ interface PersonPayload {
   tieuSu?: string
   laThanhVienHo: boolean
   thuTuAnhChi?: number
+  thuTuDoi?: number
   boId?: string
   meId?: string
   honNhan: { voChongId: string; ghiChu?: string }[]
@@ -163,6 +164,7 @@ function toPersonRow(body: PersonPayload) {
     bio: body.tieuSu ?? null,
     notes: body.ghiChu ?? null,
     ngoaiToc: !body.laThanhVienHo,
+    thuTuDoi: body.thuTuDoi ?? null,
     birthYear: birth.year, birthMonth: birth.month, birthDay: birth.day, birthIsLunar: birth.isLunar,
     isAlive: !body.namMat,
     deathYear: death.year, deathMonth: death.month, deathDay: death.day, deathIsLunar: death.isLunar,

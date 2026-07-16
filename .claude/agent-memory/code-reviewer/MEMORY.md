@@ -1,0 +1,1 @@
+- [giapha project conventions](project_giapha_conventions.md) — no-auth editor routes, unvalidated PersonPayload, thuTuDoi shared-DB risk, numeric-validation gaps in MemberManagementView, batch-save test gap

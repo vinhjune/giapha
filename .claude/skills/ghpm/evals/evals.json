@@ -1,0 +1,31 @@
+{
+  "evals": [
+    {
+      "name": "handoff-status-report",
+      "prompt": "Use GitHub as the source of truth and prepare a handoff for the current AI task queue.",
+      "assertions": [
+        "Inspects GitHub Issues or Projects before reporting status",
+        "Includes handoff log or comment guidance",
+        "Mentions owners, blockers, next action, and evidence"
+      ]
+    },
+    {
+      "name": "bootstrap-project-management",
+      "prompt": "Set up GitHub labels, project fields, and automation for AI/human project management.",
+      "assertions": [
+        "Defines minimal label taxonomy",
+        "Uses GitHub Projects fields for live status",
+        "Includes gh or gh api commands and security constraints"
+      ]
+    },
+    {
+      "name": "skill-chain-release",
+      "prompt": "Create a pipeline using issues, PRs, CI and skills to ship a feature and hand it off.",
+      "assertions": [
+        "Chains relevant skills such as ck:scout, ck:plan, ck:cook, ck:test, ck:git, ck:ship or review-pr",
+        "Links PR/check evidence back to issues",
+        "Uses GitHub as canonical state instead of local-only notes"
+      ]
+    }
+  ]
+}

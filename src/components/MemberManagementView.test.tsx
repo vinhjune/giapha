@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import MemberManagementView from './MemberManagementView'
 import { useGiaphaStore } from '../store/useGiaphaStore'
@@ -40,8 +40,8 @@ describe('MemberManagementView', () => {
     expect(screen.getByDisplayValue('Ông Tổ')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Con Trai')).toBeInTheDocument()
     expect(screen.getByText('Đời')).toBeInTheDocument()
-    expect(screen.getByText('1')).toBeInTheDocument()
-    expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.getByTestId('thuTuDoi-0')).toHaveValue('1')
+    expect(screen.getByTestId('thuTuDoi-1')).toHaveValue('2')
     expect(screen.getByText('Năm sinh')).toBeInTheDocument()
     expect(screen.getByText('Năm mất')).toBeInTheDocument()
     expect(screen.getByText('Địa chỉ')).toBeInTheDocument()
@@ -64,7 +64,9 @@ describe('MemberManagementView', () => {
 
     await user.click(screen.getByRole('button', { name: 'Thêm dòng mới' }))
     await user.type(screen.getByTestId('hoTen-2'), 'Thành viên mới')
-    await user.type(screen.getByTestId('boId-2'), '1')
+    await user.click(screen.getByRole('button', { name: 'Chọn bố dòng 3' }))
+    const modal = (await screen.findByText('Chọn bố')).closest('div.bg-white') as HTMLElement
+    await user.click(within(modal).getByText('Ông Tổ'))
 
     await user.click(screen.getByRole('button', { name: 'Áp dụng thay đổi' }))
 
@@ -72,18 +74,43 @@ describe('MemberManagementView', () => {
     expect(await screen.findByText(/Đã cập nhật/)).toBeInTheDocument()
   })
 
-  it('allows checkbox toggle and deleting a row', async () => {
+  it('allows toggling ngoại tộc and deleting a row', async () => {
     const user = userEvent.setup()
     render(<MemberManagementView />)
 
-    const memberCheckbox = screen.getByTestId('laThanhVienHo-1')
-    expect(memberCheckbox).toBeChecked()
-    await user.click(memberCheckbox)
-    expect(memberCheckbox).not.toBeChecked()
+    const ngoaiTocCheckbox = screen.getByTestId('laThanhVienHo-1')
+    expect(ngoaiTocCheckbox).not.toBeChecked()
+    await user.click(ngoaiTocCheckbox)
+    expect(ngoaiTocCheckbox).toBeChecked()
 
     const deleteButton = screen.getByRole('button', { name: 'Xóa thành viên dòng 2' })
     await user.click(deleteButton)
     expect(screen.queryByDisplayValue('Con Trai')).not.toBeInTheDocument()
     expect(api.deletePerson).not.toHaveBeenCalled()
+  })
+
+  it('rejects a non-numeric Đời value but still saves other valid rows in the same batch', async () => {
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    await user.type(screen.getByTestId('thuTuDoi-1'), 'x')
+    await user.type(screen.getByTestId('tieuSu-0'), 'Cập nhật')
+    await user.click(screen.getByRole('button', { name: 'Áp dụng thay đổi' }))
+
+    expect(await screen.findByText(/Đời phải là số/)).toBeInTheDocument()
+    expect(api.updatePerson).not.toHaveBeenCalledWith('2', expect.anything())
+    expect(api.updatePerson).toHaveBeenCalledWith('1', expect.objectContaining({ tieuSu: 'Cập nhật' }))
+  })
+
+  it('rejects a decimal or non-finite Đời value', async () => {
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    await user.clear(screen.getByTestId('thuTuDoi-1'))
+    await user.type(screen.getByTestId('thuTuDoi-1'), '1.5')
+    await user.click(screen.getByRole('button', { name: 'Áp dụng thay đổi' }))
+
+    expect(await screen.findByText(/Đời phải là số/)).toBeInTheDocument()
+    expect(api.updatePerson).not.toHaveBeenCalledWith('2', expect.anything())
   })
 })

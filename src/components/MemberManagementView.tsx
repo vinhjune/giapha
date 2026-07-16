@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
+import PersonPicker from './PersonPicker'
 import type { GioiTinh, NgayThang, Person } from '../types/giapha'
 
 type RowField =
-  | 'id' | 'hoTen' | 'gioiTinh' | 'laThanhVienHo' | 'thuTuAnhChi'
+  | 'id' | 'hoTen' | 'gioiTinh' | 'laThanhVienHo' | 'thuTuDoi' | 'thuTuAnhChi'
   | 'namSinh_nam' | 'namSinh_thang' | 'namSinh_ngay' | 'namSinh_amLich'
   | 'namMat_nam' | 'namMat_thang' | 'namMat_ngay' | 'namMat_amLich'
   | 'boId' | 'meId' | 'voChongIds'
@@ -13,11 +14,15 @@ interface EditableRow extends Record<RowField, string> {
   _key: string
 }
 
+type PickerField = 'boId' | 'meId' | 'voChongIds'
+interface PickerState { rowIndex: number; field: PickerField }
+
 const COLUMNS: Array<{ key: RowField; label: string }> = [
   { key: 'id', label: 'ID' },
   { key: 'hoTen', label: 'Họ tên' },
   { key: 'gioiTinh', label: 'Giới tính' },
-  { key: 'laThanhVienHo', label: 'Thành viên họ' },
+  { key: 'laThanhVienHo', label: 'Ngoại tộc' },
+  { key: 'thuTuDoi', label: 'Đời' },
   { key: 'thuTuAnhChi', label: 'Thứ tự anh/chị' },
   { key: 'namSinh_nam', label: 'Năm sinh' },
   { key: 'namSinh_thang', label: 'Tháng sinh' },
@@ -27,9 +32,9 @@ const COLUMNS: Array<{ key: RowField; label: string }> = [
   { key: 'namMat_thang', label: 'Tháng mất' },
   { key: 'namMat_ngay', label: 'Ngày mất' },
   { key: 'namMat_amLich', label: 'NM âm lịch' },
-  { key: 'boId', label: 'Bố ID' },
-  { key: 'meId', label: 'Mẹ ID' },
-  { key: 'voChongIds', label: 'Vợ/chồng IDs (;)' },
+  { key: 'boId', label: 'Bố' },
+  { key: 'meId', label: 'Mẹ' },
+  { key: 'voChongIds', label: 'Vợ/chồng' },
   { key: 'queQuan', label: 'Địa chỉ' },
   { key: 'tieuSu', label: 'Tiểu sử' },
   { key: 'email', label: 'Email' },
@@ -40,7 +45,8 @@ const DEFAULT_COLUMN_WIDTHS: Partial<Record<RowField, number>> = {
   id: 220,
   hoTen: 160,
   gioiTinh: 120,
-  laThanhVienHo: 116,
+  laThanhVienHo: 100,
+  thuTuDoi: 90,
   thuTuAnhChi: 130,
   namSinh_nam: 110,
   namSinh_thang: 110,
@@ -50,9 +56,9 @@ const DEFAULT_COLUMN_WIDTHS: Partial<Record<RowField, number>> = {
   namMat_thang: 110,
   namMat_ngay: 110,
   namMat_amLich: 110,
-  boId: 220,
-  meId: 220,
-  voChongIds: 220,
+  boId: 200,
+  meId: 200,
+  voChongIds: 240,
   queQuan: 150,
   tieuSu: 180,
   email: 170,
@@ -80,6 +86,7 @@ function personToRow(person: Person): EditableRow {
     hoTen: person.hoTen,
     gioiTinh: person.gioiTinh,
     laThanhVienHo: String(person.laThanhVienHo),
+    thuTuDoi: person.thuTuDoi != null ? String(person.thuTuDoi) : '',
     thuTuAnhChi: person.thuTuAnhChi != null ? String(person.thuTuAnhChi) : '',
     namSinh_nam: namSinh.nam,
     namSinh_thang: namSinh.thang,
@@ -107,6 +114,7 @@ function createEmptyRow(index: number): EditableRow {
     hoTen: '',
     gioiTinh: 'nam',
     laThanhVienHo: 'true',
+    thuTuDoi: '',
     thuTuAnhChi: '',
     namSinh_nam: '',
     namSinh_thang: '',
@@ -148,6 +156,7 @@ function rowToPersonPayload(row: EditableRow): Omit<Person, 'id'> {
     queQuan: row.queQuan || undefined,
     tieuSu: row.tieuSu || undefined,
     laThanhVienHo: row.laThanhVienHo === 'true',
+    thuTuDoi: row.thuTuDoi.trim() ? Number(row.thuTuDoi) : undefined,
     thuTuAnhChi: row.thuTuAnhChi ? Number(row.thuTuAnhChi) : undefined,
     boId: row.boId.trim() || undefined,
     meId: row.meId.trim() || undefined,
@@ -166,8 +175,13 @@ export default function MemberManagementView() {
   const [errorMessages, setErrorMessages] = useState<string[]>([])
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [picker, setPicker] = useState<PickerState | null>(null)
 
   if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
+
+  function getName(id: string) {
+    return data?.persons[id]?.hoTen || ''
+  }
 
   function handleCellChange(index: number, field: RowField, value: string) {
     setRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row))
@@ -214,6 +228,10 @@ export default function MemberManagementView() {
     let savedCount = 0
     for (const row of rows) {
       if (!row.hoTen.trim()) continue
+      if (row.thuTuDoi.trim() && !Number.isInteger(Number(row.thuTuDoi))) {
+        errors.push(`${row.hoTen || row._key}: Đời phải là số`)
+        continue
+      }
       const payload = rowToPersonPayload(row)
       try {
         if (row.id.trim() && originalIds.has(row.id.trim())) {
@@ -272,7 +290,6 @@ export default function MemberManagementView() {
         <table className="min-w-[2400px] w-full text-xs">
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
-              <th className="px-2 py-2 text-left font-semibold text-gray-600 border-b border-r">Đời</th>
               {COLUMNS.map(col => (
                 <th
                   key={col.key}
@@ -291,9 +308,6 @@ export default function MemberManagementView() {
           <tbody>
             {rows.map((row, rowIndex) => (
               <tr key={row._key} className="hover:bg-blue-50/30">
-                <td className="px-2 py-1 border-b border-r text-gray-700">
-                  {data.persons[row.id]?.thuTuDoi ?? ''}
-                </td>
                 {COLUMNS.map(col => (
                   <td
                     key={col.key}
@@ -318,9 +332,9 @@ export default function MemberManagementView() {
                       <div className="flex justify-center">
                         <input
                           type="checkbox"
-                          checked={row.laThanhVienHo === 'true'}
-                          onChange={e => handleCellChange(rowIndex, col.key, String(e.target.checked))}
-                          aria-label={`Thành viên họ dòng ${rowIndex + 1}`}
+                          checked={row.laThanhVienHo === 'false'}
+                          onChange={e => handleCellChange(rowIndex, col.key, String(!e.target.checked))}
+                          aria-label={`Ngoại tộc dòng ${rowIndex + 1}`}
                           data-testid={`${col.key}-${rowIndex}`}
                           className="h-4 w-4"
                         />
@@ -332,6 +346,63 @@ export default function MemberManagementView() {
                         data-testid={`${col.key}-${rowIndex}`}
                         className="w-full px-2 py-1 border rounded bg-gray-50 text-gray-400"
                       />
+                    ) : col.key === 'boId' || col.key === 'meId' ? (
+                      <div className="flex items-center gap-1">
+                        <span
+                          data-testid={`${col.key}-${rowIndex}`}
+                          className="flex-1 truncate text-gray-700"
+                        >
+                          {row[col.key] ? getName(row[col.key]) || row[col.key] : <span className="text-gray-400">Chưa chọn</span>}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setPicker({ rowIndex, field: col.key as PickerField })}
+                          aria-label={`Chọn ${col.key === 'boId' ? 'bố' : 'mẹ'} dòng ${rowIndex + 1}`}
+                          className="shrink-0 rounded px-1.5 py-0.5 text-blue-600 hover:bg-blue-50"
+                        >
+                          {row[col.key] ? 'Đổi' : 'Chọn'}
+                        </button>
+                        {row[col.key] && (
+                          <button
+                            type="button"
+                            onClick={() => handleCellChange(rowIndex, col.key, '')}
+                            aria-label={`Bỏ ${col.key === 'boId' ? 'bố' : 'mẹ'} dòng ${rowIndex + 1}`}
+                            className="shrink-0 rounded px-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    ) : col.key === 'voChongIds' ? (
+                      <div className="flex flex-wrap items-center gap-1" data-testid={`${col.key}-${rowIndex}`}>
+                        {row.voChongIds.split(';').map(s => s.trim()).filter(Boolean).map(spouseId => (
+                          <span
+                            key={spouseId}
+                            className="inline-flex items-center gap-1 rounded bg-gray-100 px-1.5 py-0.5 text-gray-700"
+                          >
+                            {getName(spouseId) || spouseId}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const remaining = row.voChongIds.split(';').map(s => s.trim()).filter(Boolean).filter(id => id !== spouseId)
+                                handleCellChange(rowIndex, 'voChongIds', remaining.join(';'))
+                              }}
+                              aria-label={`Bỏ vợ/chồng ${getName(spouseId) || spouseId} dòng ${rowIndex + 1}`}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setPicker({ rowIndex, field: 'voChongIds' })}
+                          aria-label={`Thêm vợ/chồng dòng ${rowIndex + 1}`}
+                          className="shrink-0 rounded px-1.5 py-0.5 text-blue-600 hover:bg-blue-50"
+                        >
+                          + Thêm
+                        </button>
+                      </div>
                     ) : (
                       <input
                         value={row[col.key]}
@@ -380,6 +451,32 @@ export default function MemberManagementView() {
           </ul>
         </div>
       )}
+
+      {picker && (() => {
+        const row = rows[picker.rowIndex]
+        if (!row) return null
+        const currentSpouseIds = row.voChongIds.split(';').map(s => s.trim()).filter(Boolean)
+        const title = picker.field === 'boId' ? 'Chọn bố' : picker.field === 'meId' ? 'Chọn mẹ' : 'Chọn vợ/chồng'
+        const excludeIds =
+          picker.field === 'boId' ? [row.id, ...(row.meId ? [row.meId] : [])]
+          : picker.field === 'meId' ? [row.id, ...(row.boId ? [row.boId] : [])]
+          : [row.id, ...currentSpouseIds]
+        return (
+          <PersonPicker
+            title={title}
+            excludeIds={excludeIds}
+            onSelect={(person: Person) => {
+              if (picker.field === 'voChongIds') {
+                handleCellChange(picker.rowIndex, 'voChongIds', [...currentSpouseIds, person.id].join(';'))
+              } else {
+                handleCellChange(picker.rowIndex, picker.field, person.id)
+              }
+              setPicker(null)
+            }}
+            onClose={() => setPicker(null)}
+          />
+        )
+      })()}
     </div>
   )
 }

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup A — Clean Minimal</title>
+<style>
+  :root{
+    --canvas:#f8fafc;
+    --card-bg:#ffffff;
+    --card-border:#e2e8f0;
+    --ink:#0f172a;
+    --muted:#64748b;
+    --accent:#4f46e5;
+    --accent-soft:#eef2ff;
+    --nam:#0ea5e9;
+    --nu:#f43f5e;
+    --line:#cbd5e1;
+    --trunk:#94a3b8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Inter",Segoe UI,sans-serif;background:var(--canvas);color:var(--ink)}
+  header{background:#fff;border-bottom:1px solid var(--card-border);padding:10px 16px;display:flex;align-items:center;gap:14px}
+  header .burger{width:34px;height:34px;border:1px solid var(--card-border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:16px}
+  header h1{font-size:16px;font-weight:700;color:var(--ink);margin:0;letter-spacing:-0.01em}
+  header .search{flex:1;max-width:320px;height:34px;border:1px solid var(--card-border);border-radius:8px;background:#f8fafc;display:flex;align-items:center;padding:0 10px;color:var(--muted);font-size:13px}
+  .label{max-width:1080px;margin:14px auto 0;padding:0 16px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .canvas-wrap{max-width:1080px;margin:8px auto 40px;padding:0 16px}
+  .canvas{position:relative;background:var(--canvas);border-radius:12px;overflow:auto;min-height:600px}
+  .zoom{position:absolute;top:10px;right:10px;z-index:5;display:flex;gap:6px;background:rgba(255,255,255,.95);border:1px solid var(--card-border);border-radius:10px;padding:6px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .zoom button{width:28px;height:28px;border:1px solid var(--card-border);border-radius:6px;background:#fff;color:var(--muted);font-size:14px;cursor:pointer}
+  .stage{position:relative;width:1080px;height:560px}
+  svg.lines{position:absolute;top:0;left:0}
+  .card{
+    position:absolute;width:150px;min-height:70px;background:var(--card-bg);
+    border:1px solid var(--card-border);border-radius:12px;padding:10px 12px;
+    box-shadow:0 1px 2px rgba(15,23,42,.04);cursor:pointer;transition:box-shadow .15s,transform .15s;
+  }
+  .card:hover{box-shadow:0 4px 10px rgba(15,23,42,.08);transform:translateY(-1px)}
+  .card .row{display:flex;align-items:center;gap:8px}
+  .avatar{width:26px;height:26px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;color:#fff;border:2px solid #fff;box-shadow:0 0 0 1px var(--card-border)}
+  .card.gender-nam .avatar{background:var(--nam)}
+  .card.gender-nu .avatar{background:var(--nu)}
+  .name{font-size:12.5px;font-weight:600;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta{font-size:10.5px;color:var(--muted);margin-top:4px;padding-left:34px}
+  .card.non-clan{background:#fbfcfe}
+  .badge{position:absolute;top:-8px;right:8px;background:#fff;border:1px solid var(--card-border);
+    color:var(--muted);font-size:9px;padding:1px 6px;border-radius:999px;letter-spacing:.02em}
+  .card.selected{outline:2px solid var(--accent);outline-offset:1px;background:var(--accent-soft)}
+  .deceased-mark{color:#94a3b8;font-size:10px;margin-left:4px}
+  .lines line{stroke:var(--line);stroke-width:1.5}
+  .lines line.trunk{stroke:var(--trunk);stroke-width:2}
+  .legend{max-width:1080px;margin:0 auto 40px;padding:0 16px;font-size:12px;color:var(--muted);line-height:1.7}
+  .legend b{color:var(--ink)}
+  .swatches{display:flex;gap:16px;margin-top:6px;flex-wrap:wrap}
+  .swatch{display:flex;align-items:center;gap:6px}
+  .sw{width:14px;height:14px;border-radius:4px;border:1px solid var(--card-border)}
+</style>
+</head>
+<body>
+  <header>
+    <div class="burger">☰</div>
+    <h1>Nguyễn Tộc Gia Phả</h1>
+    <div class="search">Tìm kiếm thành viên…</div>
+  </header>
+
+  <div class="label">Mockup A — Clean Minimal</div>
+  <div class="canvas-wrap">
+    <div class="canvas">
+      <div class="zoom">
+        <button>−</button><button style="width:auto;padding:0 8px;font-size:11px;">100%</button><button>+</button>
+      </div>
+      <div class="stage" id="stage">
+        <svg class="lines" id="lines" width="1080" height="560"></svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div><b>Tokens:</b> canvas <code>#f8fafc</code> · card <code>#ffffff</code> · border <code>#e2e8f0</code> · text <code>#0f172a</code> / <code>#64748b</code> · accent <code>#4f46e5</code></div>
+    <div style="margin-top:6px"><b>Node language:</b> flat white card + soft shadow, avatar-ring signals gender (not full fill), selection = indigo outline + tint, non-clan (married-in) marked with a small corner badge instead of a dashed border, connectors are thin neutral slate lines.</div>
+    <div class="swatches">
+      <div class="swatch"><div class="sw" style="background:var(--nam)"></div>nam (male)</div>
+      <div class="swatch"><div class="sw" style="background:var(--nu)"></div>nữ (female)</div>
+      <div class="swatch"><div class="sw" style="background:var(--accent)"></div>selected</div>
+    </div>
+  </div>
+
+<script>
+const CARDS = [
+  {id:'an',x:60,y:40,gender:'nam',clan:true,name:'Nguyễn Văn An',birth:'1948',isSpouse:false},
+  {id:'binh',x:234,y:124,gender:'nu',clan:false,name:'Trần Thị Bình',birth:'1950',isSpouse:true},
+  {id:'cuong',x:140,y:240,gender:'nam',clan:true,name:'Nguyễn Văn Cường',birth:'1972',isSpouse:false},
+  {id:'dung',x:314,y:324,gender:'nu',clan:false,name:'Lê Thị Dung',birth:'1974',isSpouse:true},
+  {id:'em',x:650,y:240,gender:'nu',clan:true,name:'Nguyễn Thị Em',birth:'1975',isSpouse:false},
+  {id:'phuc',x:824,y:324,gender:'nam',clan:false,name:'Phạm Văn Phúc',birth:'1973',isSpouse:true},
+  {id:'giang',x:80,y:440,gender:'nam',clan:true,name:'Nguyễn Văn Giang',birth:'1998',isSpouse:false},
+  {id:'hoa',x:270,y:440,gender:'nu',clan:true,name:'Nguyễn Thị Hoa',birth:'2001',death:'2019',isSpouse:false},
+  {id:'long',x:700,y:440,gender:'nam',clan:true,name:'Nguyễn Văn Long',birth:'2000',isSpouse:false,selected:true},
+  {id:'mai',x:890,y:440,gender:'nu',clan:true,name:'Phạm Thị Mai',birth:'2003',isSpouse:false},
+];
+const LINES = [
+  {x1:135,y1:110,x2:135,y2:159,trunk:true},{x1:135,y1:159,x2:309,y2:159,trunk:true},
+  {x1:309,y1:194,x2:309,y2:217},{x1:215,y1:217,x2:725,y2:217},{x1:215,y1:217,x2:215,y2:240},{x1:725,y1:217,x2:725,y2:240},
+  {x1:215,y1:310,x2:215,y2:359,trunk:true},{x1:215,y1:359,x2:389,y2:359,trunk:true},
+  {x1:389,y1:394,x2:389,y2:417},{x1:155,y1:417,x2:389,y2:417},{x1:155,y1:417,x2:155,y2:440},{x1:345,y1:417,x2:345,y2:440},
+  {x1:725,y1:310,x2:725,y2:359,trunk:true},{x1:725,y1:359,x2:899,y2:359,trunk:true},
+  {x1:899,y1:394,x2:899,y2:417},{x1:775,y1:417,x2:965,y2:417},{x1:775,y1:417,x2:775,y2:440},{x1:965,y1:417,x2:965,y2:440},
+];
+const svg = document.getElementById('lines');
+for (const l of LINES) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg','line');
+  el.setAttribute('x1',l.x1);el.setAttribute('y1',l.y1);el.setAttribute('x2',l.x2);el.setAttribute('y2',l.y2);
+  if (l.trunk) el.classList.add('trunk');
+  svg.appendChild(el);
+}
+const stage = document.getElementById('stage');
+for (const c of CARDS) {
+  const div = document.createElement('div');
+  div.className = `card gender-${c.gender} ${c.clan ? 'clan' : 'non-clan'} ${c.selected ? 'selected' : ''}`;
+  div.style.left = c.x+'px'; div.style.top = c.y+'px';
+  div.innerHTML = `
+    ${!c.clan ? '<div class="badge">kết hôn</div>' : ''}
+    <div class="row">
+      <div class="avatar">${c.name.split(' ').slice(-1)[0][0]}</div>
+      <div class="name">${c.name}</div>
+    </div>
+    <div class="meta">${c.birth}${c.death ? ' – ' + c.death + '<span class="deceased-mark">✝</span>' : ''}</div>
+  `;
+  stage.appendChild(div);
+}
+</script>
+</body>
+</html>

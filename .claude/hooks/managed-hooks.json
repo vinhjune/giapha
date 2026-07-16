@@ -1,0 +1,16 @@
+{
+  "_comment": "Hooks this kit registers unconditionally. Generated from claude/settings.json by scripts/generate-managed-hooks.cjs. The ClaudeKit CLI self-heal reads this to detect missing registrations deterministically. Do not edit by hand.",
+  "managedHooks": [
+    "cook-after-plan-reminder",
+    "descriptive-name",
+    "dev-rules-reminder",
+    "plan-format-kanban",
+    "privacy-block",
+    "scout-block",
+    "session-init",
+    "session-state",
+    "simplify-gate",
+    "subagent-init",
+    "usage-quota-cache-refresh"
+  ]
+}
