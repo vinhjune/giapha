@@ -4,6 +4,8 @@ interface Props {
   person: Person
   displayName?: string
   isSelected: boolean
+  isHighlighted?: boolean
+  isSpouse?: boolean
   onClick: () => void
 }
 
@@ -14,8 +16,10 @@ function getInitial(name: string): string {
   return parts[parts.length - 1]?.[0]?.toUpperCase() ?? '?'
 }
 
-export default function PersonCard({ person, displayName, isSelected, onClick }: Props) {
-  const isClan = person.laThanhVienHo
+export default function PersonCard({ person, displayName, isSelected, isHighlighted = false, isSpouse = false, onClick }: Props) {
+  // Mirrors ListView: the badge marks an actual married-in spouse (honNhan link),
+  // not any non-clan blood descendant (e.g. a granddaughter through a daughter's line).
+  const isMarriedIn = isSpouse && !person.laThanhVienHo
   const name = displayName ?? person.hoTen
   const avatarColorClass = AVATAR_COLOR_BY_GENDER[person.gioiTinh] ?? AVATAR_COLOR_BY_GENDER.khac
 
@@ -26,9 +30,10 @@ export default function PersonCard({ person, displayName, isSelected, onClick }:
         relative w-full h-full rounded-xl border p-2 cursor-pointer text-left
         bg-card shadow-sm transition-all hover:shadow-md hover:-translate-y-px
         ${isSelected ? 'outline outline-2 outline-accent outline-offset-1 bg-accent-soft border-accent-soft' : 'border-card-border'}
+        ${isHighlighted && !isSelected ? 'ring-2 ring-blue-400' : ''}
       `}
     >
-      {!isClan && (
+      {isMarriedIn && (
         <span
           aria-label="Vợ/chồng"
           className="absolute -top-2 right-2 text-[11px] leading-none bg-card border border-card-border rounded-full px-1.5 py-0.5"

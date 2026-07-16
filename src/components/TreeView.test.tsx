@@ -32,6 +32,19 @@ describe('TreeView', () => {
     expect(screen.getByText('Chắt')).toBeInTheDocument()
   })
 
+  it('shows the marriage badge on an actual spouse but not on a non-clan blood descendant', () => {
+    render(<TreeView />)
+
+    // 'Bà' is a real spouse (honNhan link to 'Tổ') → badge expected.
+    const spouseCard = screen.getByText('Bà').closest('div.relative')!
+    expect(spouseCard.querySelector('[aria-label="Vợ/chồng"]')).not.toBeNull()
+
+    // 'Cháu gái' is a granddaughter (child node, laThanhVienHo: false only because
+    // she descends through a daughter's line) — not anyone's spouse, so no badge.
+    const descendantCard = screen.getByText('Cháu gái').closest('div.relative')!
+    expect(descendantCard.querySelector('[aria-label="Vợ/chồng"]')).toBeNull()
+  })
+
   it('shows generation order suffix when setting is enabled', () => {
     useGiaphaStore.setState({ hienThiThuTuDoi: true })
 

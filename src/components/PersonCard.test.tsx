@@ -26,14 +26,23 @@ describe('PersonCard', () => {
     expect(screen.getByTestId('person-avatar')).toHaveClass('bg-nu')
   })
 
-  it('shows the ring badge only for non-clan (married-in) members', () => {
+  it('shows the ring badge only for an actual married-in spouse', () => {
     const { rerender } = render(
-      <PersonCard person={nguoiMau({ laThanhVienHo: false })} isSelected={false} onClick={() => {}} />
+      <PersonCard person={nguoiMau({ laThanhVienHo: false })} isSelected={false} isSpouse onClick={() => {}} />
     )
     expect(screen.getByLabelText('Vợ/chồng')).toHaveTextContent('💍')
 
     rerender(
-      <PersonCard person={nguoiMau({ laThanhVienHo: true })} isSelected={false} onClick={() => {}} />
+      <PersonCard person={nguoiMau({ laThanhVienHo: true })} isSelected={false} isSpouse onClick={() => {}} />
+    )
+    expect(screen.queryByLabelText('Vợ/chồng')).not.toBeInTheDocument()
+  })
+
+  it('hides the ring badge for a non-clan blood descendant who is not a spouse', () => {
+    // e.g. a granddaughter through a daughter's line: laThanhVienHo is false,
+    // but she's rendered as a child node, not someone's honNhan spouse.
+    render(
+      <PersonCard person={nguoiMau({ laThanhVienHo: false })} isSelected={false} isSpouse={false} onClick={() => {}} />
     )
     expect(screen.queryByLabelText('Vợ/chồng')).not.toBeInTheDocument()
   })

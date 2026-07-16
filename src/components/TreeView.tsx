@@ -681,7 +681,9 @@ export default function TreeView() {
               <PersonCard
                 person={card.person}
                 displayName={displayNameById[card.person.id]}
-                isSelected={card.person.id === highlightedPersonId}
+                isSelected={card.person.id === selectedPersonId}
+                isHighlighted={card.person.id === highlightedPersonId}
+                isSpouse={card.isSpouse}
                 onClick={() => selectPerson(card.person.id)}
               />
             </div>
