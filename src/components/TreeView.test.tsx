@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import TreeView from './TreeView'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { GiaphaData } from '../types/giapha'
@@ -23,6 +23,7 @@ describe('TreeView', () => {
       data,
       viewMode: 'tree',
       selectedPersonId: null,
+      focusedPersonId: null,
       hienThiThuTuDoi: false,
     })
   })
@@ -218,6 +219,124 @@ describe('TreeView', () => {
     expect(eldestCard).not.toBeNull()
     expect(youngerCard).not.toBeNull()
     expect(parseFloat((eldestCard as HTMLDivElement).style.left)).toBeLessThan(parseFloat((youngerCard as HTMLDivElement).style.left))
+  })
+
+  it('does not render a collapse toggle on a leaf node', () => {
+    render(<TreeView />)
+    expect(screen.queryByTestId('tree-toggle-7')).toBeNull()
+  })
+
+  it('renders a collapse toggle on every node that has children', () => {
+    render(<TreeView />)
+    expect(screen.getByTestId('tree-toggle-1')).toBeInTheDocument()
+    expect(screen.getByTestId('tree-toggle-3')).toBeInTheDocument()
+    expect(screen.getByTestId('tree-toggle-5')).toBeInTheDocument()
+  })
+
+  it('collapsing a node hides its descendant cards, keeps its own spouse visible, and shows the hidden count', () => {
+    render(<TreeView />)
+    expect(screen.getByText('Cháu gái')).toBeInTheDocument()
+    expect(screen.getByText('Chắt')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('tree-toggle-3'))
+
+    expect(screen.queryByText('Cháu gái')).toBeNull()
+    expect(screen.queryByText('Chồng cháu gái')).toBeNull()
+    expect(screen.queryByText('Chắt')).toBeNull()
+    expect(screen.getByText('Con gái')).toBeInTheDocument()
+    expect(screen.getByText('Con rể')).toBeInTheDocument() // node's own spouse stays visible
+    expect(screen.getByTestId('tree-toggle-3')).toHaveTextContent('+2')
+  })
+
+  it('re-expanding a collapsed node restores the exact original card positions', () => {
+    render(<TreeView />)
+    const before = screen.getByText('Chắt').closest('div[style*="position: absolute"]') as HTMLDivElement
+    const leftBefore = before.style.left
+    const topBefore = before.style.top
+
+    fireEvent.click(screen.getByTestId('tree-toggle-3')) // collapse
+    expect(screen.queryByText('Chắt')).toBeNull()
+
+    fireEvent.click(screen.getByTestId('tree-toggle-3')) // expand
+    const after = screen.getByText('Chắt').closest('div[style*="position: absolute"]') as HTMLDivElement
+
+    expect(after.style.left).toBe(leftBefore)
+    expect(after.style.top).toBe(topBefore)
+  })
+
+  it('clicking a collapse toggle does not select the person', () => {
+    render(<TreeView />)
+    fireEvent.click(screen.getByTestId('tree-toggle-3'))
+    expect(useGiaphaStore.getState().selectedPersonId).toBeNull()
+  })
+
+  it('collapsing a deep sibling subtree pulls the next sibling closer (reflow)', () => {
+    const siblingData: GiaphaData = {
+      ...data,
+      persons: {
+        ...data.persons,
+        '1': { ...data.persons['1'], conCaiIds: ['3', '8'] },
+        '2': { ...data.persons['2'], conCaiIds: ['3', '8'] },
+        '8': { id: '8', hoTen: 'Con trai út', gioiTinh: 'nam', laThanhVienHo: true, boId: '1', meId: '2', honNhan: [], conCaiIds: [] },
+      },
+    }
+    useGiaphaStore.setState({ data: siblingData })
+
+    render(<TreeView />)
+    const siblingBefore = screen.getByText('Con trai út').closest('div[style*="position: absolute"]') as HTMLDivElement
+    const leftBefore = parseFloat(siblingBefore.style.left)
+
+    fireEvent.click(screen.getByTestId('tree-toggle-3'))
+
+    const siblingAfter = screen.getByText('Con trai út').closest('div[style*="position: absolute"]') as HTMLDivElement
+    const leftAfter = parseFloat(siblingAfter.style.left)
+
+    expect(leftAfter).toBeLessThan(leftBefore)
+  })
+
+  it('auto-expands collapsed ancestors when the highlighted person is hidden inside them', () => {
+    // jsdom doesn't implement Element.scrollTo; the existing scroll-to-highlighted effect calls it.
+    Element.prototype.scrollTo = vi.fn()
+
+    render(<TreeView />)
+
+    fireEvent.click(screen.getByTestId('tree-toggle-1')) // collapses everyone below 'Tổ'
+    expect(screen.queryByText('Chắt')).toBeNull()
+
+    act(() => {
+      useGiaphaStore.setState({ selectedPersonId: '7', focusedPersonId: '7' }) // 'Chắt'
+    })
+
+    expect(screen.getByText('Chắt')).toBeInTheDocument()
+    expect(screen.getByTestId('tree-toggle-1')).toHaveTextContent('−')
+    expect(screen.getByTestId('tree-toggle-3')).toHaveTextContent('−')
+    expect(screen.getByTestId('tree-toggle-5')).toHaveTextContent('−')
+  })
+
+  it('collapsing a node with multiple marriages hides children from every marriage zone', () => {
+    const multiMarriageData: GiaphaData = {
+      metadata: { tenDongHo: 'Dòng họ mẫu' },
+      persons: {
+        '9': { id: '9', hoTen: 'Đa thê', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: '10' }, { voChongId: '11' }], conCaiIds: ['12', '13'] },
+        '10': { id: '10', hoTen: 'Vợ cả', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '9' }], conCaiIds: ['12'] },
+        '11': { id: '11', hoTen: 'Vợ hai', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '9' }], conCaiIds: ['13'] },
+        '12': { id: '12', hoTen: 'Con vợ cả', gioiTinh: 'nam', laThanhVienHo: true, boId: '9', meId: '10', honNhan: [], conCaiIds: [] },
+        '13': { id: '13', hoTen: 'Con vợ hai', gioiTinh: 'nam', laThanhVienHo: true, boId: '9', meId: '11', honNhan: [], conCaiIds: [] },
+      },
+    }
+    useGiaphaStore.setState({ data: multiMarriageData })
+
+    render(<TreeView />)
+    expect(screen.getByText('Con vợ cả')).toBeInTheDocument()
+    expect(screen.getByText('Con vợ hai')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('tree-toggle-9'))
+
+    expect(screen.queryByText('Con vợ cả')).toBeNull()
+    expect(screen.queryByText('Con vợ hai')).toBeNull()
+    expect(screen.getByText('Vợ cả')).toBeInTheDocument()
+    expect(screen.getByText('Vợ hai')).toBeInTheDocument()
+    expect(screen.getByTestId('tree-toggle-9')).toHaveTextContent('+2')
   })
 
   it('expands node width for long names and keeps name on a single line', () => {
