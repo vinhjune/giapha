@@ -675,7 +675,6 @@ export default function TreeView() {
                 width: card.width,
                 height: NODE_H,
                 zIndex: 1,
-                opacity: card.isSpouse ? 0.85 : 1,
               }}
             >
               <PersonCard

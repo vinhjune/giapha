@@ -47,6 +47,31 @@ describe('PersonCard', () => {
     expect(screen.queryByLabelText('Vợ/chồng')).not.toBeInTheDocument()
   })
 
+  it('gives spouse-slot cards a solid distinct background instead of opacity, so the marriage connector line underneath never bleeds through', () => {
+    const { rerender } = render(
+      <PersonCard person={nguoiMau({})} isSelected={false} isSpouse onClick={() => {}} />
+    )
+    const spouseCard = screen.getByText('Người mẫu').closest('div.relative') as HTMLElement
+    expect(spouseCard).toHaveClass('bg-card-border')
+    expect(spouseCard).not.toHaveClass('bg-card')
+    expect(spouseCard.style.opacity).toBe('')
+
+    rerender(
+      <PersonCard person={nguoiMau({})} isSelected={false} isSpouse={false} onClick={() => {}} />
+    )
+    const mainCard = screen.getByText('Người mẫu').closest('div.relative') as HTMLElement
+    expect(mainCard).toHaveClass('bg-card')
+    expect(mainCard).not.toHaveClass('bg-card-border')
+  })
+
+  it('still applies the selected-accent background on a spouse card', () => {
+    render(
+      <PersonCard person={nguoiMau({})} isSelected={true} isSpouse onClick={() => {}} />
+    )
+    const card = screen.getByText('Người mẫu').closest('div.relative') as HTMLElement
+    expect(card).toHaveClass('bg-accent-soft', 'outline-accent')
+  })
+
   it('shows an accent outline only when selected', () => {
     const { rerender } = render(
       <PersonCard person={nguoiMau({})} isSelected={true} onClick={() => {}} />

@@ -113,6 +113,17 @@ describe('TreeView', () => {
     expect(container.querySelector('svg line[stroke="#CBD5E1"]')).toBeNull()
   })
 
+  it('does not dim spouse card wrappers with opacity, so the couple trunk line underneath never bleeds through', () => {
+    render(<TreeView />)
+    const spouseWrapper = screen.getByText('Bà').closest('div.relative')!.parentElement as HTMLElement
+    const mainWrapper = screen.getByText('Tổ').closest('div.relative')!.parentElement as HTMLElement
+
+    // Wrapper opacity must be unset (fully opaque) — PersonCard's own bg-card-border
+    // class is what visually distinguishes the spouse card now, not transparency.
+    expect(spouseWrapper.style.opacity).toBe('')
+    expect(mainWrapper.style.opacity).toBe('')
+  })
+
   it('gives every card wrapper an explicit height matching the connector-line math (NODE_H)', () => {
     render(<TreeView />)
     const nameEl = screen.getByText('Tổ')

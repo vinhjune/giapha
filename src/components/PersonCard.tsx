@@ -28,7 +28,7 @@ export default function PersonCard({ person, displayName, isSelected, isHighligh
       onClick={onClick}
       className={`
         relative w-full h-full rounded-xl border p-2 cursor-pointer text-left
-        bg-card shadow-sm transition-all hover:shadow-md hover:-translate-y-px
+        ${isSpouse ? 'bg-card-spouse' : 'bg-card'} shadow-sm transition-all hover:shadow-md hover:-translate-y-px
         ${isSelected ? 'outline outline-2 outline-accent outline-offset-1 bg-accent-soft border-accent-soft' : 'border-card-border'}
         ${isHighlighted && !isSelected ? 'ring-2 ring-blue-400' : ''}
       `}

@@ -7,6 +7,7 @@ export default {
         canvas: '#f8fafc',
         card: '#ffffff',
         'card-border': '#e2e8f0',
+        'card-spouse': '#f1f5f9',
         ink: '#0f172a',
         muted: '#64748b',
         accent: '#4f46e5',
