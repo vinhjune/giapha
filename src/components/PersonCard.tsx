@@ -59,6 +59,7 @@ export default function PersonCard({ person, displayName, isSelected, isHighligh
             person.namSinh?.thang ? String(person.namSinh.thang).padStart(2, '0') : null,
             person.namSinh?.nam ? String(person.namSinh.nam) : null,
           ].filter(Boolean).join('/')}
+          {person.namSinh?.amLich && <span className="ml-0.5 text-amber-600">ÂL</span>}
           {person.namMat && <span className="ml-1 text-slate-400">†</span>}
         </div>
       )}

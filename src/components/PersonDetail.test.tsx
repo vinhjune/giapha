@@ -72,3 +72,54 @@ describe('PersonDetail contact info', () => {
     expect(screen.getByText('Người Có Liên Hệ')).toBeInTheDocument()
   })
 })
+
+describe('PersonDetail lunar date marker', () => {
+  it('shows ÂL next to birth and death dates marked as lunar', () => {
+    useGiaphaStore.setState({
+      data: {
+        metadata: { tenDongHo: 'Dòng họ mẫu' },
+        persons: {
+          '1': {
+            id: '1',
+            hoTen: 'Người Âm Lịch',
+            gioiTinh: 'nam',
+            laThanhVienHo: true,
+            namSinh: { nam: 1930, amLich: true },
+            namMat: { nam: 2000, amLich: true },
+            honNhan: [],
+            conCaiIds: [],
+          },
+        },
+      },
+      selectedPersonId: '1',
+      viewMode: 'tree',
+    })
+
+    render(<PersonDetail onEdit={vi.fn()} />)
+    expect(screen.getAllByText('ÂL')).toHaveLength(2)
+  })
+
+  it('shows no ÂL marker for a solar date', () => {
+    useGiaphaStore.setState({
+      data: {
+        metadata: { tenDongHo: 'Dòng họ mẫu' },
+        persons: {
+          '1': {
+            id: '1',
+            hoTen: 'Người Dương Lịch',
+            gioiTinh: 'nam',
+            laThanhVienHo: true,
+            namSinh: { nam: 1930 },
+            honNhan: [],
+            conCaiIds: [],
+          },
+        },
+      },
+      selectedPersonId: '1',
+      viewMode: 'tree',
+    })
+
+    render(<PersonDetail onEdit={vi.fn()} />)
+    expect(screen.queryByText('ÂL')).not.toBeInTheDocument()
+  })
+})

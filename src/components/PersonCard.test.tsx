@@ -102,4 +102,16 @@ describe('PersonCard', () => {
     )
     expect(screen.getByTestId('person-avatar')).toHaveTextContent('A')
   })
+
+  it('shows ÂL next to a lunar birth date', () => {
+    const { rerender } = render(
+      <PersonCard person={nguoiMau({ namSinh: { nam: 1930, amLich: true } })} isSelected={false} onClick={() => {}} />
+    )
+    expect(screen.getByText('ÂL')).toBeInTheDocument()
+
+    rerender(
+      <PersonCard person={nguoiMau({ namSinh: { nam: 1930 } })} isSelected={false} onClick={() => {}} />
+    )
+    expect(screen.queryByText('ÂL')).not.toBeInTheDocument()
+  })
 })

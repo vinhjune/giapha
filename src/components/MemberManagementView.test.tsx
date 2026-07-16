@@ -42,8 +42,8 @@ describe('MemberManagementView', () => {
     expect(screen.getByText('Đời')).toBeInTheDocument()
     expect(screen.getByTestId('thuTuDoi-0')).toHaveValue('1')
     expect(screen.getByTestId('thuTuDoi-1')).toHaveValue('2')
-    expect(screen.getByText('Năm sinh')).toBeInTheDocument()
-    expect(screen.getByText('Năm mất')).toBeInTheDocument()
+    expect(screen.getByText('Ngày sinh')).toBeInTheDocument()
+    expect(screen.getByText('Ngày mất')).toBeInTheDocument()
     expect(screen.getByText('Địa chỉ')).toBeInTheDocument()
     expect(screen.getByText('Tiểu sử')).toBeInTheDocument()
     expect(screen.getByTestId('member-table-scroll')).toBeInTheDocument()
@@ -112,5 +112,22 @@ describe('MemberManagementView', () => {
 
     expect(await screen.findByText(/Đời phải là số/)).toBeInTheDocument()
     expect(api.updatePerson).not.toHaveBeenCalledWith('2', expect.anything())
+  })
+
+  it('saves a partial lunar birth date entered via the masked date input', async () => {
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    const dateInput = screen.getByTestId('namSinh-0-date')
+    await user.click(dateInput)
+    await user.keyboard('{ArrowRight}{ArrowRight}')
+    await user.type(dateInput, '1954')
+    await user.click(screen.getByTestId('namSinh-0-amLich'))
+    await user.click(screen.getByRole('button', { name: 'Áp dụng thay đổi' }))
+
+    expect(await screen.findByText(/Đã cập nhật/)).toBeInTheDocument()
+    expect(api.updatePerson).toHaveBeenCalledWith('1', expect.objectContaining({
+      namSinh: { nam: 1954, thang: undefined, ngay: undefined, amLich: true },
+    }))
   })
 })

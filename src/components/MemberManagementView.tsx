@@ -1,17 +1,22 @@
 import { useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonPicker from './PersonPicker'
+import NgayThangInput from './NgayThangInput'
 import type { GioiTinh, NgayThang, Person } from '../types/giapha'
 
-type RowField =
+type StringRowField =
   | 'id' | 'hoTen' | 'gioiTinh' | 'laThanhVienHo' | 'thuTuDoi' | 'thuTuAnhChi'
-  | 'namSinh_nam' | 'namSinh_thang' | 'namSinh_ngay' | 'namSinh_amLich'
-  | 'namMat_nam' | 'namMat_thang' | 'namMat_ngay' | 'namMat_amLich'
   | 'boId' | 'meId' | 'voChongIds'
   | 'queQuan' | 'tieuSu' | 'email' | 'soDienThoai' | 'ghiChu'
 
-interface EditableRow extends Record<RowField, string> {
+type DateRowField = 'namSinh' | 'namMat'
+
+type RowField = StringRowField | DateRowField
+
+interface EditableRow extends Record<StringRowField, string> {
   _key: string
+  namSinh: NgayThang | undefined
+  namMat: NgayThang | undefined
 }
 
 type PickerField = 'boId' | 'meId' | 'voChongIds'
@@ -24,14 +29,8 @@ const COLUMNS: Array<{ key: RowField; label: string }> = [
   { key: 'laThanhVienHo', label: 'Ngoại tộc' },
   { key: 'thuTuDoi', label: 'Đời' },
   { key: 'thuTuAnhChi', label: 'Thứ tự anh/chị' },
-  { key: 'namSinh_nam', label: 'Năm sinh' },
-  { key: 'namSinh_thang', label: 'Tháng sinh' },
-  { key: 'namSinh_ngay', label: 'Ngày sinh' },
-  { key: 'namSinh_amLich', label: 'NS âm lịch' },
-  { key: 'namMat_nam', label: 'Năm mất' },
-  { key: 'namMat_thang', label: 'Tháng mất' },
-  { key: 'namMat_ngay', label: 'Ngày mất' },
-  { key: 'namMat_amLich', label: 'NM âm lịch' },
+  { key: 'namSinh', label: 'Ngày sinh' },
+  { key: 'namMat', label: 'Ngày mất' },
   { key: 'boId', label: 'Bố' },
   { key: 'meId', label: 'Mẹ' },
   { key: 'voChongIds', label: 'Vợ/chồng' },
@@ -48,14 +47,8 @@ const DEFAULT_COLUMN_WIDTHS: Partial<Record<RowField, number>> = {
   laThanhVienHo: 100,
   thuTuDoi: 90,
   thuTuAnhChi: 130,
-  namSinh_nam: 110,
-  namSinh_thang: 110,
-  namSinh_ngay: 110,
-  namSinh_amLich: 110,
-  namMat_nam: 110,
-  namMat_thang: 110,
-  namMat_ngay: 110,
-  namMat_amLich: 110,
+  namSinh: 200,
+  namMat: 200,
   boId: 200,
   meId: 200,
   voChongIds: 240,
@@ -68,18 +61,7 @@ const DEFAULT_COLUMN_WIDTHS: Partial<Record<RowField, number>> = {
 
 const FALLBACK_COLUMN_WIDTH = 120
 
-function dateToParts(d?: NgayThang) {
-  return {
-    nam: d?.nam != null ? String(d.nam) : '',
-    thang: d?.thang != null ? String(d.thang) : '',
-    ngay: d?.ngay != null ? String(d.ngay) : '',
-    amLich: d?.amLich != null ? String(d.amLich) : '',
-  }
-}
-
 function personToRow(person: Person): EditableRow {
-  const namSinh = dateToParts(person.namSinh)
-  const namMat = dateToParts(person.namMat)
   return {
     _key: person.id,
     id: person.id,
@@ -88,14 +70,8 @@ function personToRow(person: Person): EditableRow {
     laThanhVienHo: String(person.laThanhVienHo),
     thuTuDoi: person.thuTuDoi != null ? String(person.thuTuDoi) : '',
     thuTuAnhChi: person.thuTuAnhChi != null ? String(person.thuTuAnhChi) : '',
-    namSinh_nam: namSinh.nam,
-    namSinh_thang: namSinh.thang,
-    namSinh_ngay: namSinh.ngay,
-    namSinh_amLich: namSinh.amLich,
-    namMat_nam: namMat.nam,
-    namMat_thang: namMat.thang,
-    namMat_ngay: namMat.ngay,
-    namMat_amLich: namMat.amLich,
+    namSinh: person.namSinh,
+    namMat: person.namMat,
     boId: person.boId ?? '',
     meId: person.meId ?? '',
     voChongIds: person.honNhan.map(h => h.voChongId).join(';'),
@@ -116,14 +92,8 @@ function createEmptyRow(index: number): EditableRow {
     laThanhVienHo: 'true',
     thuTuDoi: '',
     thuTuAnhChi: '',
-    namSinh_nam: '',
-    namSinh_thang: '',
-    namSinh_ngay: '',
-    namSinh_amLich: '',
-    namMat_nam: '',
-    namMat_thang: '',
-    namMat_ngay: '',
-    namMat_amLich: '',
+    namSinh: undefined,
+    namMat: undefined,
     boId: '',
     meId: '',
     voChongIds: '',
@@ -135,24 +105,14 @@ function createEmptyRow(index: number): EditableRow {
   }
 }
 
-function buildNgay(nam: string, thang: string, ngay: string, amLich: string): NgayThang | undefined {
-  if (!nam && !thang && !ngay) return undefined
-  return {
-    nam: nam ? Number(nam) : undefined,
-    thang: thang ? Number(thang) : undefined,
-    ngay: ngay ? Number(ngay) : undefined,
-    amLich: amLich === 'true' ? true : amLich === 'false' ? false : undefined,
-  }
-}
-
 function rowToPersonPayload(row: EditableRow): Omit<Person, 'id'> {
   return {
     hoTen: row.hoTen.trim(),
     gioiTinh: row.gioiTinh as GioiTinh,
     email: row.email.trim() || undefined,
     soDienThoai: row.soDienThoai.trim() || undefined,
-    namSinh: buildNgay(row.namSinh_nam, row.namSinh_thang, row.namSinh_ngay, row.namSinh_amLich),
-    namMat: buildNgay(row.namMat_nam, row.namMat_thang, row.namMat_ngay, row.namMat_amLich),
+    namSinh: row.namSinh,
+    namMat: row.namMat,
     queQuan: row.queQuan || undefined,
     tieuSu: row.tieuSu || undefined,
     laThanhVienHo: row.laThanhVienHo === 'true',
@@ -184,6 +144,12 @@ export default function MemberManagementView() {
   }
 
   function handleCellChange(index: number, field: RowField, value: string) {
+    setRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row))
+    setErrorMessages([])
+    setSaveMessage(null)
+  }
+
+  function handleDateChange(index: number, field: DateRowField, value: NgayThang | undefined) {
     setRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row))
     setErrorMessages([])
     setSaveMessage(null)
@@ -403,6 +369,12 @@ export default function MemberManagementView() {
                           + Thêm
                         </button>
                       </div>
+                    ) : col.key === 'namSinh' || col.key === 'namMat' ? (
+                      <NgayThangInput
+                        value={row[col.key]}
+                        onChange={v => handleDateChange(rowIndex, col.key as DateRowField, v)}
+                        testIdPrefix={`${col.key}-${rowIndex}`}
+                      />
                     ) : (
                       <input
                         value={row[col.key]}

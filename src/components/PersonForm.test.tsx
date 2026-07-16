@@ -7,7 +7,7 @@ import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonForm from './PersonForm'
 
 const data: GiaphaData = {
-  metadata: {} as any,
+  metadata: {} as GiaphaData['metadata'],
   persons: {
     '1': { id: '1', hoTen: 'Bố', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: '2' }], conCaiIds: [] },
     '2': { id: '2', hoTen: 'Mẹ', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: [] },
@@ -102,6 +102,58 @@ describe('PersonForm parent confirmation on add', () => {
 
     expect(themNguoi).toHaveBeenCalledTimes(1)
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+  })
+})
+
+describe('PersonForm date entry', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+    vi.restoreAllMocks()
+  })
+
+  it('saves a partial lunar birth date entered via the masked date input', async () => {
+    const themNguoi = vi.fn().mockResolvedValue('new-id')
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    useGiaphaStore.setState({ data, themNguoi, suaNguoi: vi.fn() })
+
+    const { container, getByTestId } = render(<PersonForm onClose={() => {}} />)
+    const nameInput = container.querySelector('input[required]') as HTMLInputElement
+    const dateInput = getByTestId('ngaySinh-date')
+
+    fireEvent.change(nameInput, { target: { value: 'Người mới' } })
+    fireEvent.keyDown(dateInput, { key: 'ArrowRight' })
+    fireEvent.keyDown(dateInput, { key: 'ArrowRight' })
+    for (const digit of '1954') fireEvent.keyDown(dateInput, { key: digit })
+    fireEvent.click(getByTestId('ngaySinh-amLich'))
+
+    await act(async () => { fireEvent.submit(container.querySelector('form')!) })
+
+    expect(themNguoi).toHaveBeenCalledWith(expect.objectContaining({
+      namSinh: { ngay: undefined, thang: undefined, nam: 1954, amLich: true },
+    }))
+  })
+
+  it('pre-fills the lunar checkbox when editing a person with a lunar birth date', () => {
+    useGiaphaStore.setState({ data })
+
+    const editPerson: Person = {
+      id: '1',
+      hoTen: 'Bố',
+      gioiTinh: 'nam',
+      laThanhVienHo: true,
+      namSinh: { nam: 1930, amLich: true },
+      honNhan: [{ voChongId: '2' }],
+      conCaiIds: [],
+    }
+
+    const { getByTestId } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    expect((getByTestId('ngaySinh-date') as HTMLInputElement).value).toBe('__/__/1930')
+    expect((getByTestId('ngaySinh-amLich') as HTMLInputElement).checked).toBe(true)
   })
 })
 

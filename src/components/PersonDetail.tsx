@@ -65,12 +65,18 @@ export default function PersonDetail({ onEdit }: Props) {
         )}
         <div className="flex gap-2">
           <dt className="text-gray-500 w-24">Ngày sinh:</dt>
-          <dd>{formatNgay(person.namSinh)}</dd>
+          <dd>
+            {formatNgay(person.namSinh)}
+            {person.namSinh?.amLich && <span className="ml-1 text-xs text-amber-600">ÂL</span>}
+          </dd>
         </div>
         {person.namMat && (
           <div className="flex gap-2">
             <dt className="text-gray-500 w-24">Ngày mất:</dt>
-            <dd>{formatNgay(person.namMat)}</dd>
+            <dd>
+              {formatNgay(person.namMat)}
+              {person.namMat.amLich && <span className="ml-1 text-xs text-amber-600">ÂL</span>}
+            </dd>
           </div>
         )}
         {person.queQuan && (
