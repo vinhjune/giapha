@@ -90,14 +90,78 @@ describe('TreeView', () => {
     expect(scaleLayer).toHaveStyle({ transform: 'scale(1.1)' })
   })
 
-  it('renders descendant connectors in blue with same thickness as couple lines', () => {
+  it('renders descendant connectors in ink with same thickness as couple lines', () => {
     const { container } = render(<TreeView />)
     const svgLines = container.querySelectorAll('svg line')
 
     expect(svgLines.length).toBeGreaterThan(0)
-    expect(container.querySelector('svg line[stroke="#F97316"][stroke-width="2"]')).not.toBeNull()
-    expect(container.querySelector('svg line[stroke="#3B82F6"][stroke-width="2"]')).not.toBeNull()
+    expect(container.querySelector('svg line[stroke="#7C3AED"][stroke-width="3"]')).not.toBeNull()
+    expect(container.querySelector('svg line[stroke="#0F172A"][stroke-width="3"]')).not.toBeNull()
     expect(container.querySelector('svg line[stroke="#CBD5E1"]')).toBeNull()
+  })
+
+  it('gives every card wrapper an explicit height matching the connector-line math (NODE_H)', () => {
+    render(<TreeView />)
+    const nameEl = screen.getByText('Tổ')
+    const cardWrapper = nameEl.parentElement!.parentElement!.parentElement!
+
+    // NODE_H = 64 in source: every SVG connector coordinate assumes this exact card height,
+    // so the wrapper must set it explicitly rather than let PersonCard's own CSS decide it.
+    expect(cardWrapper.style.height).toBe('64px')
+  })
+
+  it('sizes cards wide enough to fit long names plus the avatar reservation', () => {
+    const longName = 'Nguyễn Thị Phương Thảo Uyên Gia Tộc'
+    const longNameData: GiaphaData = {
+      metadata: { tenDongHo: 'Dòng họ mẫu' },
+      persons: {
+        '1': { id: '1', hoTen: longName, gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+      },
+    }
+    useGiaphaStore.setState({
+      data: longNameData,
+      viewMode: 'tree',
+      selectedPersonId: null,
+      hienThiThuTuDoi: false,
+    })
+
+    render(<TreeView />)
+    const nameEl = screen.getByText(longName)
+    const cardWrapper = nameEl.parentElement!.parentElement!.parentElement!
+    const actualWidth = parseFloat(cardWrapper.style.width)
+
+    // Baseline: what the old text-only formula (no avatar reservation) would have produced
+    // (NAME_CHAR_WIDTH_ESTIMATE=8 * name length + NODE_HORIZONTAL_PADDING=20).
+    const nameOnlyBudget = longName.trim().length * 8 + 20
+    expect(actualWidth).toBeGreaterThan(nameOnlyBudget)
+  })
+
+  it('sizes each card to its own name, not the longest name in the tree', () => {
+    const shortName = 'An'
+    const longName = 'Nguyễn Thị Phương Thảo Uyên Gia Tộc'
+    const mixedLengthData: GiaphaData = {
+      metadata: { tenDongHo: 'Dòng họ mẫu' },
+      persons: {
+        '1': { id: '1', hoTen: 'Tổ', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: ['2', '3'] },
+        '2': { id: '2', hoTen: shortName, gioiTinh: 'nam', laThanhVienHo: true, boId: '1', honNhan: [], conCaiIds: [] },
+        '3': { id: '3', hoTen: longName, gioiTinh: 'nu', laThanhVienHo: true, boId: '1', honNhan: [], conCaiIds: [] },
+      },
+    }
+    useGiaphaStore.setState({
+      data: mixedLengthData,
+      viewMode: 'tree',
+      selectedPersonId: null,
+      hienThiThuTuDoi: false,
+    })
+
+    render(<TreeView />)
+    const shortWidth = parseFloat(screen.getByText(shortName).parentElement!.parentElement!.parentElement!.style.width)
+    const longWidth = parseFloat(screen.getByText(longName).parentElement!.parentElement!.parentElement!.style.width)
+
+    // A 2-letter name must not be forced as wide as a 30+ character sibling's card.
+    expect(shortWidth).toBeLessThan(longWidth)
+    // Short name falls back to the card's minimum width (MIN_NODE_W = 140 in source), not a name-derived one.
+    expect(shortWidth).toBe(140)
   })
 
   it('orders siblings left-to-right from eldest to youngest', () => {

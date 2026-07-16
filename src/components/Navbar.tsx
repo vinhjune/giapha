@@ -33,18 +33,18 @@ export default function Navbar() {
 
   return (
     <>
-    <nav className="relative bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-4">
+    <nav className="relative bg-card border-b border-card-border px-4 py-2 flex items-center gap-4">
       <button
         type="button"
         aria-label="Mở menu"
         aria-expanded={menuOpen}
         onClick={() => setMenuOpen(v => !v)}
-        className="px-2 py-1.5 text-lg leading-none rounded-md border border-gray-300 hover:bg-gray-50"
+        className="px-2 py-1.5 text-lg leading-none text-muted rounded-md border border-card-border hover:bg-slate-50"
       >
         ☰
       </button>
       <div className="min-w-0">
-        <h1 className="text-lg font-bold text-red-700 whitespace-nowrap">
+        <h1 className="text-lg font-bold text-ink whitespace-nowrap">
           {data?.metadata.tenDongHo || 'Gia Phả'}
         </h1>
       </div>
@@ -58,15 +58,15 @@ export default function Navbar() {
             onClick={() => setMenuOpen(false)}
             className="fixed inset-0 z-30"
           />
-          <div className="absolute top-full left-4 mt-2 z-40 w-72 bg-white border border-gray-200 rounded-lg shadow-lg p-3 space-y-2">
+          <div className="absolute top-full left-4 mt-2 z-40 w-72 bg-card border border-card-border rounded-lg shadow-lg p-3 space-y-2">
             <div>
-              <label htmlFor="navbar-view-mode" className="block text-xs text-gray-500 mb-1">Chế độ xem</label>
+              <label htmlFor="navbar-view-mode" className="block text-xs text-muted mb-1">Chế độ xem</label>
               <select
                 id="navbar-view-mode"
                 aria-label="Chế độ xem"
                 value={selectableViewMode}
                 onChange={e => setViewMode(e.target.value as 'tree' | 'list')}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md bg-white"
+                className="w-full px-2 py-1.5 text-sm border border-card-border rounded-md bg-card"
               >
                 <option value="" disabled>
                   {viewMode === 'members' ? 'Quản lý thành viên' : 'Chế độ xem'}
@@ -80,7 +80,7 @@ export default function Navbar() {
                 setViewMode('members')
                 setMenuOpen(false)
               }}
-              className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 text-left"
+              className="w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
             >
               Quản lý thành viên
             </button>
@@ -89,7 +89,7 @@ export default function Navbar() {
                 setCsvModalOpen(true)
                 setMenuOpen(false)
               }}
-              className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 text-left"
+              className="w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
             >
               Nhập CSV
             </button>
@@ -98,7 +98,7 @@ export default function Navbar() {
                 handleExportCsv()
                 setMenuOpen(false)
               }}
-              className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 text-left"
+              className="w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
             >
               Xuất CSV
             </button>
@@ -107,7 +107,7 @@ export default function Navbar() {
                 toggleGenerationOrder()
                 setMenuOpen(false)
               }}
-              className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 text-left"
+              className="w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
             >
               Thứ tự đời: {hienThiThuTuDoi ? 'Bật' : 'Tắt'}
             </button>

@@ -4,7 +4,7 @@ import PersonCard from './PersonCard'
 import type { Person } from '../types/giapha'
 import { sapXepAnhChiEm, dinhDangTenNguoi } from '../utils/familyTree'
 
-const MIN_NODE_W = 120
+const MIN_NODE_W = 140
 const NODE_H = 64
 const COUPLE_GAP = 24    // gap: person's right edge → start of first spouse zone
 const SPOUSE_SEP = 24    // gap between consecutive spouse zones
@@ -19,6 +19,11 @@ const ZOOM_STEP = 0.1
 const NODE_HORIZONTAL_PADDING = 20
 const NAME_CHAR_WIDTH_ESTIMATE = 8
 const NAME_TEXT_STYLE = '600 12px sans-serif'
+const AVATAR_DIAMETER = 24  // reserved width for PersonCard's avatar circle
+const AVATAR_GAP = 8        // gap between avatar and name text
+const COUPLE_LINE_COLOR = '#7C3AED'
+const DESCENT_LINE_COLOR = '#0F172A'
+const LINE_STROKE_WIDTH = 3
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -29,6 +34,7 @@ const NAME_TEXT_STYLE = '600 12px sans-serif'
 interface Marriage {
   spouse: Person | null
   spouseX: number       // left edge of spouse card; -1 if no spouse
+  spouseWidth: number   // spouse's own card width (0 if no spouse)
   descentX: number      // where the vertical descent line drops
   childNodes: TreeNode[]
 }
@@ -37,6 +43,7 @@ interface TreeNode {
   person: Person
   x: number             // left edge of person card
   y: number             // top of card row
+  width: number         // this person's own card width, sized to their name
   subtreeWidth: number  // guaranteed to contain ALL descendant cards
   marriages: Marriage[]
 }
@@ -88,7 +95,8 @@ function buildTree(
   personId: string,
   persons: Record<string, Person>,
   childrenIndex: Record<string, string[]>,
-  visited: Set<string>
+  visited: Set<string>,
+  widthByPersonId: Record<string, number>
 ): TreeNode | null {
   if (visited.has(personId)) return null
   visited.add(personId)
@@ -121,9 +129,10 @@ function buildTree(
     marriages.push({
       spouse,
       spouseX: 0,
+      spouseWidth: spouse ? (widthByPersonId[spouse.id] ?? MIN_NODE_W) : 0,
       descentX: 0,
       childNodes: childIds
-        .map(id => buildTree(id, persons, childrenIndex, visited))
+        .map(id => buildTree(id, persons, childrenIndex, visited, widthByPersonId))
         .filter(Boolean) as TreeNode[],
     })
   }
@@ -131,27 +140,28 @@ function buildTree(
   // Children not linked to any marriage (boId/meId missing)
   const unmatched = orderedChildIds
     .filter(id => !matchedChildIds.has(id))
-    .map(id => buildTree(id, persons, childrenIndex, visited))
+    .map(id => buildTree(id, persons, childrenIndex, visited, widthByPersonId))
     .filter(Boolean) as TreeNode[]
   if (unmatched.length > 0) {
-    marriages.push({ spouse: null, spouseX: -1, descentX: 0, childNodes: unmatched })
+    marriages.push({ spouse: null, spouseX: -1, spouseWidth: 0, descentX: 0, childNodes: unmatched })
   }
 
-  return { person, x: 0, y: 0, subtreeWidth: 0, marriages }
+  return { person, x: 0, y: 0, width: widthByPersonId[person.id] ?? MIN_NODE_W, subtreeWidth: 0, marriages }
 }
 
 // ─── Bottom-up: subtree width ─────────────────────────────────────────────────
 //
 // Layout rule (Option B):
-//   Person card always at the LEFT edge.
+//   Person card always at the LEFT edge, sized to its OWN name (dynamic per node).
 //   Each marriage is a "zone" to the right of the person:
-//     zoneWidth = max(NODE_W, childrenTotalW)   ← at least wide enough for the spouse card
+//     zoneWidth = max(zoneBasisWidth, childrenTotalW)   ← at least wide enough for the spouse's own card
+//     zoneBasisWidth = spouse's own card width, or the person's width when the zone has no spouse
 //   Zones are separated by SPOUSE_SEP.
 //   Person and first zone are separated by COUPLE_GAP.
 //
-//   subtreeWidth = NODE_W + COUPLE_GAP + Σ(zoneWidth_k) + (N−1)×SPOUSE_SEP
+//   subtreeWidth = node.width + COUPLE_GAP + Σ(zoneWidth_k) + (N−1)×SPOUSE_SEP
 //
-// Special case — no marriages at all: subtreeWidth = NODE_W (leaf).
+// Special case — no marriages at all: subtreeWidth = node.width (leaf).
 // Special case — single no-spouse group: symmetric centered layout.
 
 function cW(childNodes: TreeNode[]): number {
@@ -174,45 +184,54 @@ function measureNameWidth(name: string, textMeasureContext: CanvasRenderingConte
   return Math.ceil(textMeasureContext.measureText(normalized).width)
 }
 
-function calcNodeWidth(persons: Record<string, Person>, displayNameById: Record<string, string>): number {
+// One person's own card width, sized to fit their own name + avatar reservation.
+function personCardWidth(name: string, textMeasureContext: CanvasRenderingContext2D | null): number {
+  return Math.max(MIN_NODE_W, measureNameWidth(name, textMeasureContext) + NODE_HORIZONTAL_PADDING + AVATAR_DIAMETER + AVATAR_GAP)
+}
+
+function buildWidthByPersonId(persons: Record<string, Person>, displayNameById: Record<string, string>): Record<string, number> {
   const textMeasureContext =
     typeof document !== 'undefined' && !(typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent))
       ? document.createElement('canvas').getContext('2d')
       : null
 
-  const longestNameWidth = Object.values(persons)
-    .reduce((maxWidth, person) => Math.max(maxWidth, measureNameWidth(displayNameById[person.id] ?? person.hoTen, textMeasureContext)), 0)
-
-  return Math.max(MIN_NODE_W, longestNameWidth + NODE_HORIZONTAL_PADDING)
+  return Object.fromEntries(
+    Object.values(persons).map(person => [
+      person.id,
+      personCardWidth(displayNameById[person.id] ?? person.hoTen, textMeasureContext),
+    ])
+  )
 }
 
-function calcSubtreeWidth(node: TreeNode, nodeWidth: number): void {
+function calcSubtreeWidth(node: TreeNode): void {
   for (const m of node.marriages)
-    for (const c of m.childNodes) calcSubtreeWidth(c, nodeWidth)
+    for (const c of m.childNodes) calcSubtreeWidth(c)
 
   if (node.marriages.length === 0) {
-    node.subtreeWidth = nodeWidth
+    node.subtreeWidth = node.width
     return
   }
 
   // Single no-spouse group → symmetric (children centered under person)
   if (node.marriages.length === 1 && !node.marriages[0].spouse) {
-    node.subtreeWidth = Math.max(nodeWidth, cW(node.marriages[0].childNodes))
+    node.subtreeWidth = Math.max(node.width, cW(node.marriages[0].childNodes))
     return
   }
 
   // Normal: person-left + spouse zones
   let zonesW = 0
   for (let k = 0; k < node.marriages.length; k++) {
-    const zoneW = Math.max(nodeWidth, cW(node.marriages[k].childNodes))
+    const marriage = node.marriages[k]
+    const zoneBasisWidth = marriage.spouse ? marriage.spouseWidth : node.width
+    const zoneW = Math.max(zoneBasisWidth, cW(marriage.childNodes))
     zonesW += zoneW + (k > 0 ? SPOUSE_SEP : 0)
   }
-  node.subtreeWidth = nodeWidth + COUPLE_GAP + zonesW
+  node.subtreeWidth = node.width + COUPLE_GAP + zonesW
 }
 
 // ─── Top-down: assign positions ───────────────────────────────────────────────
 
-function assignPositions(node: TreeNode, startX: number, depth: number, nodeWidth: number): void {
+function assignPositions(node: TreeNode, startX: number, depth: number): void {
   node.y = depth * (NODE_H + V_GAP)
 
   // Leaf
@@ -226,13 +245,13 @@ function assignPositions(node: TreeNode, startX: number, depth: number, nodeWidt
     const m = node.marriages[0]
     const childrenW = cW(m.childNodes)
     const midX = startX + node.subtreeWidth / 2
-    node.x = midX - nodeWidth / 2
+    node.x = midX - node.width / 2
     m.spouseX = -1
     m.descentX = midX
     if (m.childNodes.length > 0) {
       let cx = midX - childrenW / 2
       for (const child of m.childNodes) {
-        assignPositions(child, cx, depth + 1, nodeWidth)
+        assignPositions(child, cx, depth + 1)
         cx += child.subtreeWidth + H_GAP
       }
     }
@@ -241,19 +260,20 @@ function assignPositions(node: TreeNode, startX: number, depth: number, nodeWidt
 
   // Normal: person at left, spouse zones to the right
   node.x = startX
-  let rightOff = nodeWidth + COUPLE_GAP
+  let rightOff = node.width + COUPLE_GAP
 
   for (let k = 0; k < node.marriages.length; k++) {
     const m = node.marriages[k]
     if (k > 0) rightOff += SPOUSE_SEP
 
     const childrenW = cW(m.childNodes)
-    const zoneW = Math.max(nodeWidth, childrenW)
+    const zoneBasisWidth = m.spouse ? m.spouseWidth : node.width
+    const zoneW = Math.max(zoneBasisWidth, childrenW)
 
     if (m.spouse) {
-      // Spouse card centered in zone; descent from spouse card center
-      m.spouseX = startX + rightOff + (zoneW - nodeWidth) / 2
-      m.descentX = m.spouseX + nodeWidth / 2
+      // Spouse card centered in zone (sized to the spouse's own width); descent from spouse card center
+      m.spouseX = startX + rightOff + (zoneW - m.spouseWidth) / 2
+      m.descentX = m.spouseX + m.spouseWidth / 2
     } else {
       // No spouse in this group; descent from zone center
       m.spouseX = -1
@@ -264,7 +284,7 @@ function assignPositions(node: TreeNode, startX: number, depth: number, nodeWidt
     if (m.childNodes.length > 0) {
       let cx = m.descentX - childrenW / 2
       for (const child of m.childNodes) {
-        assignPositions(child, cx, depth + 1, nodeWidth)
+        assignPositions(child, cx, depth + 1)
         cx += child.subtreeWidth + H_GAP
       }
     }
@@ -284,8 +304,8 @@ function assignPositions(node: TreeNode, startX: number, depth: number, nodeWidt
 //   ── horizontal child connector
 //   ↓ stems to each child
 
-function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[], nodeWidth: number): void {
-  cards.push({ person: node.person, x: node.x, y: node.y, width: nodeWidth, isSpouse: false })
+function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[]): void {
+  cards.push({ person: node.person, x: node.x, y: node.y, width: node.width, isSpouse: false })
 
   // Y positions for spouse row (sits below the person card)
   const spouseTopY   = node.y + NODE_H + SPOUSE_DROP
@@ -295,8 +315,8 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[], nodeWidt
   const spouseMarriages = node.marriages.filter(m => m.spouse && m.spouseX >= 0)
 
   if (spouseMarriages.length > 0) {
-    const personCenterX     = node.x + nodeWidth / 2
-    const lastSpouseCenterX = Math.max(...spouseMarriages.map(m => m.spouseX + nodeWidth / 2))
+    const personCenterX     = node.x + node.width / 2
+    const lastSpouseCenterX = Math.max(...spouseMarriages.map(m => m.spouseX + m.spouseWidth / 2))
 
     // Vertical: person bottom-center → trunk level
     lines.push({
@@ -312,7 +332,7 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[], nodeWidt
     })
     // Spouse cards (rendered on top of trunk via z-index)
     for (const m of spouseMarriages) {
-      cards.push({ person: m.spouse!, x: m.spouseX, y: spouseTopY, width: nodeWidth, isSpouse: true })
+      cards.push({ person: m.spouse!, x: m.spouseX, y: spouseTopY, width: m.spouseWidth, isSpouse: true })
     }
   }
 
@@ -332,8 +352,8 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[], nodeWidt
     })
 
     // Horizontal connector spanning all child stems + descentX
-    const firstCX = m.childNodes[0].x + nodeWidth / 2
-    const lastCX  = m.childNodes[m.childNodes.length - 1].x + nodeWidth / 2
+    const firstCX = m.childNodes[0].x + m.childNodes[0].width / 2
+    const lastCX  = m.childNodes[m.childNodes.length - 1].x + m.childNodes[m.childNodes.length - 1].width / 2
     const connL   = Math.min(m.descentX, firstCX)
     const connR   = Math.max(m.descentX, lastCX)
     if (connL < connR) {
@@ -342,9 +362,9 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[], nodeWidt
 
     // Vertical stems: connector → each child top
     for (const child of m.childNodes) {
-      const cx = child.x + nodeWidth / 2
+      const cx = child.x + child.width / 2
       lines.push({ x1: cx, y1: connY, x2: cx, y2: child.y, isCouple: false })
-      collect(child, cards, lines, nodeWidth)
+      collect(child, cards, lines)
     }
   }
 }
@@ -383,7 +403,7 @@ export default function TreeView() {
   const { cards, lines, width, height } = useMemo(() => {
     if (!data) return { cards: [], lines: [], width: 0, height: 0 }
     const persons = data.persons
-    const nodeWidth = calcNodeWidth(persons, displayNameById)
+    const widthByPersonId = buildWidthByPersonId(persons, displayNameById)
     const childrenIndex = taoChiMucCon(persons)
 
     // Root = clan member with no known father
@@ -396,7 +416,7 @@ export default function TreeView() {
     const trees: TreeNode[] = []
 
     if (root) {
-      const primaryTree = buildTree(root.id, persons, childrenIndex, visited)
+      const primaryTree = buildTree(root.id, persons, childrenIndex, visited, widthByPersonId)
       if (primaryTree) trees.push(primaryTree)
     }
 
@@ -404,13 +424,13 @@ export default function TreeView() {
       p => !visited.has(p.id) && (!p.boId || !persons[p.boId])
     )
     for (const extraRoot of extraRoots) {
-      const tree = buildTree(extraRoot.id, persons, childrenIndex, visited)
+      const tree = buildTree(extraRoot.id, persons, childrenIndex, visited, widthByPersonId)
       if (tree) trees.push(tree)
     }
 
     const unvisitedPersons = Object.values(persons).filter(p => !visited.has(p.id))
     for (const person of unvisitedPersons) {
-      const tree = buildTree(person.id, persons, childrenIndex, visited)
+      const tree = buildTree(person.id, persons, childrenIndex, visited, widthByPersonId)
       if (tree) trees.push(tree)
     }
 
@@ -418,14 +438,14 @@ export default function TreeView() {
 
     let startX = 20
     for (const tree of trees) {
-      calcSubtreeWidth(tree, nodeWidth)
-      assignPositions(tree, startX, 0, nodeWidth)
+      calcSubtreeWidth(tree)
+      assignPositions(tree, startX, 0)
       startX += tree.subtreeWidth + FOREST_GAP
     }
 
     const cards: RenderCard[] = []
     const lines: SvgLine[] = []
-    for (const tree of trees) collect(tree, cards, lines, nodeWidth)
+    for (const tree of trees) collect(tree, cards, lines)
 
     const maxX = Math.max(...cards.map(c => c.x + c.width)) + 40
     const maxY = Math.max(...cards.map(c => c.y)) + NODE_H + 40
@@ -578,7 +598,7 @@ export default function TreeView() {
     <div
       ref={containerRef}
       data-testid="tree-view-container"
-      className={`flex-1 overflow-auto bg-gray-50 relative ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+      className={`flex-1 overflow-auto bg-canvas relative ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
       tabIndex={0}
       aria-label="Cây gia phả"
       onMouseDown={onMouseDown}
@@ -592,13 +612,13 @@ export default function TreeView() {
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
     >
-      <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 p-2 shadow-sm">
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded-lg border border-card-border bg-card/95 p-2 shadow-sm">
         <button
           type="button"
           onClick={zoomOut}
           disabled={zoom <= MIN_ZOOM}
           aria-label="Thu nhỏ cây"
-          className="h-8 w-8 rounded border border-gray-200 text-lg leading-none disabled:opacity-50"
+          className="h-8 w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
         >
           −
         </button>
@@ -606,7 +626,7 @@ export default function TreeView() {
           type="button"
           onClick={resetZoom}
           aria-label="Đặt lại mức thu phóng"
-          className="rounded border border-gray-200 px-2 py-1 text-xs font-medium"
+          className="rounded border border-card-border text-muted px-2 py-1 text-xs font-medium hover:bg-slate-50"
         >
           {Math.round(zoom * 100)}%
         </button>
@@ -615,7 +635,7 @@ export default function TreeView() {
           onClick={zoomIn}
           disabled={zoom >= MAX_ZOOM}
           aria-label="Phóng to cây"
-          className="h-8 w-8 rounded border border-gray-200 text-lg leading-none disabled:opacity-50"
+          className="h-8 w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
         >
           +
         </button>
@@ -640,8 +660,8 @@ export default function TreeView() {
               <line
                 key={i}
                 x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-                stroke={l.isCouple ? '#F97316' : '#3B82F6'}
-                strokeWidth={2}
+                stroke={l.isCouple ? COUPLE_LINE_COLOR : DESCENT_LINE_COLOR}
+                strokeWidth={LINE_STROKE_WIDTH}
               />
             ))}
           </svg>
@@ -653,6 +673,7 @@ export default function TreeView() {
                 left: card.x,
                 top: card.y,
                 width: card.width,
+                height: NODE_H,
                 zIndex: 1,
                 opacity: card.isSpouse ? 0.85 : 1,
               }}

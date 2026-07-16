@@ -13,26 +13,59 @@ const nguoiMau = (ghiDe: Partial<Person>): Person => ({
   ...ghiDe,
 })
 
-describe('PersonCard background colors', () => {
-  it('applies background color by gender and clan membership', () => {
+describe('PersonCard', () => {
+  it('colors the avatar by gender', () => {
     const { rerender } = render(
-      <PersonCard person={nguoiMau({ hoTen: 'Nam trong họ', gioiTinh: 'nam', laThanhVienHo: true })} isSelected={false} onClick={() => {}} />
+      <PersonCard person={nguoiMau({ gioiTinh: 'nam' })} isSelected={false} onClick={() => {}} />
     )
-    expect(screen.getByText('Nam trong họ').parentElement).toHaveClass('bg-blue-100')
+    expect(screen.getByTestId('person-avatar')).toHaveClass('bg-nam')
 
     rerender(
-      <PersonCard person={nguoiMau({ hoTen: 'Nữ trong họ', gioiTinh: 'nu', laThanhVienHo: true })} isSelected={false} onClick={() => {}} />
+      <PersonCard person={nguoiMau({ gioiTinh: 'nu' })} isSelected={false} onClick={() => {}} />
     )
-    expect(screen.getByText('Nữ trong họ').parentElement).toHaveClass('bg-pink-100')
+    expect(screen.getByTestId('person-avatar')).toHaveClass('bg-nu')
+  })
+
+  it('shows the ring badge only for non-clan (married-in) members', () => {
+    const { rerender } = render(
+      <PersonCard person={nguoiMau({ laThanhVienHo: false })} isSelected={false} onClick={() => {}} />
+    )
+    expect(screen.getByLabelText('Vợ/chồng')).toHaveTextContent('💍')
 
     rerender(
-      <PersonCard person={nguoiMau({ hoTen: 'Nam ngoài họ', gioiTinh: 'nam', laThanhVienHo: false })} isSelected={false} onClick={() => {}} />
+      <PersonCard person={nguoiMau({ laThanhVienHo: true })} isSelected={false} onClick={() => {}} />
     )
-    expect(screen.getByText('Nam ngoài họ').parentElement).toHaveClass('bg-purple-100')
+    expect(screen.queryByLabelText('Vợ/chồng')).not.toBeInTheDocument()
+  })
+
+  it('shows an accent outline only when selected', () => {
+    const { rerender } = render(
+      <PersonCard person={nguoiMau({})} isSelected={true} onClick={() => {}} />
+    )
+    expect(screen.getByText('Người mẫu').closest('div.relative')).toHaveClass('outline-accent')
 
     rerender(
-      <PersonCard person={nguoiMau({ hoTen: 'Nữ ngoài họ', gioiTinh: 'nu', laThanhVienHo: false })} isSelected={false} onClick={() => {}} />
+      <PersonCard person={nguoiMau({})} isSelected={false} onClick={() => {}} />
     )
-    expect(screen.getByText('Nữ ngoài họ').parentElement).toHaveClass('bg-yellow-100')
+    expect(screen.getByText('Người mẫu').closest('div.relative')).not.toHaveClass('outline-accent')
+  })
+
+  it('shows the deceased mark only when namMat is set', () => {
+    const { rerender } = render(
+      <PersonCard person={nguoiMau({ namMat: { nam: 2020 } })} isSelected={false} onClick={() => {}} />
+    )
+    expect(screen.getByText('†')).toBeInTheDocument()
+
+    rerender(
+      <PersonCard person={nguoiMau({ namMat: undefined })} isSelected={false} onClick={() => {}} />
+    )
+    expect(screen.queryByText('†')).not.toBeInTheDocument()
+  })
+
+  it('shows the last name-part initial in the avatar', () => {
+    render(
+      <PersonCard person={nguoiMau({ hoTen: 'Nguyễn Văn An' })} isSelected={false} onClick={() => {}} />
+    )
+    expect(screen.getByTestId('person-avatar')).toHaveTextContent('A')
   })
 })
