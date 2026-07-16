@@ -156,7 +156,7 @@ export default function MemberManagementView() {
   }
 
   function handleAddRow() {
-    setRows(prev => [...prev, createEmptyRow(prev.length + 1)])
+    setRows(prev => [createEmptyRow(prev.length + 1), ...prev])
     setErrorMessages([])
     setSaveMessage(null)
   }

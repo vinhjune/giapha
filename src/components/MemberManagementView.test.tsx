@@ -63,8 +63,8 @@ describe('MemberManagementView', () => {
     render(<MemberManagementView />)
 
     await user.click(screen.getByRole('button', { name: 'Thêm dòng mới' }))
-    await user.type(screen.getByTestId('hoTen-2'), 'Thành viên mới')
-    await user.click(screen.getByRole('button', { name: 'Chọn bố dòng 3' }))
+    await user.type(screen.getByTestId('hoTen-0'), 'Thành viên mới')
+    await user.click(screen.getByRole('button', { name: 'Chọn bố dòng 1' }))
     const modal = (await screen.findByText('Chọn bố')).closest('div.bg-white') as HTMLElement
     await user.click(within(modal).getByText('Ông Tổ'))
 
