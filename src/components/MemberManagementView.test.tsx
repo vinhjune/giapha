@@ -130,4 +130,117 @@ describe('MemberManagementView', () => {
       namSinh: { nam: 1954, thang: undefined, ngay: undefined, amLich: true },
     }))
   })
+
+  it('only updates the row that actually changed, skipping untouched rows', async () => {
+    vi.mocked(api.getTree).mockResolvedValue(data)
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    await user.type(screen.getByTestId('tieuSu-0'), 'Cập nhật')
+    await user.click(screen.getByRole('button', { name: 'Áp dụng thay đổi' }))
+
+    expect(await screen.findByText(/Đã cập nhật 1 thành viên, bỏ qua 1 không đổi\./)).toBeInTheDocument()
+    expect(api.updatePerson).toHaveBeenCalledTimes(1)
+    expect(api.updatePerson).toHaveBeenCalledWith('1', expect.objectContaining({ tieuSu: 'Cập nhật' }))
+    expect(api.updatePerson).not.toHaveBeenCalledWith('2', expect.anything())
+  })
+
+  it('reloads exactly once per Apply regardless of how many rows were mutated', async () => {
+    vi.mocked(api.getTree).mockResolvedValue(data)
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    await user.type(screen.getByTestId('tieuSu-0'), 'Cập nhật A')
+    await user.type(screen.getByTestId('tieuSu-1'), 'Cập nhật B')
+    await user.click(screen.getByRole('button', { name: 'Áp dụng thay đổi' }))
+
+    await screen.findByText(/Đã cập nhật/)
+    expect(api.updatePerson).toHaveBeenCalledTimes(2)
+    expect(api.getTree).toHaveBeenCalledTimes(1)
+  })
+
+  it('marks an edited cell as dirty and leaves untouched cells alone', async () => {
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    const tieuSuCell = screen.getByTestId('tieuSu-0')
+    const hoTenCell = screen.getByTestId('hoTen-0')
+    expect(tieuSuCell.closest('td')).not.toHaveAttribute('data-dirty', 'true')
+
+    await user.type(tieuSuCell, 'Cập nhật')
+
+    expect(tieuSuCell.closest('td')).toHaveAttribute('data-dirty', 'true')
+    expect(hoTenCell.closest('td')).not.toHaveAttribute('data-dirty', 'true')
+  })
+
+  it('marks a newly added row as new/unsaved', async () => {
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    await user.click(screen.getByRole('button', { name: 'Thêm dòng mới' }))
+    const newRow = screen.getByTestId('hoTen-0').closest('tr')
+
+    expect(newRow).toHaveClass('bg-emerald-50/60')
+  })
+
+  it('clears the dirty highlight after a successful Apply', async () => {
+    vi.mocked(api.getTree).mockResolvedValue({
+      metadata: data.metadata,
+      persons: { ...data.persons, '1': { ...data.persons['1'], tieuSu: 'Cập nhật' } },
+    })
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    const tieuSuCell = screen.getByTestId('tieuSu-0')
+    await user.type(tieuSuCell, 'Cập nhật')
+    expect(tieuSuCell.closest('td')).toHaveAttribute('data-dirty', 'true')
+
+    await user.click(screen.getByRole('button', { name: 'Áp dụng thay đổi' }))
+    await screen.findByText(/Đã cập nhật/)
+
+    expect(screen.getByTestId('tieuSu-0').closest('td')).not.toHaveAttribute('data-dirty', 'true')
+  })
+
+  it('auto-computes Đời for a row with a known parent, staging it without a network call', async () => {
+    useGiaphaStore.setState({
+      data: {
+        metadata: data.metadata,
+        persons: { '1': data.persons['1'], '2': { ...data.persons['2'], thuTuDoi: undefined } },
+      },
+      viewMode: 'members',
+      selectedPersonId: null,
+      focusedPersonId: null,
+    })
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    expect(screen.getByTestId('thuTuDoi-1')).toHaveValue('')
+    await user.click(screen.getByRole('button', { name: 'Tự động cập nhật' }))
+
+    expect(screen.getByTestId('thuTuDoi-1')).toHaveValue('2')
+    expect(screen.getByTestId('thuTuDoi-1').closest('td')).toHaveAttribute('data-dirty', 'true')
+    expect(api.createPerson).not.toHaveBeenCalled()
+    expect(api.updatePerson).not.toHaveBeenCalled()
+    expect(api.deletePerson).not.toHaveBeenCalled()
+  })
+
+  it('warns when a member has no resolvable Đời basis', async () => {
+    useGiaphaStore.setState({
+      data: {
+        metadata: data.metadata,
+        persons: {
+          '3': { id: '3', hoTen: 'Người cô lập', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+        },
+      },
+      viewMode: 'members',
+      selectedPersonId: null,
+      focusedPersonId: null,
+    })
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    await user.click(screen.getByRole('button', { name: 'Tự động cập nhật' }))
+
+    expect(await screen.findByText(/Người cô lập/)).toBeInTheDocument()
+  })
 })

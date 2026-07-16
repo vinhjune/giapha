@@ -1,0 +1,2 @@
+- [giapha MemberManagementView architecture](project_giapha_member_management.md) — diff/highlight/auto-compute layering + known latent risks (`_key` collision, untrimmed id lookups)
+- [Hand-trace fixed-point convergence claims](feedback_hand_trace_fixed_point_logic.md) — don't trust matching test names for warning-timing correctness in iterative algorithms

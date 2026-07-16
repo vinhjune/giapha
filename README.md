@@ -63,7 +63,7 @@ Khi lưu file CSV, hãy dùng encoding **UTF-8** để bảo toàn tiếng Việ
 
 ## Quản lý thành viên
 
-Trên thanh điều hướng, chọn tab **Thành viên** để mở màn hình bảng quản lý thành viên. Màn hình này hiển thị đầy đủ các cột theo chuẩn CSV (kèm cột **Đời**), cho phép sửa trực tiếp nhiều dòng, thêm dòng mới và bấm **Áp dụng thay đổi** để cập nhật dữ liệu hàng loạt.
+Trên thanh điều hướng, chọn tab **Thành viên** để mở màn hình bảng quản lý thành viên. Màn hình này hiển thị đầy đủ các cột theo chuẩn CSV (kèm cột **Đời**), cho phép sửa trực tiếp nhiều dòng, thêm dòng mới và bấm **Áp dụng thay đổi** để cập nhật dữ liệu hàng loạt. Các ô đã sửa được đánh dấu bằng viền vàng, dòng mới được tô nền xanh — hãy bấm **Tự động cập nhật** để tính Đời và Thứ tự anh/chị tự động cho những thành viên cần, sau đó **Áp dụng thay đổi** để lưu (chỉ những dòng có thay đổi mới được gửi lên server).
 
 ---
 

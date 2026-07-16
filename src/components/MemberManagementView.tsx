@@ -1,19 +1,22 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonPicker from './PersonPicker'
 import NgayThangInput from './NgayThangInput'
+import * as api from '../services/api'
+import { personToRow, isNewRow, getChangedFields } from '../utils/memberRowDiff'
+import { computeThuTuDoi, computeThuTuAnhChi } from '../utils/memberAutoCompute'
 import type { GioiTinh, NgayThang, Person } from '../types/giapha'
 
-type StringRowField =
+export type StringRowField =
   | 'id' | 'hoTen' | 'gioiTinh' | 'laThanhVienHo' | 'thuTuDoi' | 'thuTuAnhChi'
   | 'boId' | 'meId' | 'voChongIds'
   | 'queQuan' | 'tieuSu' | 'email' | 'soDienThoai' | 'ghiChu'
 
-type DateRowField = 'namSinh' | 'namMat'
+export type DateRowField = 'namSinh' | 'namMat'
 
-type RowField = StringRowField | DateRowField
+export type RowField = StringRowField | DateRowField
 
-interface EditableRow extends Record<StringRowField, string> {
+export interface EditableRow extends Record<StringRowField, string> {
   _key: string
   namSinh: NgayThang | undefined
   namMat: NgayThang | undefined
@@ -61,31 +64,9 @@ const DEFAULT_COLUMN_WIDTHS: Partial<Record<RowField, number>> = {
 
 const FALLBACK_COLUMN_WIDTH = 120
 
-function personToRow(person: Person): EditableRow {
+function createEmptyRow(): EditableRow {
   return {
-    _key: person.id,
-    id: person.id,
-    hoTen: person.hoTen,
-    gioiTinh: person.gioiTinh,
-    laThanhVienHo: String(person.laThanhVienHo),
-    thuTuDoi: person.thuTuDoi != null ? String(person.thuTuDoi) : '',
-    thuTuAnhChi: person.thuTuAnhChi != null ? String(person.thuTuAnhChi) : '',
-    namSinh: person.namSinh,
-    namMat: person.namMat,
-    boId: person.boId ?? '',
-    meId: person.meId ?? '',
-    voChongIds: person.honNhan.map(h => h.voChongId).join(';'),
-    queQuan: person.queQuan ?? '',
-    tieuSu: person.tieuSu ?? '',
-    email: person.email ?? '',
-    soDienThoai: person.soDienThoai ?? '',
-    ghiChu: person.ghiChu ?? '',
-  }
-}
-
-function createEmptyRow(index: number): EditableRow {
-  return {
-    _key: `new-${index}`,
+    _key: `new-${crypto.randomUUID()}`,
     id: '',
     hoTen: '',
     gioiTinh: 'nam',
@@ -127,7 +108,7 @@ function rowToPersonPayload(row: EditableRow): Omit<Person, 'id'> {
 }
 
 export default function MemberManagementView() {
-  const { data, themNguoi, suaNguoi, xoaNguoi } = useGiaphaStore()
+  const { data, loadData } = useGiaphaStore()
   const [rows, setRows] = useState<EditableRow[]>(() => {
     if (!data) return []
     return Object.values(data.persons).map(personToRow)
@@ -136,6 +117,14 @@ export default function MemberManagementView() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [picker, setPicker] = useState<PickerState | null>(null)
+  const [autoComputeWarnings, setAutoComputeWarnings] = useState<string[]>([])
+
+  const originalIds = useMemo(() => new Set(data ? Object.keys(data.persons) : []), [data])
+  const rowDirtyInfo = useMemo(() => rows.map(row => {
+    if (!data || isNewRow(row, originalIds)) return { isNew: true, changedFields: new Set<RowField>() }
+    const original = personToRow(data.persons[row.id.trim()])
+    return { isNew: false, changedFields: new Set(getChangedFields(row, original)) }
+  }), [rows, data, originalIds])
 
   if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
 
@@ -147,18 +136,21 @@ export default function MemberManagementView() {
     setRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row))
     setErrorMessages([])
     setSaveMessage(null)
+    setAutoComputeWarnings([])
   }
 
   function handleDateChange(index: number, field: DateRowField, value: NgayThang | undefined) {
     setRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row))
     setErrorMessages([])
     setSaveMessage(null)
+    setAutoComputeWarnings([])
   }
 
   function handleAddRow() {
-    setRows(prev => [createEmptyRow(prev.length + 1), ...prev])
+    setRows(prev => [createEmptyRow(), ...prev])
     setErrorMessages([])
     setSaveMessage(null)
+    setAutoComputeWarnings([])
   }
 
   function handleResetRows() {
@@ -166,32 +158,51 @@ export default function MemberManagementView() {
     setRows(Object.values(data.persons).map(personToRow))
     setErrorMessages([])
     setSaveMessage(null)
+    setAutoComputeWarnings([])
   }
 
   function handleDeleteRow(index: number) {
     setRows(prev => prev.filter((_, i) => i !== index))
     setErrorMessages([])
     setSaveMessage(null)
+    setAutoComputeWarnings([])
+  }
+
+  function handleAutoCompute() {
+    if (!data) return
+    const originalById = new Map(Object.entries(data.persons).map(([id, p]) => [id, personToRow(p)] as const))
+    const doiResult = computeThuTuDoi(rows)
+    const anhChiResult = computeThuTuAnhChi(doiResult.updatedRows, originalById)
+
+    setRows(anhChiResult.updatedRows)
+    setErrorMessages([])
+    setAutoComputeWarnings([...doiResult.warnings, ...anhChiResult.warnings])
+    setSaveMessage(
+      doiResult.changedCount > 0 || anhChiResult.changedCount > 0
+        ? `Đã tính lại Đời cho ${doiResult.changedCount} thành viên, Thứ tự anh/chị cho ${anhChiResult.changedCount} thành viên. Bấm "Áp dụng thay đổi" để lưu.`
+        : 'Không có thay đổi nào cần tính lại.',
+    )
   }
 
   async function handleApplyChanges() {
     if (!data) return
     setSaving(true)
     setErrorMessages([])
+    setAutoComputeWarnings([])
     const errors: string[] = []
-    const originalIds = new Set(Object.keys(data.persons))
     const remainingIds = new Set(rows.map(r => r.id.trim()).filter(Boolean))
     const deletedIds = [...originalIds].filter(id => !remainingIds.has(id))
 
     for (const id of deletedIds) {
       try {
-        await xoaNguoi(id)
+        await api.deletePerson(id)
       } catch (e) {
         errors.push(`Xóa ${id}: ${(e as Error).message}`)
       }
     }
 
     let savedCount = 0
+    let skippedCount = 0
     for (const row of rows) {
       if (!row.hoTen.trim()) continue
       if (row.thuTuDoi.trim() && !Number.isInteger(Number(row.thuTuDoi))) {
@@ -199,11 +210,17 @@ export default function MemberManagementView() {
         continue
       }
       const payload = rowToPersonPayload(row)
+      const trimmedId = row.id.trim()
       try {
-        if (row.id.trim() && originalIds.has(row.id.trim())) {
-          await suaNguoi(row.id.trim(), payload)
+        if (!isNewRow(row, originalIds)) {
+          const changed = getChangedFields(row, personToRow(data.persons[trimmedId]))
+          if (changed.length === 0) {
+            skippedCount++
+            continue
+          }
+          await api.updatePerson(trimmedId, payload)
         } else {
-          await themNguoi(payload)
+          await api.createPerson(payload)
         }
         savedCount++
       } catch (e) {
@@ -211,6 +228,7 @@ export default function MemberManagementView() {
       }
     }
 
+    await loadData()
     setSaving(false)
     if (errors.length > 0) {
       setErrorMessages(errors)
@@ -218,7 +236,7 @@ export default function MemberManagementView() {
       return
     }
     setErrorMessages([])
-    setSaveMessage(`Đã cập nhật ${savedCount} thành viên.`)
+    setSaveMessage(`Đã cập nhật ${savedCount} thành viên, bỏ qua ${skippedCount} không đổi.`)
   }
 
   return (
@@ -237,6 +255,12 @@ export default function MemberManagementView() {
             className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
           >
             Hoàn tác
+          </button>
+          <button
+            onClick={handleAutoCompute}
+            className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+          >
+            Tự động cập nhật
           </button>
           <button
             onClick={handleApplyChanges}
@@ -272,12 +296,20 @@ export default function MemberManagementView() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={row._key} className="hover:bg-blue-50/30">
-                {COLUMNS.map(col => (
+            {rows.map((row, rowIndex) => {
+              const dirty = rowDirtyInfo[rowIndex]
+              return (
+              <tr
+                key={row._key}
+                className={`hover:bg-blue-50/30${dirty.isNew ? ' bg-emerald-50/60' : ''}`}
+              >
+                {COLUMNS.map(col => {
+                  const isDirtyCell = !dirty.isNew && dirty.changedFields.has(col.key)
+                  return (
                   <td
                     key={col.key}
-                    className="px-1 py-1 border-b border-r last:border-r-0"
+                    data-dirty={isDirtyCell ? 'true' : undefined}
+                    className={`px-1 py-1 border-b border-r last:border-r-0${isDirtyCell ? ' bg-amber-50 ring-1 ring-inset ring-amber-300' : ''}`}
                     style={{
                       width: `${DEFAULT_COLUMN_WIDTHS[col.key] ?? FALLBACK_COLUMN_WIDTH}px`,
                       minWidth: `${DEFAULT_COLUMN_WIDTHS[col.key] ?? FALLBACK_COLUMN_WIDTH}px`,
@@ -384,7 +416,8 @@ export default function MemberManagementView() {
                       />
                     )}
                   </td>
-                ))}
+                  )
+                })}
                 <td className="px-2 py-1 border-b text-center">
                   <button
                     type="button"
@@ -408,11 +441,17 @@ export default function MemberManagementView() {
                   </button>
                 </td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
         </div>
       </div>
+
+      <p className="mt-2 text-xs text-gray-500">
+        <span className="inline-block h-3 w-3 rounded-sm bg-emerald-50 ring-1 ring-inset ring-emerald-300 align-middle" /> Dòng mới ·{' '}
+        <span className="inline-block h-3 w-3 rounded-sm bg-amber-50 ring-1 ring-inset ring-amber-300 align-middle" /> Trường đã sửa, chưa lưu
+      </p>
 
       {saveMessage && <p className="mt-3 text-sm text-green-700">{saveMessage}</p>}
       {errorMessages.length > 0 && (
@@ -420,6 +459,14 @@ export default function MemberManagementView() {
           <p className="text-sm font-medium text-red-700 mb-1">Không thể áp dụng một số thay đổi:</p>
           <ul className="text-xs text-red-700 list-disc pl-5 space-y-1">
             {errorMessages.slice(0, 10).map((msg, idx) => <li key={idx}>{msg}</li>)}
+          </ul>
+        </div>
+      )}
+      {autoComputeWarnings.length > 0 && (
+        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+          <p className="text-sm font-medium text-amber-800 mb-1">Một số thành viên không thể tính tự động:</p>
+          <ul className="text-xs text-amber-800 list-disc pl-5 space-y-1">
+            {autoComputeWarnings.slice(0, 10).map((msg, idx) => <li key={idx}>{msg}</li>)}
           </ul>
         </div>
       )}
