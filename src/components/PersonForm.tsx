@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonPicker from './PersonPicker'
 import NgayThangInput from './NgayThangInput'
@@ -34,7 +34,7 @@ const empty: FormState = {
 }
 
 export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) {
-  const { data, themNguoi, suaNguoi } = useGiaphaStore()
+  const { data, themNguoi, suaNguoi, xoaNguoi } = useGiaphaStore()
 
   const [form, setForm] = useState<FormState>(() => {
     if (editPerson) {
@@ -59,9 +59,18 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     return empty
   })
 
-  const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong'>(null)
+  const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong' | 'anhchiem'>(null)
   const [multipleWives, setMultipleWives] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
+  const [anhChiEmFeedback, setAnhChiEmFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+
+  const currentSiblings = useMemo(() => {
+    if (!data || (!form.boId && !form.meId)) return []
+    return Object.values(data.persons).filter(p => {
+      if (editPerson && p.id === editPerson.id) return false
+      return p.boId === form.boId && p.meId === form.meId
+    })
+  }, [data, form.boId, form.meId, editPerson])
 
   function handleBoSelected(person: Person) {
     if (!data) return
@@ -96,6 +105,54 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       }
     })
     setPickerOpen(null)
+  }
+
+  async function handleXoaNguoi() {
+    if (!editPerson) return
+    const confirmed = confirm(`Bạn có chắc muốn xóa "${editPerson.hoTen}" không? Hành động này không thể hoàn tác.`)
+    if (!confirmed) return
+    try {
+      await xoaNguoi(editPerson.id)
+      onClose()
+    } catch (err) {
+      alert('Không thể xóa: ' + (err as Error).message)
+    }
+  }
+
+  async function handleAnhChiEmSelected(person: Person) {
+    setPickerOpen(null)
+    setAnhChiEmFeedback(null)
+
+    const currentBoId = form.boId
+    const currentMeId = form.meId
+
+    if (!currentBoId && !currentMeId) {
+      setAnhChiEmFeedback({ type: 'error', msg: 'Cần chọn bố hoặc mẹ trước khi thêm anh/chị/em.' })
+      return
+    }
+
+    const sibBoId = person.boId
+    const sibMeId = person.meId
+
+    if (sibBoId === currentBoId && sibMeId === currentMeId) {
+      setAnhChiEmFeedback({ type: 'success', msg: `${person.hoTen} đã là anh/chị/em.` })
+      return
+    }
+
+    if (!sibBoId && !sibMeId) {
+      const confirmed = confirm(`Bố/mẹ của ${person.hoTen} đang trống. Cập nhật bố/mẹ cho ${person.hoTen}?`)
+      if (!confirmed) return
+      const { id: _id, ...personRest } = person
+      try {
+        await suaNguoi(person.id, { ...personRest, boId: currentBoId, meId: currentMeId })
+        setAnhChiEmFeedback({ type: 'success', msg: `Đã cập nhật bố/mẹ cho ${person.hoTen}.` })
+      } catch (err) {
+        setAnhChiEmFeedback({ type: 'error', msg: 'Không thể cập nhật: ' + (err as Error).message })
+      }
+      return
+    }
+
+    setAnhChiEmFeedback({ type: 'error', msg: `Bố/mẹ của ${person.hoTen} không trùng khớp. Không thể thêm làm anh/chị/em.` })
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -277,6 +334,29 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
             </div>
 
             <div>
+              <label className="text-sm font-medium text-gray-700">Anh/Chị/Em</label>
+              <div className="mt-1 space-y-1">
+                {currentSiblings.map(p => (
+                  <div key={p.id} className="text-sm px-3 py-1 border rounded bg-gray-50 text-gray-700">
+                    {p.hoTen}
+                  </div>
+                ))}
+                {anhChiEmFeedback && (
+                  <div className={`text-sm px-3 py-1.5 rounded ${anhChiEmFeedback.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                    {anhChiEmFeedback.msg}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setAnhChiEmFeedback(null); setPickerOpen('anhchiem') }}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  + Thêm anh/chị/em
+                </button>
+              </div>
+            </div>
+
+            <div>
               <label className="text-sm font-medium text-gray-700">Quê quán</label>
               <input value={form.queQuan} onChange={e => setForm(f => ({ ...f, queQuan: e.target.value }))}
                 className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
@@ -296,6 +376,12 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                 className="flex-1 py-2 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200">
                 Hủy
               </button>
+              {editPerson && (
+                <button type="button" onClick={handleXoaNguoi}
+                  className="py-2 px-4 bg-red-50 text-red-600 text-sm rounded hover:bg-red-100 border border-red-200">
+                  Xoá
+                </button>
+              )}
             </div>
           </form>
         </div>
@@ -313,6 +399,19 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
         <PersonPicker title="Chọn vợ/chồng" excludeIds={[...(editPerson ? [editPerson.id] : []), ...form.voChongIds]}
           onSelect={handleVoChongSelected}
           onClose={() => setPickerOpen(null)} />
+      )}
+      {pickerOpen === 'anhchiem' && (
+        <PersonPicker
+          title="Chọn anh/chị/em"
+          excludeIds={[
+            ...(editPerson ? [editPerson.id] : []),
+            ...(form.boId ? [form.boId] : []),
+            ...(form.meId ? [form.meId] : []),
+            ...form.voChongIds,
+          ]}
+          onSelect={handleAnhChiEmSelected}
+          onClose={() => setPickerOpen(null)}
+        />
       )}
     </>
   )
