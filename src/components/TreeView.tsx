@@ -465,25 +465,22 @@ export default function TreeView() {
     const widthByPersonId = buildWidthByPersonId(persons, displayNameById)
     const childrenIndex = taoChiMucCon(persons)
 
-    // Root = clan member with no known father
-    const root =
-      Object.values(persons).find(
-        p => p.laThanhVienHo && (!p.boId || !persons[p.boId])
-      ) ?? Object.values(persons).find(p => !p.boId || !persons[p.boId])
-
+    // Roots = blood clan members (laThanhVienHo === true) with no known father. Married-in
+    // spouses (laThanhVienHo === false, regardless of gender) must NEVER be treated as
+    // independent roots: they only ever attach to the tree via their actual spouse's
+    // honNhan entry, and get marked visited automatically when that spouse's node builds.
+    // Letting them qualify as roots lets iteration order "steal" a shared blood relative
+    // (e.g. a son with two wives) into a separate spouse-rooted tree before the real family
+    // branch reaches him — see regression test for a concrete case.
     const visited = new Set<string>()
     const trees: TreeNode[] = []
 
-    if (root) {
-      const primaryTree = buildTree(root.id, persons, childrenIndex, visited, widthByPersonId)
-      if (primaryTree) trees.push(primaryTree)
-    }
-
-    const extraRoots = Object.values(persons).filter(
-      p => !visited.has(p.id) && (!p.boId || !persons[p.boId])
+    const clanRoots = Object.values(persons).filter(
+      p => p.laThanhVienHo && (!p.boId || !persons[p.boId])
     )
-    for (const extraRoot of extraRoots) {
-      const tree = buildTree(extraRoot.id, persons, childrenIndex, visited, widthByPersonId)
+    for (const clanRoot of clanRoots) {
+      if (visited.has(clanRoot.id)) continue
+      const tree = buildTree(clanRoot.id, persons, childrenIndex, visited, widthByPersonId)
       if (tree) trees.push(tree)
     }
 
