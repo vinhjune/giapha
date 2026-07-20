@@ -54,6 +54,37 @@ describe('TreeView', () => {
     expect(screen.getByText('Con gái (#2)')).toBeInTheDocument()
   })
 
+  it('keeps a blood-clan founder couple linked to their son instead of letting the son\'s wives steal him into separate trees', () => {
+    // Regression test: reproduces adding an ancestor couple ("Bột ông"/"Bột bà") as the
+    // parents of an existing person ("Truyền") who already has two wives on record.
+    // Object key order matters here: the wives ('vo1'/'vo2') and an unrelated pre-existing
+    // root ('x') were inserted BEFORE the newly-added ancestor couple ('bo'/'me'), mirroring
+    // real usage where the couple is added last via "Sửa thành viên".
+    const bugData: GiaphaData = {
+      metadata: { tenDongHo: 'Dòng họ mẫu' },
+      persons: {
+        x: { id: 'x', hoTen: 'Tổ không liên quan', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+        vo1: { id: 'vo1', hoTen: 'Vợ Một', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: 'truyen' }], conCaiIds: ['con1'] },
+        vo2: { id: 'vo2', hoTen: 'Vợ Hai', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: 'truyen' }], conCaiIds: ['con2'] },
+        truyen: { id: 'truyen', hoTen: 'Truyền', gioiTinh: 'nam', laThanhVienHo: true, boId: 'bo', meId: 'me', honNhan: [{ voChongId: 'vo1' }, { voChongId: 'vo2' }], conCaiIds: ['con1', 'con2'] },
+        em: { id: 'em', hoTen: 'Em Truyền', gioiTinh: 'nam', laThanhVienHo: true, boId: 'bo', meId: 'me', honNhan: [], conCaiIds: [] },
+        con1: { id: 'con1', hoTen: 'Con Vợ Một', gioiTinh: 'nu', laThanhVienHo: false, boId: 'truyen', meId: 'vo1', honNhan: [], conCaiIds: [] },
+        con2: { id: 'con2', hoTen: 'Con Vợ Hai', gioiTinh: 'nu', laThanhVienHo: false, boId: 'truyen', meId: 'vo2', honNhan: [], conCaiIds: [] },
+        bo: { id: 'bo', hoTen: 'Bột ông', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: 'me' }], conCaiIds: ['truyen', 'em'] },
+        me: { id: 'me', hoTen: 'Bột bà', gioiTinh: 'nu', laThanhVienHo: true, honNhan: [{ voChongId: 'bo' }], conCaiIds: ['truyen', 'em'] },
+      },
+    }
+    useGiaphaStore.setState({ data: bugData })
+
+    render(<TreeView />)
+
+    // Truyền must appear exactly once in the whole tree, not once per wife.
+    expect(screen.getAllByText('Truyền')).toHaveLength(1)
+    // Both of his children must be reachable (i.e. under his one true node).
+    expect(screen.getByText('Con Vợ Một')).toBeInTheDocument()
+    expect(screen.getByText('Con Vợ Hai')).toBeInTheDocument()
+  })
+
   it('allows panning with mouse drag on desktop', () => {
     render(<TreeView />)
     const container = screen.getByTestId('tree-view-container')
