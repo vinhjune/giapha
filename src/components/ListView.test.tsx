@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen } from '@testing-library/react'
 import ListView from './ListView'
 import { useGiaphaStore } from '../store/useGiaphaStore'
@@ -160,5 +160,31 @@ describe('ListView spouse rendering', () => {
     expect(isBefore(d, e)).toBe(true)
     expect(isBefore(e, hai)).toBe(true)
     expect(isBefore(hai, j)).toBe(true)
+  })
+})
+
+describe('ListView scroll-to-focus', () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn()
+    useGiaphaStore.setState({
+      data,
+      viewMode: 'list',
+      selectedPersonId: null,
+      focusedPersonId: null,
+      hienThiThuTuDoi: false,
+    })
+  })
+
+  it('scrolls the focused person row into view', () => {
+    const { rerender } = render(<ListView />)
+    const row = screen.getByText('Vinh').closest('[data-person-id]') as HTMLElement
+    expect(row.scrollIntoView).not.toHaveBeenCalled()
+
+    act(() => {
+      useGiaphaStore.setState({ focusedPersonId: '3' })
+    })
+    rerender(<ListView />)
+
+    expect(row.scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ block: 'center' }))
   })
 })

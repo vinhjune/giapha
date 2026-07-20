@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import { sapXepAnhChiEm, laThanhVienThuocHo, dinhDangTenNguoi } from '../utils/familyTree'
 import type { Person } from '../types/giapha'
@@ -58,6 +58,7 @@ function PersonRow({
   return (
     <>
       <div
+        data-person-id={person.id}
         className={`flex items-center gap-2 py-1.5 px-2 cursor-pointer rounded transition-colors
           ${isSelected ? 'bg-blue-100' : ''}
           ${isHighlighted && !isSelected ? 'ring-2 ring-blue-400' : ''}
@@ -119,14 +120,22 @@ function PersonRow({
 
 export default function ListView() {
   const { data, selectedPersonId, focusedPersonId, selectPerson, hienThiThuTuDoi } = useGiaphaStore()
-  if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
+  const containerRef = useRef<HTMLDivElement>(null)
   const highlightedPersonId = focusedPersonId ?? selectedPersonId
+
+  useEffect(() => {
+    if (!highlightedPersonId || !containerRef.current) return
+    const row = containerRef.current.querySelector(`[data-person-id="${highlightedPersonId}"]`)
+    row?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [highlightedPersonId])
+
+  if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
 
   const roots = Object.values(data.persons).filter(p => p.laThanhVienHo && (!p.boId || !data.persons[p.boId]))
   const sortedRoots = sapXepAnhChiEm(roots)
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white p-2">
+    <div ref={containerRef} className="flex-1 overflow-y-auto bg-white p-2">
       {sortedRoots.map(root => (
         <PersonRow key={root.id} person={root} depth={0}
           onSelect={selectPerson} selectedId={selectedPersonId} highlightId={highlightedPersonId}
