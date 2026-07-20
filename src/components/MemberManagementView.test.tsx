@@ -243,4 +243,55 @@ describe('MemberManagementView', () => {
 
     expect(await screen.findByText(/Người cô lập/)).toBeInTheDocument()
   })
+
+  describe('column sorting', () => {
+    function getHoTenOrder() {
+      return screen.getAllByTestId(/^hoTen-\d+$/).map(el => (el as HTMLInputElement).value)
+    }
+
+    it('sorts by a column ascending on first click, descending on second, then clears on third', async () => {
+      const user = userEvent.setup()
+      render(<MemberManagementView />)
+
+      // Default order: Ông Tổ (row 0), Con Trai (row 1)
+      expect(getHoTenOrder()).toEqual(['Ông Tổ', 'Con Trai'])
+
+      const hoTenHeader = screen.getByTestId('sort-header-hoTen')
+
+      await user.click(hoTenHeader)
+      expect(hoTenHeader).toHaveAttribute('aria-sort', 'ascending')
+      expect(getHoTenOrder()).toEqual(['Con Trai', 'Ông Tổ'])
+
+      await user.click(hoTenHeader)
+      expect(hoTenHeader).toHaveAttribute('aria-sort', 'descending')
+      expect(getHoTenOrder()).toEqual(['Ông Tổ', 'Con Trai'])
+
+      await user.click(hoTenHeader)
+      expect(hoTenHeader).toHaveAttribute('aria-sort', 'none')
+      expect(getHoTenOrder()).toEqual(['Ông Tổ', 'Con Trai'])
+    })
+
+    it('does not attach sort behavior to the non-sortable voChongIds column', () => {
+      render(<MemberManagementView />)
+      expect(screen.queryByTestId('sort-header-voChongIds')).not.toHaveAttribute('aria-sort')
+    })
+
+    it('keeps edits and deletes targeting the correct underlying row after sorting', async () => {
+      const user = userEvent.setup()
+      render(<MemberManagementView />)
+
+      await user.click(screen.getByTestId('sort-header-hoTen')) // ASC: Con Trai now displayed first
+
+      // hoTen-1 always refers to 'Con Trai' (its real position in the underlying rows array)
+      // regardless of display order.
+      const conTraiInput = screen.getByTestId('hoTen-1')
+      const conTraiRow = conTraiInput.closest('tr')
+      expect(conTraiRow).not.toBeNull()
+      const deleteButton = within(conTraiRow as HTMLElement).getByRole('button', { name: /Xóa thành viên/ })
+      await user.click(deleteButton)
+
+      expect(screen.queryByDisplayValue('Con Trai')).not.toBeInTheDocument()
+      expect(screen.getByDisplayValue('Ông Tổ')).toBeInTheDocument()
+    })
+  })
 })

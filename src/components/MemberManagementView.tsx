@@ -5,6 +5,7 @@ import NgayThangInput from './NgayThangInput'
 import * as api from '../services/api'
 import { personToRow, isNewRow, getChangedFields } from '../utils/memberRowDiff'
 import { computeThuTuDoi, computeThuTuAnhChi } from '../utils/memberAutoCompute'
+import { SORTABLE_FIELDS, sortRowsForDisplay, type SortState } from '../utils/memberRowSort'
 import type { GioiTinh, NgayThang, Person } from '../types/giapha'
 
 export type StringRowField =
@@ -118,6 +119,7 @@ export default function MemberManagementView() {
   const [saving, setSaving] = useState(false)
   const [picker, setPicker] = useState<PickerState | null>(null)
   const [autoComputeWarnings, setAutoComputeWarnings] = useState<string[]>([])
+  const [sortState, setSortState] = useState<SortState>(null)
 
   const originalIds = useMemo(() => new Set(data ? Object.keys(data.persons) : []), [data])
   const rowDirtyInfo = useMemo(() => rows.map(row => {
@@ -126,11 +128,26 @@ export default function MemberManagementView() {
     return { isNew: false, changedFields: new Set(getChangedFields(row, original)) }
   }), [rows, data, originalIds])
 
-  if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
-
   function getName(id: string) {
     return data?.persons[id]?.hoTen || ''
   }
+
+  const displayRows = useMemo(
+    () => sortRowsForDisplay(rows, sortState, getName),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- getName is redefined each render but only reads `data`, already a dependency
+    [rows, sortState, data],
+  )
+
+  function handleHeaderSortClick(field: RowField) {
+    if (!SORTABLE_FIELDS.has(field)) return
+    setSortState(prev => {
+      if (!prev || prev.field !== field) return { field, direction: 'asc' }
+      if (prev.direction === 'asc') return { field, direction: 'desc' }
+      return null
+    })
+  }
+
+  if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
 
   function handleCellChange(index: number, field: RowField, value: string) {
     setRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row))
@@ -280,23 +297,42 @@ export default function MemberManagementView() {
         <table className="min-w-[2400px] w-full text-xs">
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
-              {COLUMNS.map(col => (
+              {COLUMNS.map(col => {
+                const isSortable = SORTABLE_FIELDS.has(col.key)
+                const isActive = sortState?.field === col.key
+                const ariaSort = isActive ? (sortState!.direction === 'asc' ? 'ascending' : 'descending') : 'none'
+                return (
                 <th
                   key={col.key}
-                  className="px-2 py-2 text-left font-semibold text-gray-600 border-b border-r last:border-r-0"
+                  aria-sort={isSortable ? ariaSort : undefined}
+                  role={isSortable ? 'button' : undefined}
+                  tabIndex={isSortable ? 0 : undefined}
+                  onClick={isSortable ? () => handleHeaderSortClick(col.key) : undefined}
+                  onKeyDown={isSortable ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleHeaderSortClick(col.key)
+                    }
+                  } : undefined}
+                  data-testid={`sort-header-${col.key}`}
+                  className={`px-2 py-2 text-left font-semibold text-gray-600 border-b border-r last:border-r-0${isSortable ? ' cursor-pointer select-none hover:bg-gray-100' : ''}`}
                   style={{
                     width: `${DEFAULT_COLUMN_WIDTHS[col.key] ?? FALLBACK_COLUMN_WIDTH}px`,
                     minWidth: `${DEFAULT_COLUMN_WIDTHS[col.key] ?? FALLBACK_COLUMN_WIDTH}px`,
                   }}
                 >
-                  <span>{col.label}</span>
+                  <span>
+                    {col.label}
+                    {isActive && (sortState!.direction === 'asc' ? ' \u25B2' : ' \u25BC')}
+                  </span>
                 </th>
-              ))}
+                )
+              })}
               <th className="px-2 py-2 text-left font-semibold text-gray-600 border-b">Xóa</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, rowIndex) => {
+            {displayRows.map(({ row, originalIndex: rowIndex }) => {
               const dirty = rowDirtyInfo[rowIndex]
               return (
               <tr
