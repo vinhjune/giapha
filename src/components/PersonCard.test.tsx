@@ -52,7 +52,7 @@ describe('PersonCard', () => {
       <PersonCard person={nguoiMau({})} isSelected={false} isSpouse onClick={() => {}} />
     )
     const spouseCard = screen.getByText('Người mẫu').closest('div.relative') as HTMLElement
-    expect(spouseCard).toHaveClass('bg-card-border')
+    expect(spouseCard).toHaveClass('bg-card-spouse')
     expect(spouseCard).not.toHaveClass('bg-card')
     expect(spouseCard.style.opacity).toBe('')
 
@@ -61,7 +61,7 @@ describe('PersonCard', () => {
     )
     const mainCard = screen.getByText('Người mẫu').closest('div.relative') as HTMLElement
     expect(mainCard).toHaveClass('bg-card')
-    expect(mainCard).not.toHaveClass('bg-card-border')
+    expect(mainCard).not.toHaveClass('bg-card-spouse')
   })
 
   it('still applies the selected-accent background on a spouse card', () => {
