@@ -58,3 +58,41 @@ describe('HomePage person click flow', () => {
     expect(screen.getByText('Thêm người mới')).toBeInTheDocument()
   })
 })
+
+describe('HomePage in-modal relation navigation', () => {
+  beforeEach(() => {
+    Element.prototype.scrollTo = vi.fn()
+  })
+
+  const navData: GiaphaData = {
+    metadata: { tenDongHo: 'Dòng họ mẫu' },
+    persons: {
+      '1': { id: '1', hoTen: 'Ông Nội', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: ['2'] },
+      '2': { id: '2', hoTen: 'Con Trai', gioiTinh: 'nam', laThanhVienHo: true, boId: '1', honNhan: [], conCaiIds: [] },
+    },
+  }
+
+  it('navigating to a related member inside the edit modal fully switches the modal content and focuses them in the tree', () => {
+    useGiaphaStore.setState({
+      data: navData,
+      viewMode: 'tree',
+      selectedPersonId: null,
+      focusedPersonId: null,
+      hienThiThuTuDoi: false,
+      cyclicRelationshipWarnings: [],
+    })
+
+    render(<HomePage />)
+
+    fireEvent.click(screen.getByText('Con Trai'))
+    expect(screen.getByDisplayValue('Con Trai')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ông Nội' }))
+
+    expect(useGiaphaStore.getState().selectedPersonId).toBe('1')
+    expect(useGiaphaStore.getState().focusedPersonId).toBe('1')
+    expect(screen.getByDisplayValue('Ông Nội')).toBeInTheDocument()
+    // Ông Nội không có Bố — nếu modal không remount, tên "Ông Nội" cũ (nút Bố của Con Trai) sẽ còn sót lại.
+    expect(screen.queryByRole('button', { name: 'Ông Nội' })).toBeNull()
+  })
+})
