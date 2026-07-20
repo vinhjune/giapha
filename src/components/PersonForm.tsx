@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonPicker from './PersonPicker'
 import NgayThangInput from './NgayThangInput'
-import { timVoChong } from '../utils/familyTree'
+import { timVoChong, sapXepAnhChiEm } from '../utils/familyTree'
 import type { Person, GioiTinh, NgayThang } from '../types/giapha'
 
 interface Props {
@@ -93,6 +93,13 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       return p.boId === form.boId && p.meId === form.meId
     })
   }, [data, form.boId, form.meId, editPerson])
+
+  const currentChildren = useMemo(() => {
+    if (!data || !editPerson) return []
+    return sapXepAnhChiEm(
+      editPerson.conCaiIds.map(id => data.persons[id]).filter((p): p is Person => !!p),
+    )
+  }, [data, editPerson])
 
   function handleBoSelected(person: Person) {
     if (!data) return
@@ -419,6 +426,25 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                 </button>
               </div>
             </div>
+
+            {editPerson && (
+              <div>
+                <label className="text-sm font-medium text-gray-700">Con</label>
+                <div className="mt-1 space-y-1">
+                  {currentChildren.map(child => (
+                    <button
+                      key={child.id}
+                      type="button"
+                      title={`Xem/sửa ${child.hoTen}`}
+                      onClick={() => handleNavigateTo(child)}
+                      className="block w-full text-left text-sm px-3 py-1 border rounded bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                    >
+                      {child.hoTen}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="text-sm font-medium text-gray-700">Quê quán</label>

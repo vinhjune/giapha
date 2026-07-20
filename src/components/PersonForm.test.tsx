@@ -373,3 +373,54 @@ describe('PersonForm relation navigation - Anh/Chị/Em', () => {
     expect(selectPerson).toHaveBeenCalledWith('4')
   })
 })
+
+describe('PersonForm Con (children) list display', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+  })
+
+  const conData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Cha', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: '2' }], conCaiIds: ['3', '4'] },
+      '2': { id: '2', hoTen: 'Mẹ Của Cha', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: ['3', '4'] },
+      '3': { id: '3', hoTen: 'Con Út', gioiTinh: 'nu', laThanhVienHo: true, boId: '1', meId: '2', thuTuAnhChi: 2, honNhan: [], conCaiIds: [] },
+      '4': { id: '4', hoTen: 'Con Cả', gioiTinh: 'nam', laThanhVienHo: true, boId: '1', meId: '2', thuTuAnhChi: 1, honNhan: [], conCaiIds: [] },
+    },
+  }
+
+  it('shows children sorted by Thứ tự anh/chị when editing a person with children', () => {
+    useGiaphaStore.setState({ data: conData })
+    const editPerson = conData.persons['1']
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    const conCa = getByRole('button', { name: 'Con Cả' })
+    const conUt = getByRole('button', { name: 'Con Út' })
+    // Con Cả (thuTuAnhChi 1) phải render trước Con Út (thuTuAnhChi 2) trong DOM.
+    expect(conCa.compareDocumentPosition(conUt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('navigates to a child when its name is clicked', () => {
+    const selectPerson = vi.fn()
+    useGiaphaStore.setState({ data: conData, selectPerson })
+    const editPerson = conData.persons['1']
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+    fireEvent.click(getByRole('button', { name: 'Con Cả' }))
+
+    expect(selectPerson).toHaveBeenCalledWith('4')
+  })
+
+  it('does not show the Con field when adding a new person', () => {
+    useGiaphaStore.setState({ data: conData })
+
+    const { queryByText } = render(<PersonForm onClose={() => {}} />)
+
+    expect(queryByText('Con')).toBeNull()
+  })
+})
