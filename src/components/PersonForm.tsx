@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonPicker from './PersonPicker'
 import NgayThangInput from './NgayThangInput'
@@ -59,10 +59,10 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     return empty
   })
 
-  const initialFormRef = useRef(form)
+  const [initialForm] = useState<FormState>(() => form)
   const isDirty = useMemo(
-    () => JSON.stringify(form) !== JSON.stringify(initialFormRef.current),
-    [form],
+    () => JSON.stringify(form) !== JSON.stringify(initialForm),
+    [form, initialForm],
   )
 
   const getPerson = (id?: string): Person | undefined => (id ? data?.persons[id] : undefined)
