@@ -424,3 +424,115 @@ describe('PersonForm Con (children) list display', () => {
     expect(queryByText('Con')).toBeNull()
   })
 })
+
+describe('PersonForm add Con via picker', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+    vi.restoreAllMocks()
+  })
+
+  const oneSpouseData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Cha Một Vợ', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: '2' }], conCaiIds: [] },
+      '2': { id: '2', hoTen: 'Vợ Cha', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: [] },
+      '5': { id: '5', hoTen: 'Người Chưa Liên Kết', gioiTinh: 'nu', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+      '6': { id: '6', hoTen: 'Người Đã Có Bố Mẹ Khác', gioiTinh: 'nam', laThanhVienHo: true, boId: '2', honNhan: [], conCaiIds: [] },
+      '7': { id: '7', hoTen: 'Con Đã Có', gioiTinh: 'nu', laThanhVienHo: true, boId: '1', meId: '2', honNhan: [], conCaiIds: [] },
+    },
+  }
+
+  it('links an unlinked person as a child, auto-filling the single spouse as the other parent', async () => {
+    const suaNguoi = vi.fn().mockResolvedValue(undefined)
+    useGiaphaStore.setState({ data: oneSpouseData, suaNguoi })
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const editPerson = oneSpouseData.persons['1']
+
+    const { getByText } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByText('+ Thêm con'))
+    fireEvent.click(getByText('Chọn con'))
+    await act(async () => {
+      fireEvent.click(getByText('Người Chưa Liên Kết'))
+    })
+
+    expect(suaNguoi).toHaveBeenCalledWith('5', expect.objectContaining({ boId: '1', meId: '2' }))
+    expect(getByText('Đã cập nhật Người Chưa Liên Kết làm con của Cha Một Vợ.')).toBeInTheDocument()
+  })
+
+  it('shows a success message without calling the API when the person is already a child', () => {
+    useGiaphaStore.setState({ data: oneSpouseData, suaNguoi: vi.fn() })
+    const editPerson: Person = { ...oneSpouseData.persons['1'], conCaiIds: ['7'] }
+
+    const { getByText, getAllByText } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByText('+ Thêm con'))
+    fireEvent.click(getByText('Chọn con'))
+    const conDaCos = getAllByText('Con Đã Có')
+    fireEvent.click(conDaCos[1])
+
+    expect(getByText('Con Đã Có đã là con.')).toBeInTheDocument()
+  })
+
+  it('shows an error and does not call the API when the selected person already has a conflicting parent', () => {
+    const suaNguoi = vi.fn()
+    useGiaphaStore.setState({ data: oneSpouseData, suaNguoi })
+    const editPerson = oneSpouseData.persons['1']
+
+    const { getByText } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByText('+ Thêm con'))
+    fireEvent.click(getByText('Chọn con'))
+    fireEvent.click(getByText('Người Đã Có Bố Mẹ Khác'))
+
+    expect(suaNguoi).not.toHaveBeenCalled()
+    expect(getByText('Bố/mẹ của Người Đã Có Bố Mẹ Khác không trùng khớp. Không thể thêm làm con.')).toBeInTheDocument()
+  })
+})
+
+describe('PersonForm add Con with multiple spouses', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+    vi.restoreAllMocks()
+  })
+
+  const twoSpouseData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Cha Nhiều Vợ', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: '2' }, { voChongId: '3' }], conCaiIds: [] },
+      '2': { id: '2', hoTen: 'Vợ Cả', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: [] },
+      '3': { id: '3', hoTen: 'Vợ Hai', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: [] },
+      '4': { id: '4', hoTen: 'Con Chưa Liên Kết', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+    },
+  }
+
+  it('shows a spouse-choice dropdown before linking when the person has multiple spouses', async () => {
+    const suaNguoi = vi.fn().mockResolvedValue(undefined)
+    useGiaphaStore.setState({ data: twoSpouseData, suaNguoi })
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const editPerson = twoSpouseData.persons['1']
+
+    const { getByText, getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByText('+ Thêm con'))
+    fireEvent.click(getByText('Chọn con'))
+    fireEvent.click(getByText('Con Chưa Liên Kết'))
+
+    expect(getByText(/Chọn vợ\/chồng là bố\/mẹ còn lại/)).toBeInTheDocument()
+    expect(suaNguoi).not.toHaveBeenCalled()
+
+    await act(async () => {
+      fireEvent.change(getByRole('combobox'), { target: { value: '3' } })
+    })
+
+    expect(suaNguoi).toHaveBeenCalledWith('4', expect.objectContaining({ boId: '1', meId: '3' }))
+  })
+})

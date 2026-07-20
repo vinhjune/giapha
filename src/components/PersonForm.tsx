@@ -81,10 +81,12 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     if (saved) selectPerson(target.id)
   }
 
-  const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong' | 'anhchiem'>(null)
+  const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong' | 'anhchiem' | 'con'>(null)
   const [multipleWives, setMultipleWives] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [anhChiEmFeedback, setAnhChiEmFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [conFeedback, setConFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [pendingChild, setPendingChild] = useState<{ person: Person; voChongOptions: string[] } | null>(null)
 
   const currentSiblings = useMemo(() => {
     if (!data || (!form.boId && !form.meId)) return []
@@ -182,6 +184,45 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     }
 
     setAnhChiEmFeedback({ type: 'error', msg: `Bố/mẹ của ${person.hoTen} không trùng khớp. Không thể thêm làm anh/chị/em.` })
+  }
+
+  function handleConSelected(person: Person) {
+    setPickerOpen(null)
+    setConFeedback(null)
+    if (!editPerson) return
+
+    const spouseIds = editPerson.honNhan.map(h => h.voChongId)
+    if (spouseIds.length >= 2) {
+      setPendingChild({ person, voChongOptions: spouseIds })
+      return
+    }
+    void confirmLinkChild(person, spouseIds[0])
+  }
+
+  async function confirmLinkChild(child: Person, otherParentId: string | undefined) {
+    if (!editPerson) return
+    const boId = editPerson.gioiTinh === 'nam' ? editPerson.id : otherParentId
+    const meId = editPerson.gioiTinh === 'nam' ? otherParentId : editPerson.id
+
+    if (child.boId === boId && child.meId === meId) {
+      setConFeedback({ type: 'success', msg: `${child.hoTen} đã là con.` })
+      return
+    }
+
+    if (!child.boId && !child.meId) {
+      const confirmed = confirm(`Bố/mẹ của ${child.hoTen} đang trống. Cập nhật làm con của ${editPerson.hoTen}?`)
+      if (!confirmed) return
+      const { id: _id, ...childRest } = child
+      try {
+        await suaNguoi(child.id, { ...childRest, boId, meId })
+        setConFeedback({ type: 'success', msg: `Đã cập nhật ${child.hoTen} làm con của ${editPerson.hoTen}.` })
+      } catch (err) {
+        setConFeedback({ type: 'error', msg: 'Không thể cập nhật: ' + (err as Error).message })
+      }
+      return
+    }
+
+    setConFeedback({ type: 'error', msg: `Bố/mẹ của ${child.hoTen} không trùng khớp. Không thể thêm làm con.` })
   }
 
   async function trySave(): Promise<boolean> {
@@ -442,6 +483,41 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                       {child.hoTen}
                     </button>
                   ))}
+                  {conFeedback && (
+                    <div className={`text-sm px-3 py-1.5 rounded ${conFeedback.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                      {conFeedback.msg}
+                    </div>
+                  )}
+                  {pendingChild && (
+                    <div className="text-sm px-3 py-2 border rounded bg-yellow-50 space-y-2">
+                      <div>Chọn vợ/chồng là bố/mẹ còn lại của <strong>{pendingChild.person.hoTen}</strong>:</div>
+                      <select
+                        defaultValue=""
+                        onChange={e => {
+                          const voChongId = e.target.value
+                          const chosen = pendingChild.person
+                          setPendingChild(null)
+                          if (voChongId) void confirmLinkChild(chosen, voChongId)
+                        }}
+                        className="w-full px-3 py-1.5 text-sm border rounded"
+                      >
+                        <option value="" disabled>-- Chọn vợ/chồng --</option>
+                        {pendingChild.voChongOptions.map(id => (
+                          <option key={id} value={id}>{getName(id)}</option>
+                        ))}
+                      </select>
+                      <button type="button" onClick={() => setPendingChild(null)} className="text-xs text-gray-500 hover:underline">
+                        Hủy
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setConFeedback(null); setPendingChild(null); setPickerOpen('con') }}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    + Thêm con
+                  </button>
                 </div>
               </div>
             )}
@@ -500,6 +576,19 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
             ...form.voChongIds,
           ]}
           onSelect={handleAnhChiEmSelected}
+          onClose={() => setPickerOpen(null)}
+        />
+      )}
+      {pickerOpen === 'con' && editPerson && (
+        <PersonPicker
+          title="Chọn con"
+          excludeIds={[
+            editPerson.id,
+            ...(form.boId ? [form.boId] : []),
+            ...(form.meId ? [form.meId] : []),
+            ...form.voChongIds,
+          ]}
+          onSelect={handleConSelected}
           onClose={() => setPickerOpen(null)}
         />
       )}
