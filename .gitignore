@@ -24,3 +24,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Brainstorming visual companion artifacts
+.superpowers/
