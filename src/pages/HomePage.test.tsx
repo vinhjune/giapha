@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import HomePage from './HomePage'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { GiaphaData } from '../types/giapha'
+import { mockMatchMedia } from '../test-setup'
 
 const data: GiaphaData = {
   metadata: { tenDongHo: 'Dòng họ mẫu' },
@@ -94,5 +95,45 @@ describe('HomePage in-modal relation navigation', () => {
     expect(screen.getByDisplayValue('Ông Nội')).toBeInTheDocument()
     // Ông Nội không có Bố — nếu modal không remount, tên "Ông Nội" cũ (nút Bố của Con Trai) sẽ còn sót lại.
     expect(screen.queryByRole('button', { name: 'Ông Nội' })).toBeNull()
+  })
+})
+
+describe('HomePage mobile navigation', () => {
+  beforeEach(() => {
+    Element.prototype.scrollTo = vi.fn()
+    useGiaphaStore.setState({
+      data,
+      viewMode: 'tree',
+      selectedPersonId: null,
+      focusedPersonId: null,
+      hienThiThuTuDoi: false,
+      cyclicRelationshipWarnings: [],
+    })
+  })
+
+  it('shows the bottom tab bar on mobile and opens the add-person modal from "Thêm mới"', () => {
+    mockMatchMedia(true)
+    render(<HomePage />)
+
+    expect(screen.getByRole('button', { name: 'Thêm mới' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Thêm mới' }))
+
+    expect(screen.getByText('Thêm người mới')).toBeInTheDocument()
+  })
+
+  it('does not show the bottom tab bar on desktop', () => {
+    mockMatchMedia(false)
+    render(<HomePage />)
+
+    expect(screen.queryByRole('navigation', { name: 'Điều hướng chính' })).toBeNull()
+  })
+
+  it('marks the floating add button as desktop-only via CSS classes', () => {
+    mockMatchMedia(false)
+    render(<HomePage />)
+
+    const fab = screen.getByTitle('Thêm người mới')
+    expect(fab.className).toContain('hidden')
+    expect(fab.className).toContain('sm:flex')
   })
 })
