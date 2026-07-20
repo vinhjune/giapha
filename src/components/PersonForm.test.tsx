@@ -342,3 +342,34 @@ describe('PersonForm relation navigation - Vợ/Chồng', () => {
     expect(selectPerson).toHaveBeenCalledWith('2')
   })
 })
+
+describe('PersonForm relation navigation - Anh/Chị/Em', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+  })
+
+  const anhChiEmData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Bố', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: ['3', '4'] },
+      '3': { id: '3', hoTen: 'Anh Cả', gioiTinh: 'nam', laThanhVienHo: true, boId: '1', honNhan: [], conCaiIds: [] },
+      '4': { id: '4', hoTen: 'Em Út', gioiTinh: 'nu', laThanhVienHo: true, boId: '1', honNhan: [], conCaiIds: [] },
+    },
+  }
+
+  it('navigates to a sibling when their name is clicked', () => {
+    const selectPerson = vi.fn()
+    useGiaphaStore.setState({ data: anhChiEmData, selectPerson })
+    const editPerson = anhChiEmData.persons['3']
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByRole('button', { name: 'Em Út' }))
+
+    expect(selectPerson).toHaveBeenCalledWith('4')
+  })
+})

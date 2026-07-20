@@ -395,9 +395,15 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
               <label className="text-sm font-medium text-gray-700">Anh/Chị/Em</label>
               <div className="mt-1 space-y-1">
                 {currentSiblings.map(p => (
-                  <div key={p.id} className="text-sm px-3 py-1 border rounded bg-gray-50 text-gray-700">
+                  <button
+                    key={p.id}
+                    type="button"
+                    title={`Xem/sửa ${p.hoTen}`}
+                    onClick={() => handleNavigateTo(p)}
+                    className="block w-full text-left text-sm px-3 py-1 border rounded bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                  >
                     {p.hoTen}
-                  </div>
+                  </button>
                 ))}
                 {anhChiEmFeedback && (
                   <div className={`text-sm px-3 py-1.5 rounded ${anhChiEmFeedback.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
