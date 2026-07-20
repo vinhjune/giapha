@@ -42,7 +42,7 @@ export const useGiaphaStore = create<GiaphaState>((set, get) => ({
   data: null,
   loading: false,
   error: null,
-  viewMode: 'tree',
+  viewMode: 'list',
   selectedPersonId: null,
   focusedPersonId: null,
   cyclicRelationshipWarnings: [],

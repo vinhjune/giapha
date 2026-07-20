@@ -666,52 +666,25 @@ export default function TreeView() {
   if (!data) return <div className="flex-1 flex items-center justify-center text-gray-400">Chưa có dữ liệu</div>
 
   return (
-    <div
-      ref={containerRef}
-      data-testid="tree-view-container"
-      className={`flex-1 overflow-auto bg-canvas relative ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
-      tabIndex={0}
-      aria-label="Cây gia phả"
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={stopDragging}
-      onMouseLeave={stopDragging}
-      onKeyDown={onKeyDown}
-      onWheel={onWheel}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      onTouchCancel={onTouchEnd}
-    >
-      <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded-lg border border-card-border bg-card/95 p-2 shadow-sm">
-        <button
-          type="button"
-          onClick={zoomOut}
-          disabled={zoom <= MIN_ZOOM}
-          aria-label="Thu nhỏ cây"
-          className="h-11 w-11 sm:h-8 sm:w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
-        >
-          −
-        </button>
-        <button
-          type="button"
-          onClick={resetZoom}
-          aria-label="Đặt lại mức thu phóng"
-          className="rounded border border-card-border text-muted px-2 py-1 text-xs font-medium hover:bg-slate-50"
-        >
-          {Math.round(zoom * 100)}%
-        </button>
-        <button
-          type="button"
-          onClick={zoomIn}
-          disabled={zoom >= MAX_ZOOM}
-          aria-label="Phóng to cây"
-          className="h-11 w-11 sm:h-8 sm:w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
-        >
-          +
-        </button>
-      </div>
-      <div style={{ width: width * zoom, height: height * zoom, position: 'relative' }}>
+    <div className="relative flex-1 overflow-hidden">
+      <div
+        ref={containerRef}
+        data-testid="tree-view-container"
+        className={`absolute inset-0 overflow-auto bg-canvas ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+        tabIndex={0}
+        aria-label="Cây gia phả"
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={stopDragging}
+        onMouseLeave={stopDragging}
+        onKeyDown={onKeyDown}
+        onWheel={onWheel}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
+      >
+        <div style={{ width: width * zoom, height: height * zoom, position: 'relative' }}>
         <div
           data-testid="tree-view-scale-layer"
           style={{
@@ -772,6 +745,36 @@ export default function TreeView() {
             </button>
           ))}
         </div>
+      </div>
+      </div>
+
+      <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2 rounded-lg border border-card-border bg-card/95 p-2 shadow-sm">
+        <button
+          type="button"
+          onClick={zoomOut}
+          disabled={zoom <= MIN_ZOOM}
+          aria-label="Thu nhỏ cây"
+          className="h-11 w-11 sm:h-8 sm:w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
+        >
+          −
+        </button>
+        <button
+          type="button"
+          onClick={resetZoom}
+          aria-label="Đặt lại mức thu phóng"
+          className="rounded border border-card-border text-muted px-2 py-1 text-xs font-medium hover:bg-slate-50"
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <button
+          type="button"
+          onClick={zoomIn}
+          disabled={zoom >= MAX_ZOOM}
+          aria-label="Phóng to cây"
+          className="h-11 w-11 sm:h-8 sm:w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
+        >
+          +
+        </button>
       </div>
     </div>
   )
