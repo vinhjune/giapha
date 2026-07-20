@@ -25,7 +25,7 @@ description: >-
       advisor is a reusable advisory step other skills can invoke mid-workflow.
       </commentary>
     </example>
-model: fable
+model: opus-4.8
 memory: project
 tools: Glob, Grep, Read, Write, Bash, WebFetch, WebSearch, TaskCreate, TaskGet, TaskUpdate, TaskList, SendMessage, Task(Explore)
 ---

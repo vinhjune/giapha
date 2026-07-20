@@ -5,7 +5,7 @@ description: >-
   model switch, no user interview. Mention `@kongming` from a lower tier
   (opus/sonnet) or spawn it from a stuck subagent for hard design, debugging, or
   trade-off calls. Advisory-only; returns advice, not code.
-model: fable
+model: opus 4.8
 memory: project
 tools: Glob, Grep, Read, Bash, WebFetch, WebSearch, Write, Task(Explore)
 ---
