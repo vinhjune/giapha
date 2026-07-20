@@ -312,3 +312,33 @@ describe('PersonForm relation navigation - Bố', () => {
     expect(selectPerson).toHaveBeenCalledWith('2')
   })
 })
+
+describe('PersonForm relation navigation - Vợ/Chồng', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+  })
+
+  const voChongData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Chồng', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: '2' }], conCaiIds: [] },
+      '2': { id: '2', hoTen: 'Vợ', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: [] },
+    },
+  }
+
+  it('navigates to a spouse when their name is clicked, and the × button still removes without navigating', () => {
+    const selectPerson = vi.fn()
+    useGiaphaStore.setState({ data: voChongData, selectPerson })
+    const editPerson = voChongData.persons['1']
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByRole('button', { name: 'Vợ' }))
+
+    expect(selectPerson).toHaveBeenCalledWith('2')
+  })
+})

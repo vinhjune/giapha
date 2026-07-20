@@ -365,13 +365,27 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
             <div>
               <label className="text-sm font-medium text-gray-700">Vợ/Chồng</label>
               <div className="mt-1 space-y-1">
-                {form.voChongIds.map(id => (
-                  <div key={id} className="flex items-center gap-2">
-                    <span className="flex-1 text-sm px-3 py-1 border rounded bg-gray-50">{getName(id)}</span>
-                    <button type="button" onClick={() => setForm(f => ({ ...f, voChongIds: f.voChongIds.filter(v => v !== id) }))}
-                      className="text-gray-400 hover:text-red-500">&times;</button>
-                  </div>
-                ))}
+                {form.voChongIds.map(id => {
+                  const spouse = getPerson(id)
+                  return (
+                    <div key={id} className="flex items-center gap-2">
+                      {spouse ? (
+                        <button
+                          type="button"
+                          title={`Xem/sửa ${spouse.hoTen}`}
+                          onClick={() => handleNavigateTo(spouse)}
+                          className="flex-1 text-left text-sm px-3 py-1 border rounded bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                        >
+                          {spouse.hoTen}
+                        </button>
+                      ) : (
+                        <span className="flex-1 text-sm px-3 py-1 border rounded bg-gray-50 text-gray-400">{getName(id)}</span>
+                      )}
+                      <button type="button" onClick={() => setForm(f => ({ ...f, voChongIds: f.voChongIds.filter(v => v !== id) }))}
+                        className="text-gray-400 hover:text-red-500">&times;</button>
+                    </div>
+                  )
+                })}
                 <button type="button" onClick={() => setPickerOpen('vochong')}
                   className="text-sm text-blue-600 hover:underline">+ Thêm vợ/chồng</button>
               </div>
