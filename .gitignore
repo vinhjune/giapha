@@ -27,3 +27,6 @@ dist-ssr
 
 # Brainstorming visual companion artifacts
 .superpowers/
+
+# Git worktrees for isolated task execution
+.worktrees/
