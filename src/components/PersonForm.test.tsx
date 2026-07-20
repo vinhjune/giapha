@@ -1,10 +1,11 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { act, fireEvent, render, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, within, waitFor } from '@testing-library/react'
 import { tuDongDienMe, tuDongDienBo } from '../utils/familyTree'
 import type { GiaphaData } from '../types/giapha'
 import type { Person } from '../types/giapha'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonForm from './PersonForm'
+import { mockMatchMedia } from '../test-setup'
 
 const data: GiaphaData = {
   metadata: {} as GiaphaData['metadata'],
@@ -534,5 +535,94 @@ describe('PersonForm add Con with multiple spouses', () => {
     })
 
     expect(suaNguoi).toHaveBeenCalledWith('4', expect.objectContaining({ boId: '1', meId: '3' }))
+  })
+})
+
+describe('PersonForm mobile full-screen modal', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+  })
+
+  const editPerson: Person = {
+    id: '1',
+    hoTen: 'Bố',
+    gioiTinh: 'nam',
+    laThanhVienHo: true,
+    honNhan: [{ voChongId: '2' }],
+    conCaiIds: [],
+  }
+
+  it('renders full-screen without rounded corners on mobile', () => {
+    mockMatchMedia(true)
+    useGiaphaStore.setState({ data })
+
+    const { getByTestId } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+    const modal = getByTestId('person-form-modal') as HTMLDivElement
+
+    expect(modal.className).toContain('w-full')
+    expect(modal.className).toContain('h-full')
+    expect(modal.className).not.toContain('rounded-lg')
+  })
+
+  it('shows a back arrow instead of the × close button, and drops Hủy from the footer', () => {
+    mockMatchMedia(true)
+    useGiaphaStore.setState({ data })
+
+    const { getByTestId } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    // The modal header (first child of the modal container) must show the back
+    // arrow and drop the × close button. (Unrelated "×" remove-spouse buttons
+    // further down the form are expected to remain — only the header's is checked here.)
+    const header = getByTestId('person-form-modal').firstElementChild as HTMLElement
+    expect(screen.getByRole('button', { name: 'Quay lại' })).toBeInTheDocument()
+    expect(within(header).queryByRole('button', { name: '×' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Hủy' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Lưu thay đổi' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Xoá' })).toBeInTheDocument()
+  })
+
+  it('back arrow closes immediately when nothing changed', () => {
+    mockMatchMedia(true)
+    useGiaphaStore.setState({ data })
+    const onClose = vi.fn()
+
+    render(<PersonForm editPerson={editPerson} onClose={onClose} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('back arrow asks for confirmation before closing when the form changed, and respects the answer', () => {
+    mockMatchMedia(true)
+    useGiaphaStore.setState({ data })
+    const onClose = vi.fn()
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+    render(<PersonForm editPerson={editPerson} onClose={onClose} />)
+    fireEvent.change(screen.getByDisplayValue('Bố'), { target: { value: 'Bố sửa' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1)
+    expect(onClose).not.toHaveBeenCalled()
+
+    confirmSpy.mockReturnValue(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại' }))
+    expect(onClose).toHaveBeenCalledTimes(1)
+
+    confirmSpy.mockRestore()
+  })
+
+  it('hides Xoá and keeps a full-width Lưu when adding a new person on mobile', () => {
+    mockMatchMedia(true)
+    useGiaphaStore.setState({ data })
+
+    render(<PersonForm editPerson={null} onClose={() => {}} />)
+
+    expect(screen.queryByRole('button', { name: 'Xoá' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Thêm' })).toBeInTheDocument()
   })
 })

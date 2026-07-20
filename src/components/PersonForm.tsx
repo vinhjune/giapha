@@ -4,6 +4,7 @@ import PersonPicker from './PersonPicker'
 import NgayThangInput from './NgayThangInput'
 import { timVoChong, sapXepAnhChiEm } from '../utils/familyTree'
 import type { Person, GioiTinh, NgayThang } from '../types/giapha'
+import { useIsMobile } from '../utils/useIsMobile'
 
 interface Props {
   editPerson?: Person | null
@@ -64,6 +65,16 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     () => JSON.stringify(form) !== JSON.stringify(initialForm),
     [form, initialForm],
   )
+
+  const isMobile = useIsMobile()
+
+  function handleMobileClose() {
+    if (isDirty) {
+      const confirmed = confirm('Bạn có thay đổi chưa lưu. Đóng mà không lưu?')
+      if (!confirmed) return
+    }
+    onClose()
+  }
 
   const getPerson = (id?: string): Person | undefined => (id ? data?.persons[id] : undefined)
 
@@ -275,11 +286,38 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40 flex items-end justify-center p-2 sm:items-center sm:p-4">
-        <div data-testid="person-form-modal" className="bg-white rounded-lg shadow-xl w-full max-w-[480px] max-h-[100dvh] sm:max-h-[90vh] flex flex-col">
+      <div
+        className={
+          isMobile
+            ? 'fixed inset-0 bg-black/40 z-40 flex'
+            : 'fixed inset-0 bg-black/40 z-40 flex items-end justify-center p-2 sm:items-center sm:p-4'
+        }
+      >
+        <div
+          data-testid="person-form-modal"
+          className={
+            isMobile
+              ? 'bg-white w-full h-full max-h-[100dvh] flex flex-col'
+              : 'bg-white rounded-lg shadow-xl w-full max-w-[480px] max-h-[100dvh] sm:max-h-[90vh] flex flex-col'
+          }
+        >
           <div className="flex justify-between items-center px-4 py-3 border-b">
-            <h3 className="font-semibold">{editPerson ? 'Sửa thông tin' : 'Thêm người mới'}</h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            <div className="flex items-center gap-2 min-w-0">
+              {isMobile && (
+                <button
+                  type="button"
+                  onClick={handleMobileClose}
+                  aria-label="Quay lại"
+                  className="text-gray-500 hover:text-gray-700 text-xl leading-none"
+                >
+                  ←
+                </button>
+              )}
+              <h3 className="font-semibold truncate">{editPerson ? 'Sửa thông tin' : 'Thêm người mới'}</h3>
+            </div>
+            {!isMobile && (
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-4 py-3 space-y-3">
@@ -538,13 +576,22 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                 className="flex-1 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 disabled:opacity-50">
                 {saving ? 'Đang lưu...' : editPerson ? 'Lưu thay đổi' : 'Thêm'}
               </button>
-              <button type="button" onClick={onClose}
-                className="flex-1 py-2 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200">
-                Hủy
-              </button>
+              {!isMobile && (
+                <button type="button" onClick={onClose}
+                  className="flex-1 py-2 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200">
+                  Hủy
+                </button>
+              )}
               {editPerson && (
-                <button type="button" onClick={handleXoaNguoi}
-                  className="py-2 px-4 bg-red-50 text-red-600 text-sm rounded hover:bg-red-100 border border-red-200">
+                <button
+                  type="button"
+                  onClick={handleXoaNguoi}
+                  className={
+                    isMobile
+                      ? 'flex-1 py-2 bg-red-50 text-red-600 text-sm rounded hover:bg-red-100 border border-red-200'
+                      : 'py-2 px-4 bg-red-50 text-red-600 text-sm rounded hover:bg-red-100 border border-red-200'
+                  }
+                >
                   Xoá
                 </button>
               )}
