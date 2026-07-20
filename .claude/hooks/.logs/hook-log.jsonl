@@ -76,3 +76,7 @@
 {"ts":"2026-07-16T14:43:52.979Z","hook":"scout-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":2,"status":"ok","exit":0,"error":""}
 {"ts":"2026-07-16T14:43:56.339Z","hook":"scout-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":2,"status":"ok","exit":0,"error":""}
 {"ts":"2026-07-16T14:43:56.338Z","hook":"privacy-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":2,"status":"ok","exit":0,"error":""}
+{"ts":"2026-07-20T12:43:28.003Z","hook":"scout-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":2,"status":"ok","exit":0,"error":""}
+{"ts":"2026-07-20T12:43:28.308Z","hook":"privacy-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":1,"status":"ok","exit":0,"error":""}
+{"ts":"2026-07-20T12:43:33.971Z","hook":"scout-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":2,"status":"ok","exit":0,"error":""}
+{"ts":"2026-07-20T12:43:34.297Z","hook":"privacy-block","event":"PreToolUse","tool":"Bash","target":"","note":"","dur":1,"status":"ok","exit":0,"error":""}

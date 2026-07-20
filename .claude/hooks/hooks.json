@@ -1,0 +1,192 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/plan-format-kanban.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          }
+        ],
+        "matcher": "Edit|Write"
+      },
+      {
+        "hooks": [
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/session-state.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          }
+        ],
+        "matcher": "Agent|Task|TodoWrite|TodoRead"
+      },
+      {
+        "hooks": [
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/usage-quota-cache-refresh.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/descriptive-name.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          }
+        ],
+        "matcher": "Write"
+      },
+      {
+        "hooks": [
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/privacy-block.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          }
+        ],
+        "matcher": "Read|Write|Edit|Bash"
+      },
+      {
+        "hooks": [
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/scout-block.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash|Read"
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/session-init.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/cook-after-plan-reminder.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          },
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/session-state.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          },
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/usage-quota-cache-refresh.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/subagent-init.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          },
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/team-context-inject.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/session-state.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/secret-output-guardrail.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          },
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/dev-rules-reminder.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          },
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/simplify-gate.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          },
+          {
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/usage-quota-cache-refresh.cjs"
+            ],
+            "command": "node",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ]
+  }
+}

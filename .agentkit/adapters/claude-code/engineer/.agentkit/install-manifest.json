@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "kit": "engineer",
+  "kit_version": "0.2.0",
+  "files": [
+    {
+      "rel_path": ".agentkit/output-styles/coding-level-0-eli5.md",
+      "sha256": "db1882c4c992134b67c6d7c4a88f27af414638beb054d82a6350239b85978f25"
+    },
+    {
+      "rel_path": ".agentkit/output-styles/coding-level-1-junior.md",
+      "sha256": "0c41c9469aac2a1913eca9a40b6965a7ae5e6b006cbb6dff6c06f884b53125d9"
+    },
+    {
+      "rel_path": ".agentkit/output-styles/coding-level-2-mid.md",
+      "sha256": "71c92761fb0dff5eac9fcad89b248a2c94b2765139b1bcf1df12fbe2af09a32a"
+    },
+    {
+      "rel_path": ".agentkit/output-styles/coding-level-3-senior.md",
+      "sha256": "cfec83d2d493245382320819bb5878aa70a884d7d6b6d21cfc127294470f8e86"
+    },
+    {
+      "rel_path": ".agentkit/output-styles/coding-level-4-lead.md",
+      "sha256": "c7da8d488165c70f251de3f6b4d86e7b477d15fa79475bc84e3a30ad5326bfa5"
+    },
+    {
+      "rel_path": ".agentkit/output-styles/coding-level-5-god.md",
+      "sha256": "4df16ad59fae94759a9b71e0752233234cae28d6f5b9b412bfe189a3ae8a1a14"
+    },
+    {
+      "rel_path": ".agentkit/schemas/ck-config.schema.json",
+      "sha256": "9a0c0aed85c67dedd2c773790cb975b008efac6693ff2f18e0586554e72a78bf"
+    },
+    {
+      "rel_path": ".agentkit/scripts/resolve_env.py",
+      "sha256": "5540b61baddc265a3097060df5036cceea454ea55f25fccb907a9230d6feda90"
+    },
+    {
+      "rel_path": ".agentkit/scripts/set-active-plan.cjs",
+      "sha256": "5359e5586bde94f1ba1de287c5cef2b86a26f5f772d8c6ef7d74f1acdd2cf955"
+    },
+    {
+      "rel_path": ".agentkit/scripts/validate-skill-crossrefs.py",
+      "sha256": "6f9e93c69601214dda0525f91a13668818fcb4c0ea0b5801af52ba5cdfe4abb3"
+    },
+    {
+      "rel_path": ".agentkit/scripts/worktree.cjs",
+      "sha256": "1980a15178eba9830d82a9e19dd6dd80dbc05e748ccd331634b0bfe6979ef648"
+    },
+    {
+      "rel_path": ".agentkit/scripts/worktree.test.cjs",
+      "sha256": "9295aa512aacbaebfb9f4c04376210ea82ab86e31bde93546b62fbd19e21db9d"
+    }
+  ],
+  "skill_selection": {
+    "mode": "all",
+    "skills": [
+      "ak-advise",
+      "ak-agent-browser",
+      "ak-agentize",
+      "ak-agentkit",
+      "ak-ai-artist",
+      "ak-ai-multimodal",
+      "ak-ask",
+      "ak-autoresearch",
+      "ak-backend-development",
+      "ak-better-auth",
+      "ak-bootstrap",
+      "ak-brainstorm",
+      "ak-chrome-profile",
+      "ak-code-review",
+      "ak-codex-goal",
+      "ak-coding-level",
+      "ak-common",
+      "ak-context-engineering",
+      "ak-cook",
+      "ak-copywriting",
+      "ak-cti-expert",
+      "ak-databases",
+      "ak-debug",
+      "ak-deep-swe",
+      "ak-deploy",
+      "ak-design",
+      "ak-devops",
+      "ak-docs",
+      "ak-docs-seeker",
+      "ak-document-skills",
+      "ak-excalidraw",
+      "ak-fable-thinking",
+      "ak-find-skills",
+      "ak-fix",
+      "ak-folder-context",
+      "ak-frontend-design",
+      "ak-frontend-development",
+      "ak-git",
+      "ak-gkg",
+      "ak-google-adk-python",
+      "ak-graphify",
+      "ak-handoff",
+      "ak-help",
+      "ak-html-video",
+      "ak-interview-docs",
+      "ak-issue-to-plan",
+      "ak-journal",
+      "ak-llms",
+      "ak-loop",
+      "ak-markdown-novel-viewer",
+      "ak-mcp-builder",
+      "ak-media-processing",
+      "ak-mermaidjs-v11",
+      "ak-mintlify",
+      "ak-mobile-development",
+      "ak-orchestrate",
+      "ak-payment-integration",
+      "ak-plan",
+      "ak-plans-kanban",
+      "ak-predict",
+      "ak-preview",
+      "ak-problem-solving",
+      "ak-project-management",
+      "ak-project-organization",
+      "ak-react-best-practices",
+      "ak-remotion",
+      "ak-repomix",
+      "ak-research",
+      "ak-research-prompt",
+      "ak-retro",
+      "ak-review-pr",
+      "ak-scenario",
+      "ak-scout",
+      "ak-security",
+      "ak-security-scan",
+      "ak-sequential-thinking",
+      "ak-shader",
+      "ak-ship",
+      "ak-shopify",
+      "ak-show-off",
+      "ak-skill-creator",
+      "ak-stitch",
+      "ak-tanstack",
+      "ak-team",
+      "ak-tech-graph",
+      "ak-test",
+      "ak-threejs",
+      "ak-ui-styling",
+      "ak-ui-ux-pro-max",
+      "ak-use-mcp",
+      "ak-vibe",
+      "ak-watzup",
+      "ak-web-design-guidelines",
+      "ak-web-frameworks",
+      "ak-web-testing",
+      "ak-worktree",
+      "ak-xia"
+    ],
+    "selected_count": 97,
+    "total_count": 97
+  }
+}
