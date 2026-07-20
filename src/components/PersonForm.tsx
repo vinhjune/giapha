@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonPicker from './PersonPicker'
 import NgayThangInput from './NgayThangInput'
@@ -34,7 +34,7 @@ const empty: FormState = {
 }
 
 export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) {
-  const { data, themNguoi, suaNguoi, xoaNguoi } = useGiaphaStore()
+  const { data, themNguoi, suaNguoi, xoaNguoi, selectPerson } = useGiaphaStore()
 
   const [form, setForm] = useState<FormState>(() => {
     if (editPerson) {
@@ -58,6 +58,28 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     }
     return empty
   })
+
+  const initialFormRef = useRef(form)
+  const isDirty = useMemo(
+    () => JSON.stringify(form) !== JSON.stringify(initialFormRef.current),
+    [form],
+  )
+
+  const getPerson = (id?: string): Person | undefined => (id ? data?.persons[id] : undefined)
+
+  async function handleNavigateTo(target: Person) {
+    if (!isDirty) {
+      selectPerson(target.id)
+      return
+    }
+    const currentName = editPerson ? editPerson.hoTen : (form.hoTen.trim() || '(người mới)')
+    const confirmed = confirm(
+      `Bạn có thay đổi chưa lưu cho "${currentName}". Lưu lại trước khi chuyển sang xem "${target.hoTen}"?`,
+    )
+    if (!confirmed) return
+    const saved = await trySave()
+    if (saved) selectPerson(target.id)
+  }
 
   const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong' | 'anhchiem'>(null)
   const [multipleWives, setMultipleWives] = useState<string[]>([])
@@ -291,9 +313,18 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
             <div>
               <label className="text-sm font-medium text-gray-700">Bố</label>
               <div className="mt-1 flex flex-wrap gap-2">
-                <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-700">
-                  {form.boId ? getName(form.boId) : <span className="text-gray-400">Chưa chọn</span>}
-                </div>
+                {getPerson(form.boId) ? (
+                  <button
+                    type="button"
+                    title={`Xem/sửa ${getName(form.boId!)}`}
+                    onClick={() => handleNavigateTo(getPerson(form.boId)!)}
+                    className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                  >
+                    {getName(form.boId!)}
+                  </button>
+                ) : (
+                  <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-400">Chưa chọn</div>
+                )}
                 <button type="button" onClick={() => setPickerOpen('bo')}
                   className="px-3 py-1.5 text-sm bg-gray-100 border rounded hover:bg-gray-200">Chọn</button>
                 {form.boId && <button type="button" onClick={() => setForm(f => ({ ...f, boId: undefined }))}

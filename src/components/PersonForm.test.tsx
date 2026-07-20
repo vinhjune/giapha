@@ -231,3 +231,73 @@ describe('PersonForm outside-clan marker', () => {
     expect(outsideCheckbox.checked).toBe(true)
   })
 })
+
+describe('PersonForm relation navigation - Bố', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+    vi.restoreAllMocks()
+  })
+
+  const relationData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Ông Nội', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: ['3'] },
+      '2': { id: '2', hoTen: 'Bà Nội', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [], conCaiIds: ['3'] },
+      '3': { id: '3', hoTen: 'Con', gioiTinh: 'nam', laThanhVienHo: true, boId: '1', meId: '2', honNhan: [], conCaiIds: [] },
+    },
+  }
+  const editPerson: Person = relationData.persons['3']
+
+  it('navigates immediately to Bố when there are no unsaved changes', () => {
+    const selectPerson = vi.fn()
+    useGiaphaStore.setState({ data: relationData, selectPerson })
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByRole('button', { name: 'Ông Nội' }))
+
+    expect(selectPerson).toHaveBeenCalledWith('1')
+  })
+
+  it('asks to save unsaved changes before navigating, and navigates after saving successfully', async () => {
+    const selectPerson = vi.fn()
+    const suaNguoi = vi.fn().mockResolvedValue(undefined)
+    useGiaphaStore.setState({ data: relationData, selectPerson, suaNguoi })
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    const { container, getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+    const nameInput = container.querySelector('input[required]') as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'Con (đã sửa)' } })
+
+    await act(async () => {
+      fireEvent.click(getByRole('button', { name: 'Ông Nội' }))
+    })
+
+    expect(confirmSpy).toHaveBeenCalled()
+    expect(suaNguoi).toHaveBeenCalledWith('3', expect.objectContaining({ hoTen: 'Con (đã sửa)' }))
+    expect(selectPerson).toHaveBeenCalledWith('1')
+  })
+
+  it('stays on the current form and does not save when the user declines to navigate away', async () => {
+    const selectPerson = vi.fn()
+    const suaNguoi = vi.fn()
+    useGiaphaStore.setState({ data: relationData, selectPerson, suaNguoi })
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+    const { container, getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+    const nameInput = container.querySelector('input[required]') as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'Con (đã sửa)' } })
+
+    await act(async () => {
+      fireEvent.click(getByRole('button', { name: 'Ông Nội' }))
+    })
+
+    expect(suaNguoi).not.toHaveBeenCalled()
+    expect(selectPerson).not.toHaveBeenCalled()
+    expect(nameInput.value).toBe('Con (đã sửa)')
+  })
+})
