@@ -689,7 +689,7 @@ export default function TreeView() {
           onClick={zoomOut}
           disabled={zoom <= MIN_ZOOM}
           aria-label="Thu nhỏ cây"
-          className="h-8 w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
+          className="h-11 w-11 sm:h-8 sm:w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
         >
           −
         </button>
@@ -706,7 +706,7 @@ export default function TreeView() {
           onClick={zoomIn}
           disabled={zoom >= MAX_ZOOM}
           aria-label="Phóng to cây"
-          className="h-8 w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
+          className="h-11 w-11 sm:h-8 sm:w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
         >
           +
         </button>

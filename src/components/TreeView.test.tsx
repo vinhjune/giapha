@@ -125,6 +125,20 @@ describe('TreeView', () => {
     expect(scaleLayer).toHaveStyle({ transform: 'scale(1)' })
   })
 
+  it('sizes zoom buttons for touch on mobile while staying compact on larger screens', () => {
+    render(<TreeView />)
+
+    const zoomInButton = screen.getByRole('button', { name: 'Phóng to cây' })
+    const zoomOutButton = screen.getByRole('button', { name: 'Thu nhỏ cây' })
+
+    for (const button of [zoomInButton, zoomOutButton]) {
+      expect(button.className).toContain('h-11')
+      expect(button.className).toContain('w-11')
+      expect(button.className).toContain('sm:h-8')
+      expect(button.className).toContain('sm:w-8')
+    }
+  })
+
   it('supports ctrl + wheel zooming', () => {
     render(<TreeView />)
     const container = screen.getByTestId('tree-view-container')
