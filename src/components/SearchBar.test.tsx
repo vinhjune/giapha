@@ -46,4 +46,12 @@ describe('SearchBar focus behavior', () => {
     expect(selectedPersonId).toBe('1')
     expect(focusedPersonId).toBe('2')
   })
+
+  it('is full width by default and constrained back to a fixed width on larger screens', () => {
+    render(<SearchBar />)
+
+    const wrapper = screen.getByPlaceholderText('Tìm kiếm theo tên...').closest('div')
+    expect(wrapper?.className).toContain('w-full')
+    expect(wrapper?.className).toContain('sm:w-64')
+  })
 })

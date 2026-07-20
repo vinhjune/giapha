@@ -37,7 +37,7 @@ export default function SearchBar() {
   }, [])
 
   return (
-    <div ref={ref} className="relative w-64">
+    <div ref={ref} className="relative w-full sm:w-64">
       <input
         type="text"
         value={query}
