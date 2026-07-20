@@ -231,3 +231,308 @@ describe('PersonForm outside-clan marker', () => {
     expect(outsideCheckbox.checked).toBe(true)
   })
 })
+
+describe('PersonForm relation navigation - Bố', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+    vi.restoreAllMocks()
+  })
+
+  const relationData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Ông Nội', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: ['3'] },
+      '2': { id: '2', hoTen: 'Bà Nội', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [], conCaiIds: ['3'] },
+      '3': { id: '3', hoTen: 'Con', gioiTinh: 'nam', laThanhVienHo: true, boId: '1', meId: '2', honNhan: [], conCaiIds: [] },
+    },
+  }
+  const editPerson: Person = relationData.persons['3']
+
+  it('navigates immediately to Bố when there are no unsaved changes', () => {
+    const selectPerson = vi.fn()
+    useGiaphaStore.setState({ data: relationData, selectPerson })
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByRole('button', { name: 'Ông Nội' }))
+
+    expect(selectPerson).toHaveBeenCalledWith('1')
+  })
+
+  it('asks to save unsaved changes before navigating, and navigates after saving successfully', async () => {
+    const selectPerson = vi.fn()
+    const suaNguoi = vi.fn().mockResolvedValue(undefined)
+    useGiaphaStore.setState({ data: relationData, selectPerson, suaNguoi })
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    const { container, getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+    const nameInput = container.querySelector('input[required]') as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'Con (đã sửa)' } })
+
+    await act(async () => {
+      fireEvent.click(getByRole('button', { name: 'Ông Nội' }))
+    })
+
+    expect(confirmSpy).toHaveBeenCalled()
+    expect(suaNguoi).toHaveBeenCalledWith('3', expect.objectContaining({ hoTen: 'Con (đã sửa)' }))
+    expect(selectPerson).toHaveBeenCalledWith('1')
+  })
+
+  it('stays on the current form and does not save when the user declines to navigate away', async () => {
+    const selectPerson = vi.fn()
+    const suaNguoi = vi.fn()
+    useGiaphaStore.setState({ data: relationData, selectPerson, suaNguoi })
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+    const { container, getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+    const nameInput = container.querySelector('input[required]') as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'Con (đã sửa)' } })
+
+    await act(async () => {
+      fireEvent.click(getByRole('button', { name: 'Ông Nội' }))
+    })
+
+    expect(suaNguoi).not.toHaveBeenCalled()
+    expect(selectPerson).not.toHaveBeenCalled()
+    expect(nameInput.value).toBe('Con (đã sửa)')
+  })
+
+  it('navigates immediately to Mẹ when there are no unsaved changes', () => {
+    const selectPerson = vi.fn()
+    useGiaphaStore.setState({ data: relationData, selectPerson })
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByRole('button', { name: 'Bà Nội' }))
+
+    expect(selectPerson).toHaveBeenCalledWith('2')
+  })
+})
+
+describe('PersonForm relation navigation - Vợ/Chồng', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+  })
+
+  const voChongData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Chồng', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: '2' }], conCaiIds: [] },
+      '2': { id: '2', hoTen: 'Vợ', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: [] },
+    },
+  }
+
+  it('navigates to a spouse when their name is clicked, and the × button still removes without navigating', () => {
+    const selectPerson = vi.fn()
+    useGiaphaStore.setState({ data: voChongData, selectPerson })
+    const editPerson = voChongData.persons['1']
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByRole('button', { name: 'Vợ' }))
+
+    expect(selectPerson).toHaveBeenCalledWith('2')
+  })
+})
+
+describe('PersonForm relation navigation - Anh/Chị/Em', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+  })
+
+  const anhChiEmData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Bố', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: ['3', '4'] },
+      '3': { id: '3', hoTen: 'Anh Cả', gioiTinh: 'nam', laThanhVienHo: true, boId: '1', honNhan: [], conCaiIds: [] },
+      '4': { id: '4', hoTen: 'Em Út', gioiTinh: 'nu', laThanhVienHo: true, boId: '1', honNhan: [], conCaiIds: [] },
+    },
+  }
+
+  it('navigates to a sibling when their name is clicked', () => {
+    const selectPerson = vi.fn()
+    useGiaphaStore.setState({ data: anhChiEmData, selectPerson })
+    const editPerson = anhChiEmData.persons['3']
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByRole('button', { name: 'Em Út' }))
+
+    expect(selectPerson).toHaveBeenCalledWith('4')
+  })
+})
+
+describe('PersonForm Con (children) list display', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+  })
+
+  const conData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Cha', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: '2' }], conCaiIds: ['3', '4'] },
+      '2': { id: '2', hoTen: 'Mẹ Của Cha', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: ['3', '4'] },
+      '3': { id: '3', hoTen: 'Con Út', gioiTinh: 'nu', laThanhVienHo: true, boId: '1', meId: '2', thuTuAnhChi: 2, honNhan: [], conCaiIds: [] },
+      '4': { id: '4', hoTen: 'Con Cả', gioiTinh: 'nam', laThanhVienHo: true, boId: '1', meId: '2', thuTuAnhChi: 1, honNhan: [], conCaiIds: [] },
+    },
+  }
+
+  it('shows children sorted by Thứ tự anh/chị when editing a person with children', () => {
+    useGiaphaStore.setState({ data: conData })
+    const editPerson = conData.persons['1']
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    const conCa = getByRole('button', { name: 'Con Cả' })
+    const conUt = getByRole('button', { name: 'Con Út' })
+    // Con Cả (thuTuAnhChi 1) phải render trước Con Út (thuTuAnhChi 2) trong DOM.
+    expect(conCa.compareDocumentPosition(conUt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('navigates to a child when its name is clicked', () => {
+    const selectPerson = vi.fn()
+    useGiaphaStore.setState({ data: conData, selectPerson })
+    const editPerson = conData.persons['1']
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+    fireEvent.click(getByRole('button', { name: 'Con Cả' }))
+
+    expect(selectPerson).toHaveBeenCalledWith('4')
+  })
+
+  it('does not show the Con field when adding a new person', () => {
+    useGiaphaStore.setState({ data: conData })
+
+    const { queryByText } = render(<PersonForm onClose={() => {}} />)
+
+    expect(queryByText('Con')).toBeNull()
+  })
+})
+
+describe('PersonForm add Con via picker', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+    vi.restoreAllMocks()
+  })
+
+  const oneSpouseData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Cha Một Vợ', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: '2' }], conCaiIds: [] },
+      '2': { id: '2', hoTen: 'Vợ Cha', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: [] },
+      '5': { id: '5', hoTen: 'Người Chưa Liên Kết', gioiTinh: 'nu', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+      '6': { id: '6', hoTen: 'Người Đã Có Bố Mẹ Khác', gioiTinh: 'nam', laThanhVienHo: true, boId: '2', honNhan: [], conCaiIds: [] },
+      '7': { id: '7', hoTen: 'Con Đã Có', gioiTinh: 'nu', laThanhVienHo: true, boId: '1', meId: '2', honNhan: [], conCaiIds: [] },
+    },
+  }
+
+  it('links an unlinked person as a child, auto-filling the single spouse as the other parent', async () => {
+    const suaNguoi = vi.fn().mockResolvedValue(undefined)
+    useGiaphaStore.setState({ data: oneSpouseData, suaNguoi })
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const editPerson = oneSpouseData.persons['1']
+
+    const { getByText } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByText('+ Thêm con'))
+    fireEvent.click(getByText('Chọn con'))
+    await act(async () => {
+      fireEvent.click(getByText('Người Chưa Liên Kết'))
+    })
+
+    expect(suaNguoi).toHaveBeenCalledWith('5', expect.objectContaining({ boId: '1', meId: '2' }))
+    expect(getByText('Đã cập nhật Người Chưa Liên Kết làm con của Cha Một Vợ.')).toBeInTheDocument()
+  })
+
+  it('shows a success message without calling the API when the person is already a child', () => {
+    useGiaphaStore.setState({ data: oneSpouseData, suaNguoi: vi.fn() })
+    const editPerson: Person = { ...oneSpouseData.persons['1'], conCaiIds: ['7'] }
+
+    const { getByText, getAllByText } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByText('+ Thêm con'))
+    fireEvent.click(getByText('Chọn con'))
+    const conDaCos = getAllByText('Con Đã Có')
+    fireEvent.click(conDaCos[1])
+
+    expect(getByText('Con Đã Có đã là con.')).toBeInTheDocument()
+  })
+
+  it('shows an error and does not call the API when the selected person already has a conflicting parent', () => {
+    const suaNguoi = vi.fn()
+    useGiaphaStore.setState({ data: oneSpouseData, suaNguoi })
+    const editPerson = oneSpouseData.persons['1']
+
+    const { getByText } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByText('+ Thêm con'))
+    fireEvent.click(getByText('Chọn con'))
+    fireEvent.click(getByText('Người Đã Có Bố Mẹ Khác'))
+
+    expect(suaNguoi).not.toHaveBeenCalled()
+    expect(getByText('Bố/mẹ của Người Đã Có Bố Mẹ Khác không trùng khớp. Không thể thêm làm con.')).toBeInTheDocument()
+  })
+})
+
+describe('PersonForm add Con with multiple spouses', () => {
+  const initialState = useGiaphaStore.getState()
+
+  afterEach(() => {
+    act(() => {
+      useGiaphaStore.setState(initialState, true)
+    })
+    vi.restoreAllMocks()
+  })
+
+  const twoSpouseData: GiaphaData = {
+    metadata: {} as GiaphaData['metadata'],
+    persons: {
+      '1': { id: '1', hoTen: 'Cha Nhiều Vợ', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [{ voChongId: '2' }, { voChongId: '3' }], conCaiIds: [] },
+      '2': { id: '2', hoTen: 'Vợ Cả', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: [] },
+      '3': { id: '3', hoTen: 'Vợ Hai', gioiTinh: 'nu', laThanhVienHo: false, honNhan: [{ voChongId: '1' }], conCaiIds: [] },
+      '4': { id: '4', hoTen: 'Con Chưa Liên Kết', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+    },
+  }
+
+  it('shows a spouse-choice dropdown before linking when the person has multiple spouses', async () => {
+    const suaNguoi = vi.fn().mockResolvedValue(undefined)
+    useGiaphaStore.setState({ data: twoSpouseData, suaNguoi })
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const editPerson = twoSpouseData.persons['1']
+
+    const { getByText, getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByText('+ Thêm con'))
+    fireEvent.click(getByText('Chọn con'))
+    fireEvent.click(getByText('Con Chưa Liên Kết'))
+
+    expect(getByText(/Chọn vợ\/chồng là bố\/mẹ còn lại/)).toBeInTheDocument()
+    expect(suaNguoi).not.toHaveBeenCalled()
+
+    await act(async () => {
+      fireEvent.change(getByRole('combobox'), { target: { value: '3' } })
+    })
+
+    expect(suaNguoi).toHaveBeenCalledWith('4', expect.objectContaining({ boId: '1', meId: '3' }))
+  })
+})

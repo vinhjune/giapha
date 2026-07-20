@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import PersonPicker from './PersonPicker'
 import NgayThangInput from './NgayThangInput'
-import { timVoChong } from '../utils/familyTree'
+import { timVoChong, sapXepAnhChiEm } from '../utils/familyTree'
 import type { Person, GioiTinh, NgayThang } from '../types/giapha'
 
 interface Props {
@@ -34,7 +34,7 @@ const empty: FormState = {
 }
 
 export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) {
-  const { data, themNguoi, suaNguoi, xoaNguoi } = useGiaphaStore()
+  const { data, themNguoi, suaNguoi, xoaNguoi, selectPerson } = useGiaphaStore()
 
   const [form, setForm] = useState<FormState>(() => {
     if (editPerson) {
@@ -59,10 +59,34 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     return empty
   })
 
-  const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong' | 'anhchiem'>(null)
+  const [initialForm] = useState<FormState>(() => form)
+  const isDirty = useMemo(
+    () => JSON.stringify(form) !== JSON.stringify(initialForm),
+    [form, initialForm],
+  )
+
+  const getPerson = (id?: string): Person | undefined => (id ? data?.persons[id] : undefined)
+
+  async function handleNavigateTo(target: Person) {
+    if (!isDirty) {
+      selectPerson(target.id)
+      return
+    }
+    const currentName = editPerson ? editPerson.hoTen : (form.hoTen.trim() || '(người mới)')
+    const confirmed = confirm(
+      `Bạn có thay đổi chưa lưu cho "${currentName}". Lưu lại trước khi chuyển sang xem "${target.hoTen}"?`,
+    )
+    if (!confirmed) return
+    const saved = await trySave()
+    if (saved) selectPerson(target.id)
+  }
+
+  const [pickerOpen, setPickerOpen] = useState<null | 'bo' | 'me' | 'vochong' | 'anhchiem' | 'con'>(null)
   const [multipleWives, setMultipleWives] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [anhChiEmFeedback, setAnhChiEmFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [conFeedback, setConFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [pendingChild, setPendingChild] = useState<{ person: Person; voChongOptions: string[] } | null>(null)
 
   const currentSiblings = useMemo(() => {
     if (!data || (!form.boId && !form.meId)) return []
@@ -71,6 +95,13 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       return p.boId === form.boId && p.meId === form.meId
     })
   }, [data, form.boId, form.meId, editPerson])
+
+  const currentChildren = useMemo(() => {
+    if (!data || !editPerson) return []
+    return sapXepAnhChiEm(
+      editPerson.conCaiIds.map(id => data.persons[id]).filter((p): p is Person => !!p),
+    )
+  }, [data, editPerson])
 
   function handleBoSelected(person: Person) {
     if (!data) return
@@ -155,12 +186,50 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     setAnhChiEmFeedback({ type: 'error', msg: `Bố/mẹ của ${person.hoTen} không trùng khớp. Không thể thêm làm anh/chị/em.` })
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.hoTen.trim()) return
+  function handleConSelected(person: Person) {
+    setPickerOpen(null)
+    setConFeedback(null)
+    if (!editPerson) return
+
+    const spouseIds = editPerson.honNhan.map(h => h.voChongId)
+    if (spouseIds.length >= 2) {
+      setPendingChild({ person, voChongOptions: spouseIds })
+      return
+    }
+    void confirmLinkChild(person, spouseIds[0])
+  }
+
+  async function confirmLinkChild(child: Person, otherParentId: string | undefined) {
+    if (!editPerson) return
+    const boId = editPerson.gioiTinh === 'nam' ? editPerson.id : otherParentId
+    const meId = editPerson.gioiTinh === 'nam' ? otherParentId : editPerson.id
+
+    if (child.boId === boId && child.meId === meId) {
+      setConFeedback({ type: 'success', msg: `${child.hoTen} đã là con.` })
+      return
+    }
+
+    if (!child.boId && !child.meId) {
+      const confirmed = confirm(`Bố/mẹ của ${child.hoTen} đang trống. Cập nhật làm con của ${editPerson.hoTen}?`)
+      if (!confirmed) return
+      const { id: _id, ...childRest } = child
+      try {
+        await suaNguoi(child.id, { ...childRest, boId, meId })
+        setConFeedback({ type: 'success', msg: `Đã cập nhật ${child.hoTen} làm con của ${editPerson.hoTen}.` })
+      } catch (err) {
+        setConFeedback({ type: 'error', msg: 'Không thể cập nhật: ' + (err as Error).message })
+      }
+      return
+    }
+
+    setConFeedback({ type: 'error', msg: `Bố/mẹ của ${child.hoTen} không trùng khớp. Không thể thêm làm con.` })
+  }
+
+  async function trySave(): Promise<boolean> {
+    if (!form.hoTen.trim()) return false
     if (!editPerson && (!form.boId || !form.meId)) {
       const shouldContinue = confirm('Chưa nhập đủ thông tin bố và mẹ thành viên. Bạn có thể bổ sung sau. Bạn có chắc muốn lưu không?')
-      if (!shouldContinue) return
+      if (!shouldContinue) return false
     }
 
     const personData: Omit<Person, 'id'> = {
@@ -187,12 +256,19 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       } else {
         await themNguoi(personData)
       }
-      onClose()
+      return true
     } catch (err) {
       alert('Không thể lưu: ' + (err as Error).message)
+      return false
     } finally {
       setSaving(false)
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const saved = await trySave()
+    if (saved) onClose()
   }
 
   const getName = (id: string) => data?.persons[id]?.hoTen || ''
@@ -285,9 +361,18 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
             <div>
               <label className="text-sm font-medium text-gray-700">Bố</label>
               <div className="mt-1 flex flex-wrap gap-2">
-                <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-700">
-                  {form.boId ? getName(form.boId) : <span className="text-gray-400">Chưa chọn</span>}
-                </div>
+                {getPerson(form.boId) ? (
+                  <button
+                    type="button"
+                    title={`Xem/sửa ${getName(form.boId!)}`}
+                    onClick={() => handleNavigateTo(getPerson(form.boId)!)}
+                    className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                  >
+                    {getName(form.boId!)}
+                  </button>
+                ) : (
+                  <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-400">Chưa chọn</div>
+                )}
                 <button type="button" onClick={() => setPickerOpen('bo')}
                   className="px-3 py-1.5 text-sm bg-gray-100 border rounded hover:bg-gray-200">Chọn</button>
                 {form.boId && <button type="button" onClick={() => setForm(f => ({ ...f, boId: undefined }))}
@@ -306,10 +391,17 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                       <option key={id} value={id}>{getName(id)}</option>
                     ))}
                   </select>
+                ) : getPerson(form.meId) ? (
+                  <button
+                    type="button"
+                    title={`Xem/sửa ${getName(form.meId!)}`}
+                    onClick={() => handleNavigateTo(getPerson(form.meId)!)}
+                    className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                  >
+                    {getName(form.meId!)}
+                  </button>
                 ) : (
-                  <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-700">
-                    {form.meId ? getName(form.meId) : <span className="text-gray-400">Chưa chọn</span>}
-                  </div>
+                  <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-400">Chưa chọn</div>
                 )}
                 <button type="button" onClick={() => setPickerOpen('me')}
                   className="px-3 py-1.5 text-sm bg-gray-100 border rounded hover:bg-gray-200">Chọn</button>
@@ -321,13 +413,27 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
             <div>
               <label className="text-sm font-medium text-gray-700">Vợ/Chồng</label>
               <div className="mt-1 space-y-1">
-                {form.voChongIds.map(id => (
-                  <div key={id} className="flex items-center gap-2">
-                    <span className="flex-1 text-sm px-3 py-1 border rounded bg-gray-50">{getName(id)}</span>
-                    <button type="button" onClick={() => setForm(f => ({ ...f, voChongIds: f.voChongIds.filter(v => v !== id) }))}
-                      className="text-gray-400 hover:text-red-500">&times;</button>
-                  </div>
-                ))}
+                {form.voChongIds.map(id => {
+                  const spouse = getPerson(id)
+                  return (
+                    <div key={id} className="flex items-center gap-2">
+                      {spouse ? (
+                        <button
+                          type="button"
+                          title={`Xem/sửa ${spouse.hoTen}`}
+                          onClick={() => handleNavigateTo(spouse)}
+                          className="flex-1 text-left text-sm px-3 py-1 border rounded bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                        >
+                          {spouse.hoTen}
+                        </button>
+                      ) : (
+                        <span className="flex-1 text-sm px-3 py-1 border rounded bg-gray-50 text-gray-400">{getName(id)}</span>
+                      )}
+                      <button type="button" onClick={() => setForm(f => ({ ...f, voChongIds: f.voChongIds.filter(v => v !== id) }))}
+                        className="text-gray-400 hover:text-red-500">&times;</button>
+                    </div>
+                  )
+                })}
                 <button type="button" onClick={() => setPickerOpen('vochong')}
                   className="text-sm text-blue-600 hover:underline">+ Thêm vợ/chồng</button>
               </div>
@@ -337,9 +443,15 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
               <label className="text-sm font-medium text-gray-700">Anh/Chị/Em</label>
               <div className="mt-1 space-y-1">
                 {currentSiblings.map(p => (
-                  <div key={p.id} className="text-sm px-3 py-1 border rounded bg-gray-50 text-gray-700">
+                  <button
+                    key={p.id}
+                    type="button"
+                    title={`Xem/sửa ${p.hoTen}`}
+                    onClick={() => handleNavigateTo(p)}
+                    className="block w-full text-left text-sm px-3 py-1 border rounded bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                  >
                     {p.hoTen}
-                  </div>
+                  </button>
                 ))}
                 {anhChiEmFeedback && (
                   <div className={`text-sm px-3 py-1.5 rounded ${anhChiEmFeedback.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
@@ -355,6 +467,60 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                 </button>
               </div>
             </div>
+
+            {editPerson && (
+              <div>
+                <label className="text-sm font-medium text-gray-700">Con</label>
+                <div className="mt-1 space-y-1">
+                  {currentChildren.map(child => (
+                    <button
+                      key={child.id}
+                      type="button"
+                      title={`Xem/sửa ${child.hoTen}`}
+                      onClick={() => handleNavigateTo(child)}
+                      className="block w-full text-left text-sm px-3 py-1 border rounded bg-gray-50 text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                    >
+                      {child.hoTen}
+                    </button>
+                  ))}
+                  {conFeedback && (
+                    <div className={`text-sm px-3 py-1.5 rounded ${conFeedback.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                      {conFeedback.msg}
+                    </div>
+                  )}
+                  {pendingChild && (
+                    <div className="text-sm px-3 py-2 border rounded bg-yellow-50 space-y-2">
+                      <div>Chọn vợ/chồng là bố/mẹ còn lại của <strong>{pendingChild.person.hoTen}</strong>:</div>
+                      <select
+                        defaultValue=""
+                        onChange={e => {
+                          const voChongId = e.target.value
+                          const chosen = pendingChild.person
+                          setPendingChild(null)
+                          if (voChongId) void confirmLinkChild(chosen, voChongId)
+                        }}
+                        className="w-full px-3 py-1.5 text-sm border rounded"
+                      >
+                        <option value="" disabled>-- Chọn vợ/chồng --</option>
+                        {pendingChild.voChongOptions.map(id => (
+                          <option key={id} value={id}>{getName(id)}</option>
+                        ))}
+                      </select>
+                      <button type="button" onClick={() => setPendingChild(null)} className="text-xs text-gray-500 hover:underline">
+                        Hủy
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setConFeedback(null); setPendingChild(null); setPickerOpen('con') }}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    + Thêm con
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="text-sm font-medium text-gray-700">Quê quán</label>
@@ -410,6 +576,19 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
             ...form.voChongIds,
           ]}
           onSelect={handleAnhChiEmSelected}
+          onClose={() => setPickerOpen(null)}
+        />
+      )}
+      {pickerOpen === 'con' && editPerson && (
+        <PersonPicker
+          title="Chọn con"
+          excludeIds={[
+            editPerson.id,
+            ...(form.boId ? [form.boId] : []),
+            ...(form.meId ? [form.meId] : []),
+            ...form.voChongIds,
+          ]}
+          onSelect={handleConSelected}
           onClose={() => setPickerOpen(null)}
         />
       )}

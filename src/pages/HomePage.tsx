@@ -47,7 +47,7 @@ export default function HomePage() {
       )}
 
       {formOpen && (
-        <PersonForm editPerson={editPerson} onClose={closeForm} />
+        <PersonForm key={editPerson?.id ?? 'new'} editPerson={editPerson} onClose={closeForm} />
       )}
     </div>
   )
