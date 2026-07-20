@@ -155,12 +155,11 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
     setAnhChiEmFeedback({ type: 'error', msg: `Bố/mẹ của ${person.hoTen} không trùng khớp. Không thể thêm làm anh/chị/em.` })
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form.hoTen.trim()) return
+  async function trySave(): Promise<boolean> {
+    if (!form.hoTen.trim()) return false
     if (!editPerson && (!form.boId || !form.meId)) {
       const shouldContinue = confirm('Chưa nhập đủ thông tin bố và mẹ thành viên. Bạn có thể bổ sung sau. Bạn có chắc muốn lưu không?')
-      if (!shouldContinue) return
+      if (!shouldContinue) return false
     }
 
     const personData: Omit<Person, 'id'> = {
@@ -187,12 +186,19 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
       } else {
         await themNguoi(personData)
       }
-      onClose()
+      return true
     } catch (err) {
       alert('Không thể lưu: ' + (err as Error).message)
+      return false
     } finally {
       setSaving(false)
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const saved = await trySave()
+    if (saved) onClose()
   }
 
   const getName = (id: string) => data?.persons[id]?.hoTen || ''
