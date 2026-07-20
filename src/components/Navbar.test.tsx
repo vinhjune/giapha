@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import Navbar from './Navbar'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import type { GiaphaData } from '../types/giapha'
+import { mockMatchMedia } from '../test-setup'
 
 vi.mock('../services/api', () => ({
   exportCsv: vi.fn(),
@@ -65,5 +66,26 @@ describe('Navbar hamburger menu actions', () => {
     await user.click(screen.getByRole('button', { name: 'Thứ tự đời: Tắt' }))
 
     expect(useGiaphaStore.getState().hienThiThuTuDoi).toBe(true)
+  })
+})
+
+describe('Navbar mobile layout', () => {
+  beforeEach(() => {
+    mockMatchMedia(true)
+    useGiaphaStore.setState({
+      data,
+      viewMode: 'tree',
+      selectedPersonId: '1',
+      focusedPersonId: '1',
+      hienThiThuTuDoi: false,
+    })
+  })
+
+  it('moves the search bar to its own full-width row below the title bar', () => {
+    render(<Navbar />)
+
+    expect(screen.getByRole('button', { name: 'Mở menu' })).toBeInTheDocument()
+    const searchRow = screen.getByTestId('navbar-search-row-mobile')
+    expect(searchRow).toContainElement(screen.getByPlaceholderText('Tìm kiếm theo tên...'))
   })
 })

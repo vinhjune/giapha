@@ -3,9 +3,11 @@ import { useGiaphaStore } from '../store/useGiaphaStore'
 import SearchBar from './SearchBar'
 import CsvImportModal from './CsvImportModal'
 import { exportCsv } from '../services/api'
+import { useIsMobile } from '../utils/useIsMobile'
 
 export default function Navbar() {
   const { data, viewMode, setViewMode, hienThiThuTuDoi, toggleGenerationOrder } = useGiaphaStore()
+  const isMobile = useIsMobile()
   const [csvModalOpen, setCsvModalOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -33,23 +35,31 @@ export default function Navbar() {
 
   return (
     <>
-    <nav className="relative bg-card border-b border-card-border px-4 py-2 flex items-center gap-4">
-      <button
-        type="button"
-        aria-label="Mở menu"
-        aria-expanded={menuOpen}
-        onClick={() => setMenuOpen(v => !v)}
-        className="px-2 py-1.5 text-lg leading-none text-muted rounded-md border border-card-border hover:bg-slate-50"
-      >
-        ☰
-      </button>
-      <div className="min-w-0">
-        <h1 className="text-lg font-bold text-ink whitespace-nowrap">
-          {data?.metadata.tenDongHo || 'Gia Phả'}
-        </h1>
+    <nav className="relative bg-card border-b border-card-border flex flex-col">
+      <div className="px-4 py-2 flex items-center gap-4">
+        <button
+          type="button"
+          aria-label="Mở menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(v => !v)}
+          className="px-2 py-1.5 text-lg leading-none text-muted rounded-md border border-card-border hover:bg-slate-50"
+        >
+          ☰
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold text-ink whitespace-nowrap">
+            {data?.metadata.tenDongHo || 'Gia Phả'}
+          </h1>
+        </div>
+
+        {!isMobile && <SearchBar />}
       </div>
 
-      <SearchBar />
+      {isMobile && (
+        <div data-testid="navbar-search-row-mobile" className="px-4 pb-2">
+          <SearchBar />
+        </div>
+      )}
 
       {menuOpen && (
         <>
