@@ -343,10 +343,17 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                       <option key={id} value={id}>{getName(id)}</option>
                     ))}
                   </select>
+                ) : getPerson(form.meId) ? (
+                  <button
+                    type="button"
+                    title={`Xem/sửa ${getName(form.meId!)}`}
+                    onClick={() => handleNavigateTo(getPerson(form.meId)!)}
+                    className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-left text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                  >
+                    {getName(form.meId!)}
+                  </button>
                 ) : (
-                  <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-700">
-                    {form.meId ? getName(form.meId) : <span className="text-gray-400">Chưa chọn</span>}
-                  </div>
+                  <div className="flex-1 px-3 py-1.5 text-sm border rounded bg-gray-50 text-gray-400">Chưa chọn</div>
                 )}
                 <button type="button" onClick={() => setPickerOpen('me')}
                   className="px-3 py-1.5 text-sm bg-gray-100 border rounded hover:bg-gray-200">Chọn</button>

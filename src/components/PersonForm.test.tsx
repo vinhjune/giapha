@@ -300,4 +300,15 @@ describe('PersonForm relation navigation - Bố', () => {
     expect(selectPerson).not.toHaveBeenCalled()
     expect(nameInput.value).toBe('Con (đã sửa)')
   })
+
+  it('navigates immediately to Mẹ when there are no unsaved changes', () => {
+    const selectPerson = vi.fn()
+    useGiaphaStore.setState({ data: relationData, selectPerson })
+
+    const { getByRole } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
+
+    fireEvent.click(getByRole('button', { name: 'Bà Nội' }))
+
+    expect(selectPerson).toHaveBeenCalledWith('2')
+  })
 })
