@@ -680,7 +680,7 @@ export default function TreeView() {
       <div
         ref={containerRef}
         data-testid="tree-view-container"
-        className={`absolute inset-0 overflow-auto bg-canvas ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+        className={`absolute inset-0 overflow-auto bg-canvas touch-pan-x touch-pan-y ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
         tabIndex={0}
         aria-label="Cây gia phả"
         onMouseDown={onMouseDown}
