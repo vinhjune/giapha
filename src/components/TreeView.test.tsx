@@ -295,18 +295,40 @@ describe('TreeView', () => {
 
   it('re-expanding a collapsed node restores the exact original card positions', () => {
     render(<TreeView />)
-    const before = screen.getByText('Chắt').closest('div[style*="position: absolute"]') as HTMLDivElement
-    const leftBefore = before.style.left
-    const topBefore = before.style.top
+    const chauGaiBefore = screen.getByText('Cháu gái').closest('div[style*="position: absolute"]') as HTMLDivElement
+    const chauGaiLeftBefore = chauGaiBefore.style.left
+    const chauGaiTopBefore = chauGaiBefore.style.top
+    const chatBefore = screen.getByText('Chắt').closest('div[style*="position: absolute"]') as HTMLDivElement
+    const chatLeftBefore = chatBefore.style.left
+    const chatTopBefore = chatBefore.style.top
 
     fireEvent.click(screen.getByTestId('tree-toggle-3')) // collapse
+    expect(screen.queryByText('Cháu gái')).toBeNull()
+
+    fireEvent.click(screen.getByTestId('tree-toggle-3')) // expand (only 1 level below reappears)
+    const chauGaiAfter = screen.getByText('Cháu gái').closest('div[style*="position: absolute"]') as HTMLDivElement
+    expect(chauGaiAfter.style.left).toBe(chauGaiLeftBefore)
+    expect(chauGaiAfter.style.top).toBe(chauGaiTopBefore)
+
+    fireEvent.click(screen.getByTestId('tree-toggle-5')) // expand the next level down
+    const chatAfter = screen.getByText('Chắt').closest('div[style*="position: absolute"]') as HTMLDivElement
+    expect(chatAfter.style.left).toBe(chatLeftBefore)
+    expect(chatAfter.style.top).toBe(chatTopBefore)
+  })
+
+  it('expanding a collapsed node reveals only one level below, keeping deeper descendants collapsed', () => {
+    render(<TreeView />)
+
+    fireEvent.click(screen.getByTestId('tree-toggle-3')) // collapse 'Con gái' branch
+    expect(screen.queryByText('Cháu gái')).toBeNull()
+
+    fireEvent.click(screen.getByTestId('tree-toggle-3')) // expand: 1 level only
+    expect(screen.getByText('Cháu gái')).toBeInTheDocument()
     expect(screen.queryByText('Chắt')).toBeNull()
+    expect(screen.getByTestId('tree-toggle-5')).toHaveTextContent('+1')
 
-    fireEvent.click(screen.getByTestId('tree-toggle-3')) // expand
-    const after = screen.getByText('Chắt').closest('div[style*="position: absolute"]') as HTMLDivElement
-
-    expect(after.style.left).toBe(leftBefore)
-    expect(after.style.top).toBe(topBefore)
+    fireEvent.click(screen.getByTestId('tree-toggle-5')) // expand the next level
+    expect(screen.getByText('Chắt')).toBeInTheDocument()
   })
 
   it('clicking a collapse toggle does not select the person', () => {

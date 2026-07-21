@@ -439,14 +439,25 @@ export default function TreeView() {
   const [isDragging, setIsDragging] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set())
+  const childrenIndex = useMemo(() => (data ? taoChiMucCon(data.persons) : {}), [data])
   const toggleCollapse = useCallback((personId: string) => {
     setCollapsedIds(prev => {
       const next = new Set(prev)
-      if (next.has(personId)) next.delete(personId)
-      else next.add(personId)
+      if (next.has(personId)) {
+        // Expanding: reveal only this node's direct children. Any of those children that
+        // themselves have children are re-collapsed, so the branch unfolds one level at a
+        // time instead of dumping every descendant open at once.
+        next.delete(personId)
+        for (const childId of childrenIndex[personId] ?? []) {
+          if ((childrenIndex[childId]?.length ?? 0) > 0) next.add(childId)
+        }
+      } else {
+        // Collapsing: unchanged — just hide this node's entire subtree.
+        next.add(personId)
+      }
       return next
     })
-  }, [])
+  }, [childrenIndex])
   const highlightedPersonId = focusedPersonId ?? selectedPersonId
   const showGenerationOrder = useGiaphaStore(s => s.hienThiThuTuDoi)
   const displayNameById = useMemo(() => {
@@ -463,7 +474,6 @@ export default function TreeView() {
     if (!data) return { cards: [], lines: [], toggles: [], width: 0, height: 0 }
     const persons = data.persons
     const widthByPersonId = buildWidthByPersonId(persons, displayNameById)
-    const childrenIndex = taoChiMucCon(persons)
 
     // Roots = blood clan members (laThanhVienHo === true) with no known father. Married-in
     // spouses (laThanhVienHo === false, regardless of gender) must NEVER be treated as
@@ -522,7 +532,7 @@ export default function TreeView() {
     const maxY = Math.max(...cards.map(c => c.y)) + NODE_H + 40
 
     return { cards, lines, toggles, width: maxX, height: maxY }
-  }, [data, displayNameById, collapsedIds, highlightedPersonId])
+  }, [data, displayNameById, collapsedIds, highlightedPersonId, childrenIndex])
 
   useEffect(() => {
     if (!highlightedPersonId || !containerRef.current) return
