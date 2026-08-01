@@ -37,9 +37,9 @@ export function sapXepAnhChiEm(persons: Person[]): Person[] {
 }
 
 export function laThanhVienThuocHo(person: Person): boolean {
-  // Males are always clan members; females and 'khac' follow the laThanhVienHo flag
-  if (person.gioiTinh !== 'nam' && !person.laThanhVienHo) return false
-  return true
+  // Clan membership follows the laThanhVienHo flag directly, regardless of gender.
+  // A married-in spouse (con dâu/con rể) is never a blood clan member, whether male or female.
+  return person.laThanhVienHo
 }
 
 export function dinhDangTenNguoi(person: Person, hienThiThuTuDoi: boolean): string {

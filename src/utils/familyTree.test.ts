@@ -70,8 +70,12 @@ describe('sapXepAnhChiEm', () => {
 })
 
 describe('laThanhVienThuocHo', () => {
-  it('male is always clan member', () => {
-    expect(laThanhVienThuocHo(nguoiMau({ gioiTinh: 'nam' }))).toBe(true)
+  it('male with laThanhVienHo true is a clan member', () => {
+    expect(laThanhVienThuocHo(nguoiMau({ gioiTinh: 'nam', laThanhVienHo: true }))).toBe(true)
+  })
+
+  it('male with laThanhVienHo false (married-in con rể) is not a clan member', () => {
+    expect(laThanhVienThuocHo(nguoiMau({ gioiTinh: 'nam', laThanhVienHo: false }))).toBe(false)
   })
 
   it('female with laThanhVienHo false is not clan member', () => {

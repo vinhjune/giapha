@@ -111,6 +111,28 @@ describe('ListView spouse rendering', () => {
     expect(screen.getAllByText('Vinh')).toHaveLength(1)
   })
 
+  it('dims non-clan members regardless of gender (male spouse dims same as female spouse)', () => {
+    render(<ListView />)
+
+    // 'Bà Thanh' (female, laThanhVienHo: false) — married-in wife, dimmed.
+    const thanh = screen.getByText('Bà Thanh')
+    expect(thanh.className).toContain('text-gray-400')
+
+    // 'Khánh' (male, laThanhVienHo: false) — married-in husband, must dim the same way.
+    const khanh = screen.getByText('Khánh')
+    expect(khanh.className).toContain('text-gray-400')
+
+    // 'Phúc' (male, laThanhVienHo: false, blood descendant through non-clan father) also dims.
+    const phuc = screen.getByText('Phúc')
+    expect(phuc.className).toContain('text-gray-400')
+
+    // Actual clan members (regardless of gender) stay un-dimmed.
+    const vinh = screen.getByText('Vinh')
+    expect(vinh.className).toContain('text-gray-900')
+    const nga = screen.getByText('Nga')
+    expect(nga.className).toContain('text-gray-900')
+  })
+
   it('groups each spouse with only their own children, in marriage order', () => {
     const multiSpouseData: GiaphaData = {
       metadata: { tenDongHo: 'Dòng họ mẫu' },
