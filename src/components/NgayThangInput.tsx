@@ -167,7 +167,7 @@ export default function NgayThangInput({ value, onChange, testIdPrefix }: Props)
         onFocus={handleFocusOrClick}
         onKeyDown={handleKeyDown}
         data-testid={testIdPrefix ? `${testIdPrefix}-date` : undefined}
-        className="w-32 px-2 py-1 text-sm text-center tracking-wide font-mono rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className="w-32 px-2 py-1 text-base sm:text-sm text-center tracking-wide font-mono rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
       />
       <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
         <input

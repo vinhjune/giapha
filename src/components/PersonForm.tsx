@@ -328,7 +328,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                 required
                 value={form.hoTen}
                 onChange={e => setForm(f => ({ ...f, hoTen: e.target.value }))}
-                className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="mt-1 w-full px-3 py-1.5 text-base sm:text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
 
@@ -352,7 +352,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                   type="email"
                   value={form.email}
                   onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="mt-1 w-full px-3 py-1.5 text-base sm:text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
               </div>
               <div className="flex-1">
@@ -360,7 +360,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                 <input
                   value={form.soDienThoai}
                   onChange={e => setForm(f => ({ ...f, soDienThoai: e.target.value }))}
-                  className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="mt-1 w-full px-3 py-1.5 text-base sm:text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
               </div>
             </div>
@@ -393,7 +393,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
               <label className="text-sm font-medium text-gray-700">Thứ tự anh chị em</label>
               <input type="number" value={form.thuTuAnhChi} min={1}
                 onChange={e => setForm(f => ({ ...f, thuTuAnhChi: e.target.value }))}
-                className="mt-1 w-24 px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                className="mt-1 w-24 px-3 py-1.5 text-base sm:text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
 
             <div>
@@ -423,7 +423,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
               <div className="mt-1 flex flex-wrap gap-2">
                 {multipleWives.length > 1 && !form.meId ? (
                   <select onChange={e => setForm(f => ({ ...f, meId: e.target.value || undefined }))}
-                    className="flex-1 px-3 py-1.5 text-sm border rounded">
+                    className="flex-1 px-3 py-1.5 text-base sm:text-sm border rounded">
                     <option value="">-- Chọn mẹ --</option>
                     {multipleWives.map(id => (
                       <option key={id} value={id}>{getName(id)}</option>
@@ -537,7 +537,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                           setPendingChild(null)
                           if (voChongId) void confirmLinkChild(chosen, voChongId)
                         }}
-                        className="w-full px-3 py-1.5 text-sm border rounded"
+                        className="w-full px-3 py-1.5 text-base sm:text-sm border rounded"
                       >
                         <option value="" disabled>-- Chọn vợ/chồng --</option>
                         {pendingChild.voChongOptions.map(id => (
@@ -563,12 +563,12 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
             <div>
               <label className="text-sm font-medium text-gray-700">Quê quán</label>
               <input value={form.queQuan} onChange={e => setForm(f => ({ ...f, queQuan: e.target.value }))}
-                className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                className="mt-1 w-full px-3 py-1.5 text-base sm:text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700">Tiểu sử</label>
               <textarea value={form.tieuSu} onChange={e => setForm(f => ({ ...f, tieuSu: e.target.value }))} rows={3}
-                className="mt-1 w-full px-3 py-1.5 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                className="mt-1 w-full px-3 py-1.5 text-base sm:text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </div>
 
             <div className="flex flex-col gap-3 pt-2 sm:flex-row">
