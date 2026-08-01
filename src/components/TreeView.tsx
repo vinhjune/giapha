@@ -758,7 +758,7 @@ export default function TreeView() {
       </div>
       </div>
 
-      <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2 rounded-lg border border-card-border bg-card/95 p-2 shadow-sm">
+      <div className="hidden sm:flex absolute bottom-3 left-3 z-20 items-center gap-2 rounded-lg border border-card-border bg-card/95 p-2 shadow-sm">
         <button
           type="button"
           onClick={zoomOut}
