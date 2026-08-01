@@ -65,6 +65,12 @@ const DEFAULT_COLUMN_WIDTHS: Partial<Record<RowField, number>> = {
 
 const FALLBACK_COLUMN_WIDTH = 120
 
+// The 'id' column is intentionally excluded from what's rendered in the GUI (the raw
+// UUID isn't useful to end users), but stays in COLUMNS/RowField/EditableRow so all
+// non-display logic (diffing, sort-by-id, import/export, cell lookups by key) is
+// completely unaffected — this is a display-only change.
+const VISIBLE_COLUMNS = COLUMNS.filter(col => col.key !== 'id')
+
 function createEmptyRow(): EditableRow {
   return {
     _key: `new-${crypto.randomUUID()}`,
@@ -297,7 +303,7 @@ export default function MemberManagementView() {
         <table className="min-w-[2400px] w-full text-xs">
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
-              {COLUMNS.map(col => {
+              {VISIBLE_COLUMNS.map(col => {
                 const isSortable = SORTABLE_FIELDS.has(col.key)
                 const isActive = sortState?.field === col.key
                 const ariaSort = isActive ? (sortState!.direction === 'asc' ? 'ascending' : 'descending') : 'none'
@@ -339,7 +345,7 @@ export default function MemberManagementView() {
                 key={row._key}
                 className={`hover:bg-blue-50/30${dirty.isNew ? ' bg-emerald-50/60' : ''}`}
               >
-                {COLUMNS.map(col => {
+                {VISIBLE_COLUMNS.map(col => {
                   const isDirtyCell = !dirty.isNew && dirty.changedFields.has(col.key)
                   return (
                   <td

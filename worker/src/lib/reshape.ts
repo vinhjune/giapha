@@ -63,7 +63,7 @@ export async function buildMetadata(db: DB): Promise<Metadata> {
   const rows = await db.select().from(settings).all()
   const byKey = Object.fromEntries(rows.map(r => [r.key, r.value]))
   return {
-    tenDongHo: byKey.family_name ?? 'Gia phả dòng họ',
+    tenDongHo: byKey.family_name ?? 'Gia phả họ Hoàng',
     moTa: byKey.family_description ?? undefined,
   }
 }

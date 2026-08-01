@@ -48,7 +48,7 @@ export default function Navbar() {
         </button>
         <div className="min-w-0">
           <h1 className="text-lg font-bold text-ink whitespace-nowrap">
-            {data?.metadata.tenDongHo || 'Gia Phả'}
+            {data?.metadata.tenDongHo || 'Gia phả họ Hoàng'}
           </h1>
         </div>
 

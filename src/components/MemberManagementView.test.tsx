@@ -49,6 +49,20 @@ describe('MemberManagementView', () => {
     expect(screen.getByTestId('member-table-scroll')).toBeInTheDocument()
   })
 
+  it('hides the ID column from the GUI without affecting underlying row data', () => {
+    render(<MemberManagementView />)
+
+    // No 'ID' header column and no id-N input cells rendered.
+    expect(screen.queryByText('ID')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('sort-header-id')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('id-0')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('id-1')).not.toBeInTheDocument()
+
+    // Every other column still renders as before.
+    expect(screen.getByTestId('sort-header-hoTen')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Ông Tổ')).toBeInTheDocument()
+  })
+
   it('allows adding a new row and applying changes in one action', async () => {
     vi.mocked(api.createPerson).mockResolvedValue({ id: 'new-1' })
     vi.mocked(api.getTree).mockResolvedValue({
