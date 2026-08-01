@@ -135,7 +135,7 @@ export default function ListView() {
   const sortedRoots = sapXepAnhChiEm(roots)
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-y-auto bg-white p-2">
+    <div ref={containerRef} className="flex-1 overflow-y-auto bg-white p-2 touch-pan-y">
       {sortedRoots.map(root => (
         <PersonRow key={root.id} person={root} depth={0}
           onSelect={selectPerson} selectedId={selectedPersonId} highlightId={highlightedPersonId}
