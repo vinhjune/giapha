@@ -475,19 +475,30 @@ export default function TreeView() {
     const persons = data.persons
     const widthByPersonId = buildWidthByPersonId(persons, displayNameById)
 
-    // Roots = blood clan members (laThanhVienHo === true) with no known father. Married-in
-    // spouses (laThanhVienHo === false, regardless of gender) must NEVER be treated as
-    // independent roots: they only ever attach to the tree via their actual spouse's
-    // honNhan entry, and get marked visited automatically when that spouse's node builds.
-    // Letting them qualify as roots lets iteration order "steal" a shared blood relative
-    // (e.g. a son with two wives) into a separate spouse-rooted tree before the real family
-    // branch reaches him — see regression test for a concrete case.
+    // Roots = blood clan members (laThanhVienHo === true) with no known father, AND no
+    // spouse who DOES have a known father. Married-in spouses (laThanhVienHo === false)
+    // must never be treated as roots — they only ever attach via their actual spouse's
+    // honNhan entry, marked visited automatically when that spouse's node builds. The
+    // same logic must extend to blood clan members whose own parents were simply never
+    // recorded: if they're married to someone who DOES have a known father, that spouse
+    // is guaranteed to be reached by the real family tree traversal (which pre-marks
+    // this person visited via honNhan) — so this person must defer instead of
+    // registering as their own root. Otherwise, iteration order over Object.values(...)
+    // could let them "steal" their spouse (and all descendants below) into a separate
+    // floating tree before the real family branch reaches them — see regression tests
+    // for concrete cases (multi-wife son, and blood-member couple with one unrecorded
+    // parent side).
     const visited = new Set<string>()
     const trees: TreeNode[] = []
 
-    const clanRoots = Object.values(persons).filter(
-      p => p.laThanhVienHo && (!p.boId || !persons[p.boId])
-    )
+    const clanRoots = Object.values(persons).filter(p => {
+      if (!p.laThanhVienHo) return false
+      if (p.boId && persons[p.boId]) return false
+      return !p.honNhan.some(h => {
+        const spouse = persons[h.voChongId]
+        return !!spouse && !!spouse.boId && !!persons[spouse.boId]
+      })
+    })
     for (const clanRoot of clanRoots) {
       if (visited.has(clanRoot.id)) continue
       const tree = buildTree(clanRoot.id, persons, childrenIndex, visited, widthByPersonId)

@@ -85,6 +85,42 @@ describe('TreeView', () => {
     expect(screen.getByText('Con Vợ Hai')).toBeInTheDocument()
   })
 
+  it('keeps a couple linked to the main tree when both spouses are blood clan members but only one has recorded parents', () => {
+    // Regression test: two people "trong họ" (laThanhVienHo: true) marry each other.
+    // 'chong' has known parents (linked to the main tree's founder 'to'). 'vo' is also
+    // a blood clan member but her own parents were simply never recorded (boId/meId
+    // blank) — she must NOT be treated as an independent root just because of that;
+    // she should attach as 'chong's wife under the main tree.
+    // Object key order matters: 'vo' (the blank-parent spouse) is inserted BEFORE
+    // 'to' (the real founder) and 'chong', mirroring real usage where she could have
+    // been added to the data at any point.
+    const bugData: GiaphaData = {
+      metadata: { tenDongHo: 'Dòng họ mẫu' },
+      persons: {
+        vo: { id: 'vo', hoTen: 'Vợ Trong Họ', gioiTinh: 'nu', laThanhVienHo: true, honNhan: [{ voChongId: 'chong' }], conCaiIds: ['con'] },
+        to: { id: 'to', hoTen: 'Tổ', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: ['chong'] },
+        chong: { id: 'chong', hoTen: 'Chồng Trong Họ', gioiTinh: 'nam', laThanhVienHo: true, boId: 'to', honNhan: [{ voChongId: 'vo' }], conCaiIds: ['con'] },
+        con: { id: 'con', hoTen: 'Con Của Cặp', gioiTinh: 'nu', laThanhVienHo: true, boId: 'chong', meId: 'vo', honNhan: [], conCaiIds: [] },
+      },
+    }
+    useGiaphaStore.setState({ data: bugData })
+
+    render(<TreeView />)
+
+    // Only one tree should exist: 'Con Của Cặp' must be reachable from the same
+    // render as 'Tổ', not floated off into a separate forest tree.
+    expect(screen.getByText('Tổ')).toBeInTheDocument()
+    expect(screen.getByText('Chồng Trong Họ')).toBeInTheDocument()
+    expect(screen.getByText('Vợ Trong Họ')).toBeInTheDocument()
+    expect(screen.getByText('Con Của Cặp')).toBeInTheDocument()
+
+    const to = screen.getByText('Tổ').closest('div[style*="position: absolute"]') as HTMLDivElement
+    const con = screen.getByText('Con Của Cặp').closest('div[style*="position: absolute"]') as HTMLDivElement
+    // 'Con Của Cặp' must be positioned to the right of 'Tổ' within the SAME tree
+    // (not at some unrelated far-left x belonging to a separate forest tree starting at x=20).
+    expect(parseFloat(con.style.left)).toBeGreaterThan(parseFloat(to.style.left))
+  })
+
   it('allows panning with mouse drag on desktop', () => {
     render(<TreeView />)
     const container = screen.getByTestId('tree-view-container')
