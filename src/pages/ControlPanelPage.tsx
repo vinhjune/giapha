@@ -41,7 +41,7 @@ export default function ControlPanelPage() {
           </button>
         ))}
       </div>
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-h-0 overflow-auto">
         {tab === 'members' && <MemberManagementView />}
         {tab === 'requests' && <PendingRequestsPanel />}
         {tab === 'csv' && isAdmin && <CsvPanel />}
