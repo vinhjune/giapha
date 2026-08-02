@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import MemberManagementView from './MemberManagementView'
 import { useGiaphaStore } from '../store/useGiaphaStore'
+import { useAuthStore } from '../store/useAuthStore'
 import type { GiaphaData } from '../types/giapha'
 
 vi.mock('../services/api', () => ({
@@ -27,7 +28,7 @@ describe('MemberManagementView', () => {
     vi.clearAllMocks()
     useGiaphaStore.setState({
       data,
-      viewMode: 'members',
+      viewMode: 'tree',
       selectedPersonId: null,
       focusedPersonId: null,
     })
@@ -221,7 +222,7 @@ describe('MemberManagementView', () => {
         metadata: data.metadata,
         persons: { '1': data.persons['1'], '2': { ...data.persons['2'], thuTuDoi: undefined } },
       },
-      viewMode: 'members',
+      viewMode: 'tree',
       selectedPersonId: null,
       focusedPersonId: null,
     })
@@ -246,7 +247,7 @@ describe('MemberManagementView', () => {
           '3': { id: '3', hoTen: 'Người cô lập', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
         },
       },
-      viewMode: 'members',
+      viewMode: 'tree',
       selectedPersonId: null,
       focusedPersonId: null,
     })
@@ -307,5 +308,81 @@ describe('MemberManagementView', () => {
       expect(screen.queryByDisplayValue('Con Trai')).not.toBeInTheDocument()
       expect(screen.getByDisplayValue('Ông Tổ')).toBeInTheDocument()
     })
+  })
+})
+
+describe('MemberManagementView — editor pending-request flow', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useGiaphaStore.setState({
+      data,
+      viewMode: 'tree',
+      selectedPersonId: null,
+      focusedPersonId: null,
+    })
+    useAuthStore.setState({ user: { id: 'editor-1', username: 'ed1', email: 'e@example.com', role: 'editor', personId: null } })
+  })
+
+  it('shows a "sent for approval" message when api.createPerson returns pending:true', async () => {
+    vi.mocked(api.createPerson).mockResolvedValue({ pending: true, requestId: 'req-1' })
+    vi.mocked(api.getTree).mockResolvedValue(data)
+
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    await user.click(screen.getByRole('button', { name: 'Thêm dòng mới' }))
+    await user.type(screen.getByTestId('hoTen-0'), 'Thành viên mới')
+    await user.click(screen.getByRole('button', { name: 'Áp dụng thay đổi' }))
+
+    expect(await screen.findByText(/Đã gửi 1 thay đổi để chờ admin duyệt/)).toBeInTheDocument()
+  })
+})
+
+describe('MemberManagementView search', () => {
+  const manyPersonsData: GiaphaData = {
+    metadata: { tenDongHo: 'Dòng họ mẫu' },
+    persons: {
+      '1': { id: '1', hoTen: 'Nguyễn Văn A', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+      '2': { id: '2', hoTen: 'Trần Thị B', gioiTinh: 'nu', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+      '3': { id: '3', hoTen: 'Nguyễn Văn C', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
+    },
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useGiaphaStore.setState({
+      data: manyPersonsData,
+      viewMode: 'tree',
+      selectedPersonId: null,
+      focusedPersonId: null,
+    })
+    useAuthStore.setState({ user: { id: 'editor-1', username: 'ed1', email: 'e@example.com', role: 'editor', personId: null } })
+  })
+
+  it('scrolls the matching row to the top of the table when searching by name', async () => {
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    const container = screen.getByTestId('member-table-scroll')
+    const matchedRow = screen.getByDisplayValue('Nguyễn Văn C').closest('tr') as HTMLElement
+    // jsdom always reports 0 for layout metrics; simulate the matched row sitting
+    // further down the table so we can assert the container actually scrolls to it.
+    Object.defineProperty(matchedRow, 'offsetTop', { value: 400, configurable: true })
+
+    await user.type(screen.getByLabelText('Tìm theo họ tên'), 'Văn C')
+
+    expect(container.scrollTop).toBe(400)
+  })
+
+  it('does not scroll when the search query matches nothing', async () => {
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    const container = screen.getByTestId('member-table-scroll')
+    container.scrollTop = 123
+
+    await user.type(screen.getByLabelText('Tìm theo họ tên'), 'Không tồn tại')
+
+    expect(container.scrollTop).toBe(123)
   })
 })

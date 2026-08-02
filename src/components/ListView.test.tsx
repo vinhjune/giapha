@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen } from '@testing-library/react'
 import ListView from './ListView'
 import { useGiaphaStore } from '../store/useGiaphaStore'
+import { useAuthStore } from '../store/useAuthStore'
 import type { GiaphaData } from '../types/giapha'
 
 const data: GiaphaData = {
@@ -208,5 +209,31 @@ describe('ListView scroll-to-focus', () => {
     rerender(<ListView />)
 
     expect(row.scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ block: 'center' }))
+  })
+})
+
+describe('ListView pending-request badge', () => {
+  beforeEach(() => {
+    useGiaphaStore.setState({
+      data: {
+        metadata: data.metadata,
+        persons: { ...data.persons, '3': { ...data.persons['3'], pendingRequestId: 'req-1' } },
+      },
+      viewMode: 'list',
+      selectedPersonId: null,
+      hienThiThuTuDoi: false,
+    })
+  })
+
+  it('shows a pending badge on a row when logged in and the person has pendingRequestId', () => {
+    useAuthStore.setState({ user: { id: '1', username: 'ed1', email: 'e@example.com', role: 'editor', personId: null } })
+    render(<ListView />)
+    expect(screen.getByLabelText('Đang chờ duyệt')).toBeInTheDocument()
+  })
+
+  it('hides the pending badge when logged out', () => {
+    useAuthStore.setState({ user: null })
+    render(<ListView />)
+    expect(screen.queryByLabelText('Đang chờ duyệt')).not.toBeInTheDocument()
   })
 })

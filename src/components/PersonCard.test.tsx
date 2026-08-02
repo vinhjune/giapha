@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import PersonCard from './PersonCard'
+import { useAuthStore } from '../store/useAuthStore'
 import type { Person } from '../types/giapha'
 
 const nguoiMau = (ghiDe: Partial<Person>): Person => ({
@@ -113,5 +114,23 @@ describe('PersonCard', () => {
       <PersonCard person={nguoiMau({ namSinh: { nam: 1930 } })} isSelected={false} onClick={() => {}} />
     )
     expect(screen.queryByText('ÂL')).not.toBeInTheDocument()
+  })
+})
+
+describe('PersonCard pending-request badge', () => {
+  it('shows the badge when logged in and pendingRequestId is set', () => {
+    useAuthStore.setState({ user: { id: '1', username: 'ed1', email: 'e@example.com', role: 'editor', personId: null } })
+    render(
+      <PersonCard person={nguoiMau({ pendingRequestId: 'req-1' })} isSelected={false} onClick={() => {}} />
+    )
+    expect(screen.getByLabelText('Đang chờ duyệt')).toBeInTheDocument()
+  })
+
+  it('hides the badge when logged out even if pendingRequestId is set', () => {
+    useAuthStore.setState({ user: null })
+    render(
+      <PersonCard person={nguoiMau({ pendingRequestId: 'req-1' })} isSelected={false} onClick={() => {}} />
+    )
+    expect(screen.queryByLabelText('Đang chờ duyệt')).not.toBeInTheDocument()
   })
 })

@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
+import { useAuthStore } from '../store/useAuthStore'
 import { sapXepAnhChiEm, laThanhVienThuocHo, dinhDangTenNguoi } from '../utils/familyTree'
 import type { Person } from '../types/giapha'
 
@@ -31,6 +32,7 @@ function PersonRow({
   nextAncestorIds.add(person.id)
 
   const data = useGiaphaStore(s => s.data)
+  const { user } = useAuthStore()
   const isClan = laThanhVienThuocHo(person)
   const isSelected = person.id === selectedId
   const isHighlighted = person.id === highlightId
@@ -69,6 +71,9 @@ function PersonRow({
         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isClan ? 'bg-blue-500' : 'bg-gray-300'}`} />
         {isSpouse && (
           <span aria-label="Vợ/chồng" className="text-xs text-amber-500">💍</span>
+        )}
+        {person.pendingRequestId && user && (
+          <span aria-label="Đang chờ duyệt" title="Đang chờ duyệt" className="text-xs text-amber-600">⏳</span>
         )}
         <span className={`text-sm ${isClan ? 'text-gray-900' : 'text-gray-400'}`}>
           {dinhDangTenNguoi(person, showGenerationOrder)}

@@ -1,8 +1,9 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
 import { eq, and, isNull, count } from 'drizzle-orm'
-import { persons, families, familyMembers } from '../db/schema'
+import { persons, families, familyMembers, editorRequests } from '../db/schema'
 import { mapGioiTinhToGender, fromNgayThang, type NgayThang } from '../lib/reshape'
+import { requireRole } from '../middleware/auth'
 import type { HonoEnv } from '../types'
 import type { DB } from '../lib/reshape'
 
@@ -69,7 +70,7 @@ async function syncParents(
   await db.insert(familyMembers).values({ familyId: targetFamily.id, personId, childOrder: childOrder ?? null })
 }
 
-class FamilyHasChildrenError extends Error {
+export class FamilyHasChildrenError extends Error {
   familyId: string
   constructor(familyId: string) {
     super(`Family ${familyId} still has children, cannot remove marriage`)
@@ -133,7 +134,7 @@ async function syncMarriages(
   }
 }
 
-interface PersonPayload {
+export interface PersonPayload {
   hoTen: string
   gioiTinh: 'nam' | 'nu' | 'khac'
   email?: string
@@ -171,46 +172,26 @@ function toPersonRow(body: PersonPayload) {
   }
 }
 
-editorRoutes.post('/persons', async (c) => {
-  const body = await c.req.json<PersonPayload>()
-  if (!body.hoTen?.trim()) return c.json({ error: 'hoTen is required' }, 400)
+// ─── Internal record operations (reused by both direct-admin-write and the
+// approve-request flow in requests.ts) ─────────────────────────────────────
 
-  const db = drizzle(c.env.giapha_db) as DB
+export async function createPersonRecord(db: DB, body: PersonPayload): Promise<string> {
   const id = crypto.randomUUID()
-  try {
-    await db.insert(persons).values({ id, ...toPersonRow(body) })
-    await syncParents(db, id, body.boId ?? null, body.meId ?? null, body.thuTuAnhChi ?? null)
-    await syncMarriages(db, id, mapGioiTinhToGender(body.gioiTinh), body.honNhan ?? [])
-    return c.json({ id }, 201)
-  } catch (err) {
-    if (err instanceof FamilyHasChildrenError) return c.json({ error: err.message }, 409)
-    throw err
-  }
-})
+  await db.insert(persons).values({ id, ...toPersonRow(body) })
+  await syncParents(db, id, body.boId ?? null, body.meId ?? null, body.thuTuAnhChi ?? null)
+  await syncMarriages(db, id, mapGioiTinhToGender(body.gioiTinh), body.honNhan ?? [])
+  return id
+}
 
-editorRoutes.put('/persons/:id', async (c) => {
-  const id = c.req.param('id')
-  const body = await c.req.json<PersonPayload>()
-  if (!body.hoTen?.trim()) return c.json({ error: 'hoTen is required' }, 400)
+export async function updatePersonRecord(db: DB, id: string, body: PersonPayload): Promise<void> {
+  await db.update(persons)
+    .set({ ...toPersonRow(body), updatedAt: new Date().toISOString() })
+    .where(eq(persons.id, id))
+  await syncParents(db, id, body.boId ?? null, body.meId ?? null, body.thuTuAnhChi ?? null)
+  await syncMarriages(db, id, mapGioiTinhToGender(body.gioiTinh), body.honNhan ?? [])
+}
 
-  const db = drizzle(c.env.giapha_db) as DB
-  try {
-    await db.update(persons)
-      .set({ ...toPersonRow(body), updatedAt: new Date().toISOString() })
-      .where(eq(persons.id, id))
-    await syncParents(db, id, body.boId ?? null, body.meId ?? null, body.thuTuAnhChi ?? null)
-    await syncMarriages(db, id, mapGioiTinhToGender(body.gioiTinh), body.honNhan ?? [])
-    return c.json({ ok: true })
-  } catch (err) {
-    if (err instanceof FamilyHasChildrenError) return c.json({ error: err.message }, 409)
-    throw err
-  }
-})
-
-editorRoutes.delete('/persons/:id', async (c) => {
-  const personId = c.req.param('id')
-  const db = drizzle(c.env.giapha_db) as DB
-
+export async function deletePersonRecord(db: DB, personId: string): Promise<void> {
   const membership = await db.select({ familyId: familyMembers.familyId }).from(familyMembers)
     .where(eq(familyMembers.personId, personId)).get()
   const [parentFamilies1, parentFamilies2] = await Promise.all([
@@ -235,13 +216,92 @@ editorRoutes.delete('/persons/:id', async (c) => {
       await db.delete(families).where(eq(families.id, familyId))
     }
   }
+}
 
-  return c.json({ ok: true })
+async function hasPendingRequest(db: DB, personId: string): Promise<boolean> {
+  const existing = await db.select({ id: editorRequests.id }).from(editorRequests)
+    .where(and(eq(editorRequests.personId, personId), eq(editorRequests.status, 'pending'))).get()
+  return !!existing
+}
+
+// ─── Routes ────────────────────────────────────────────────────────────────
+
+editorRoutes.post('/persons', requireRole('admin', 'editor'), async (c) => {
+  const body = await c.req.json<PersonPayload>()
+  if (!body.hoTen?.trim()) return c.json({ error: 'hoTen is required' }, 400)
+  const db = drizzle(c.env.giapha_db) as DB
+  const user = c.get('user')!
+
+  if (user.role === 'admin') {
+    try {
+      const id = await createPersonRecord(db, body)
+      return c.json({ id }, 201)
+    } catch (err) {
+      if (err instanceof FamilyHasChildrenError) return c.json({ error: err.message }, 409)
+      throw err
+    }
+  }
+
+  const requestId = crypto.randomUUID()
+  await db.insert(editorRequests).values({
+    id: requestId, type: 'create', personId: null,
+    payload: JSON.stringify(body), submittedBy: user.id, status: 'pending',
+  })
+  return c.json({ pending: true, requestId }, 202)
 })
 
-editorRoutes.post('/persons/:id/avatar', async (c) => {
+editorRoutes.put('/persons/:id', requireRole('admin', 'editor'), async (c) => {
+  const id = c.req.param('id')
+  const body = await c.req.json<PersonPayload>()
+  if (!body.hoTen?.trim()) return c.json({ error: 'hoTen is required' }, 400)
+  const db = drizzle(c.env.giapha_db) as DB
+  const user = c.get('user')!
+
+  if (user.role === 'admin') {
+    try {
+      await updatePersonRecord(db, id, body)
+      return c.json({ ok: true })
+    } catch (err) {
+      if (err instanceof FamilyHasChildrenError) return c.json({ error: err.message }, 409)
+      throw err
+    }
+  }
+
+  if (await hasPendingRequest(db, id)) {
+    return c.json({ error: 'Người này đã có một yêu cầu đang chờ duyệt' }, 409)
+  }
+  const requestId = crypto.randomUUID()
+  await db.insert(editorRequests).values({
+    id: requestId, type: 'update', personId: id,
+    payload: JSON.stringify(body), submittedBy: user.id, status: 'pending',
+  })
+  return c.json({ pending: true, requestId }, 202)
+})
+
+editorRoutes.delete('/persons/:id', requireRole('admin', 'editor'), async (c) => {
+  const personId = c.req.param('id')
+  const db = drizzle(c.env.giapha_db) as DB
+  const user = c.get('user')!
+
+  if (user.role === 'admin') {
+    await deletePersonRecord(db, personId)
+    return c.json({ ok: true })
+  }
+
+  if (await hasPendingRequest(db, personId)) {
+    return c.json({ error: 'Người này đã có một yêu cầu đang chờ duyệt' }, 409)
+  }
+  const requestId = crypto.randomUUID()
+  await db.insert(editorRequests).values({
+    id: requestId, type: 'delete', personId, payload: null, submittedBy: user.id, status: 'pending',
+  })
+  return c.json({ pending: true, requestId }, 202)
+})
+
+editorRoutes.post('/persons/:id/avatar', requireRole('admin', 'editor'), async (c) => {
   const db = drizzle(c.env.giapha_db) as DB
   const personId = c.req.param('id')
+  const user = c.get('user')!
   const formData = await c.req.formData()
   const file = formData.get('file') as File | null
   if (!file) return c.json({ error: 'Missing file' }, 400)
@@ -251,8 +311,24 @@ editorRoutes.post('/persons/:id/avatar', async (c) => {
   await c.env.giapha_avatars.put(key, await file.arrayBuffer(), {
     httpMetadata: { contentType: file.type },
   })
-  await db.update(persons).set({ avatarKey: key, updatedAt: new Date().toISOString() }).where(eq(persons.id, personId))
-  return c.json({ avatarUrl: `/api/avatars/${key}` })
+
+  if (user.role === 'admin') {
+    await db.update(persons).set({ avatarKey: key, updatedAt: new Date().toISOString() }).where(eq(persons.id, personId))
+    return c.json({ avatarUrl: `/api/avatars/${key}` })
+  }
+
+  // Editor: file is already uploaded to its final R2 key (harmless if the
+  // request is later rejected — it simply becomes an orphaned object), but
+  // the `persons` row is only updated once an admin approves the request.
+  if (await hasPendingRequest(db, personId)) {
+    return c.json({ error: 'Người này đã có một yêu cầu đang chờ duyệt' }, 409)
+  }
+  const requestId = crypto.randomUUID()
+  await db.insert(editorRequests).values({
+    id: requestId, type: 'update', personId,
+    payload: JSON.stringify({ avatarKey: key }), submittedBy: user.id, status: 'pending',
+  })
+  return c.json({ pending: true, requestId, avatarUrl: `/api/avatars/${key}` }, 202)
 })
 
 export default editorRoutes

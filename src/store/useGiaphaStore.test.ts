@@ -78,7 +78,7 @@ describe('useGiaphaStore', () => {
   })
 
   it('suaNguoi updates a person via the API then refetches', async () => {
-    vi.mocked(api.updatePerson).mockResolvedValue({ ok: true })
+    vi.mocked(api.updatePerson).mockResolvedValue({})
     vi.mocked(api.getTree).mockResolvedValue(taoDataMau())
 
     await useGiaphaStore.getState().suaNguoi('1', {
@@ -90,7 +90,7 @@ describe('useGiaphaStore', () => {
   })
 
   it('xoaNguoi deletes a person via the API then refetches', async () => {
-    vi.mocked(api.deletePerson).mockResolvedValue({ ok: true })
+    vi.mocked(api.deletePerson).mockResolvedValue({})
     vi.mocked(api.getTree).mockResolvedValue(taoDataMau())
 
     await useGiaphaStore.getState().xoaNguoi('1')

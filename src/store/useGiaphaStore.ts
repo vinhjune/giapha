@@ -3,7 +3,7 @@ import type { GiaphaData, Person } from '../types/giapha'
 import * as api from '../services/api'
 import { taoCanhBaoQuanHeVongLap } from '../utils/familyTree'
 
-export type ViewMode = 'tree' | 'list' | 'members'
+export type ViewMode = 'tree' | 'list'
 
 const HIEN_THI_THU_TU_DOI_KEY = 'giaphaHienThiThuTuDoi'
 
@@ -33,7 +33,7 @@ interface GiaphaState {
   toggleGenerationOrder: () => void
   dismissCyclicRelationshipWarnings: () => void
 
-  themNguoi: (person: Omit<Person, 'id'>) => Promise<string>
+  themNguoi: (person: Omit<Person, 'id'>) => Promise<string | undefined>
   suaNguoi: (id: string, updates: Omit<Person, 'id'>) => Promise<void>
   xoaNguoi: (id: string) => Promise<void>
 }

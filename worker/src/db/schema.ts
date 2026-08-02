@@ -1,8 +1,6 @@
-// COPIED FROM giaphadongho packages/shared/src/schema.ts — DO NOT MODIFY
-// INDEPENDENTLY. This worker binds the exact same live D1 database that
-// giaphadongho's own worker uses, so the table shape here must always match
-// giaphadongho's schema exactly. If giaphadongho's schema changes, mirror the
-// change here manually (never run drizzle-kit push/migrate from this repo).
+// This worker owns and independently migrates its own D1 database schema
+// (see worker/migrations/ — apply with `wrangler d1 execute`, never
+// drizzle-kit push/migrate).
 import { sqliteTable, text, integer, index, primaryKey } from 'drizzle-orm/sqlite-core'
 import { relations, sql } from 'drizzle-orm'
 
@@ -11,11 +9,36 @@ export const users = sqliteTable('users', {
   id:           text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
   username:     text('username').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
-  role:         text('role', { enum: ['editor', 'viewer'] }).notNull().default('viewer'),
+  role:         text('role', { enum: ['admin', 'editor', 'viewer'] }).notNull().default('viewer'),
+  email:        text('email').notNull(),
   isActive:     integer('is_active', { mode: 'boolean' }).notNull().default(true),
   personId:     text('person_id').unique().references(() => persons.id, { onDelete: 'set null' }),
   createdAt:    text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 })
+
+// ─── Sessions ─────────────────────────────────────────────────────────────────
+export const sessions = sqliteTable('sessions', {
+  token:     text('token').primaryKey(),
+  userId:    text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: text('expires_at').notNull(),
+  createdAt: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+})
+
+// ─── Editor Requests ──────────────────────────────────────────────────────────
+export const editorRequests = sqliteTable('editor_requests', {
+  id:           text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  type:         text('type', { enum: ['create', 'update', 'delete'] }).notNull(),
+  personId:     text('person_id').references(() => persons.id, { onDelete: 'set null' }),
+  payload:      text('payload'),
+  status:       text('status', { enum: ['pending', 'approved', 'rejected'] }).notNull().default('pending'),
+  submittedBy:  text('submitted_by').notNull().references(() => users.id),
+  resolvedBy:   text('resolved_by').references(() => users.id),
+  resolvedAt:   text('resolved_at'),
+  createdAt:    text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index('editor_requests_status_idx').on(t.status),
+  index('editor_requests_pending_person_idx').on(t.personId, t.status),
+])
 
 // ─── Persons ──────────────────────────────────────────────────────────────────
 export const persons = sqliteTable('persons', {

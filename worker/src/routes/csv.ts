@@ -4,11 +4,12 @@ import { persons, families, familyMembers } from '../db/schema'
 import { serializeToUnifiedCsv } from '../lib/csv-export'
 import { parseUnifiedCsv, validateImportData, buildFamilyMemberships, coerceMemberRow, coerceFamilyRow } from '../lib/csv-import'
 import { eq } from 'drizzle-orm'
+import { requireRole } from '../middleware/auth'
 import type { HonoEnv } from '../types'
 
 const csvRoutes = new Hono<HonoEnv>()
 
-csvRoutes.get('/export/csv', async (c) => {
+csvRoutes.get('/export/csv', requireRole('admin'), async (c) => {
   const db = drizzle(c.env.giapha_db)
   const today = new Date().toISOString().slice(0, 10)
 
@@ -66,7 +67,7 @@ csvRoutes.get('/export/csv', async (c) => {
   })
 })
 
-csvRoutes.post('/import/csv', async (c) => {
+csvRoutes.post('/import/csv', requireRole('admin'), async (c) => {
   const formData = await c.req.formData()
   const file = formData.get('file') as File | null
   if (!file) return c.json({ errors: ['No file uploaded'] }, 400)
