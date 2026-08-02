@@ -1,28 +1,21 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useGiaphaStore } from '../store/useGiaphaStore'
+import { useAuthStore } from '../store/useAuthStore'
 import SearchBar from './SearchBar'
-import CsvImportModal from './CsvImportModal'
-import { exportCsv } from '../services/api'
+import LoginModal from './LoginModal'
 import { useIsMobile } from '../utils/useIsMobile'
+
+const ROLE_LABELS: Record<string, string> = { admin: 'Admin', editor: 'Editor', viewer: 'Viewer' }
 
 export default function Navbar() {
   const { data, viewMode, setViewMode, hienThiThuTuDoi, toggleGenerationOrder } = useGiaphaStore()
+  const { user, logout } = useAuthStore()
   const isMobile = useIsMobile()
-  const [csvModalOpen, setCsvModalOpen] = useState(false)
+  const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
   const selectableViewMode = viewMode === 'list' || viewMode === 'tree' ? viewMode : ''
-
-  async function handleExportCsv() {
-    const blob = await exportCsv()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    const date = new Date().toISOString().slice(0, 10)
-    a.href = url
-    a.download = `gia-pha-export-${date}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
 
   useEffect(() => {
     if (!menuOpen) return
@@ -53,6 +46,15 @@ export default function Navbar() {
         </div>
 
         {!isMobile && <SearchBar />}
+
+        {user && (
+          <div className="ml-auto flex items-center gap-2 shrink-0">
+            <span className="text-sm text-ink font-medium hidden sm:inline">{user.username}</span>
+            <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
+              {ROLE_LABELS[user.role] ?? user.role}
+            </span>
+          </div>
+        )}
       </div>
 
       {isMobile && (
@@ -78,40 +80,22 @@ export default function Navbar() {
                 onChange={e => setViewMode(e.target.value as 'tree' | 'list')}
                 className="w-full px-2 py-1.5 text-sm border border-card-border rounded-md bg-card"
               >
-                <option value="" disabled>
-                  {viewMode === 'members' ? 'Quản lý thành viên' : 'Chế độ xem'}
-                </option>
+                <option value="" disabled>Chế độ xem</option>
                 <option value="tree">Cây</option>
                 <option value="list">Danh sách</option>
               </select>
             </div>
-            <button
-              onClick={() => {
-                setViewMode('members')
-                setMenuOpen(false)
-              }}
-              className="w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
-            >
-              Quản lý thành viên
-            </button>
-            <button
-              onClick={() => {
-                setCsvModalOpen(true)
-                setMenuOpen(false)
-              }}
-              className="w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
-            >
-              Nhập CSV
-            </button>
-            <button
-              onClick={() => {
-                handleExportCsv()
-                setMenuOpen(false)
-              }}
-              className="w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
-            >
-              Xuất CSV
-            </button>
+
+            {user && (
+              <Link
+                to="/control-panel"
+                onClick={() => setMenuOpen(false)}
+                className="block w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
+              >
+                Control Panel
+              </Link>
+            )}
+
             <button
               onClick={() => {
                 toggleGenerationOrder()
@@ -121,12 +105,34 @@ export default function Navbar() {
             >
               Thứ tự đời: {hienThiThuTuDoi ? 'Bật' : 'Tắt'}
             </button>
+
+            {user ? (
+              <button
+                onClick={() => {
+                  logout()
+                  setMenuOpen(false)
+                }}
+                className="w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
+              >
+                Đăng xuất
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setLoginModalOpen(true)
+                  setMenuOpen(false)
+                }}
+                className="w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
+              >
+                Đăng nhập
+              </button>
+            )}
           </div>
         </>
       )}
     </nav>
 
-    {csvModalOpen && <CsvImportModal onClose={() => setCsvModalOpen(false)} />}
+    {loginModalOpen && <LoginModal onClose={() => setLoginModalOpen(false)} />}
     </>
   )
 }
