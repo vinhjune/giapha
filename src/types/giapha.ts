@@ -31,6 +31,7 @@ export interface Person {
   honNhan: HonNhan[]           // Marriages (ordered)
   conCaiIds: string[]          // Children IDs — derived server-side, read-only
   ghiChu?: string
+  pendingRequestId?: string    // set when an update/delete request is awaiting admin approval
 }
 
 export interface Metadata {
@@ -42,4 +43,42 @@ export interface Metadata {
 export interface GiaphaData {
   metadata: Metadata
   persons: Record<string, Person>  // id → Person map
+}
+
+export type UserRole = 'admin' | 'editor' | 'viewer'
+
+export interface AuthUser {
+  id: string
+  username: string
+  email: string
+  role: UserRole
+  personId: string | null
+}
+
+export interface EditorRequest {
+  id: string
+  type: 'create' | 'update' | 'delete'
+  personId: string | null
+  payload: string | null
+  submittedBy: string
+  status: 'pending' | 'approved' | 'rejected'
+  resolvedBy: string | null
+  resolvedAt: string | null
+  createdAt: string
+}
+
+export interface ManagedUser {
+  id: string
+  username: string
+  email: string
+  role: UserRole
+  personId: string | null
+  isActive: boolean
+  createdAt: string
+}
+
+export interface MutationResult {
+  id?: string
+  pending?: boolean
+  requestId?: string
 }

@@ -33,7 +33,7 @@ interface GiaphaState {
   toggleGenerationOrder: () => void
   dismissCyclicRelationshipWarnings: () => void
 
-  themNguoi: (person: Omit<Person, 'id'>) => Promise<string>
+  themNguoi: (person: Omit<Person, 'id'>) => Promise<string | undefined>
   suaNguoi: (id: string, updates: Omit<Person, 'id'>) => Promise<void>
   xoaNguoi: (id: string) => Promise<void>
 }
