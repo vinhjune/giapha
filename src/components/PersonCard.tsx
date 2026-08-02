@@ -1,4 +1,5 @@
 import type { Person } from '../types/giapha'
+import { useAuthStore } from '../store/useAuthStore'
 
 interface Props {
   person: Person
@@ -20,6 +21,8 @@ export default function PersonCard({ person, displayName, isSelected, isHighligh
   // Mirrors ListView: the badge marks an actual married-in spouse (honNhan link),
   // not any non-clan blood descendant (e.g. a granddaughter through a daughter's line).
   const isMarriedIn = isSpouse && !person.laThanhVienHo
+  const { user } = useAuthStore()
+  const showPendingBadge = !!person.pendingRequestId && !!user
   const name = displayName ?? person.hoTen
   const avatarColorClass = AVATAR_COLOR_BY_GENDER[person.gioiTinh] ?? AVATAR_COLOR_BY_GENDER.khac
 
@@ -39,6 +42,15 @@ export default function PersonCard({ person, displayName, isSelected, isHighligh
           className="absolute -top-2 right-2 text-[11px] leading-none bg-card border border-card-border rounded-full px-1.5 py-0.5"
         >
           💍
+        </span>
+      )}
+      {showPendingBadge && (
+        <span
+          aria-label="Đang chờ duyệt"
+          title="Đang chờ duyệt"
+          className="absolute -top-2 left-2 text-[11px] leading-none bg-amber-100 text-amber-700 border border-amber-300 rounded-full px-1.5 py-0.5"
+        >
+          ⏳
         </span>
       )}
       <div className="flex items-center gap-2">
