@@ -5,6 +5,7 @@ import { users } from '../db/schema'
 import { requireRole } from '../middleware/auth'
 import { hashPassword } from '../lib/password'
 import type { HonoEnv } from '../types'
+import type { DB } from '../lib/reshape'
 
 const userRoutes = new Hono<HonoEnv>()
 
@@ -13,20 +14,20 @@ function toPublicUser(row: typeof users.$inferSelect) {
   return rest
 }
 
-async function countOtherAdmins(db: ReturnType<typeof drizzle>, excludeUserId: string): Promise<number> {
+async function countOtherAdmins(db: DB, excludeUserId: string): Promise<number> {
   const [{ total }] = await db.select({ total: count() }).from(users)
     .where(and(eq(users.role, 'admin'), ne(users.id, excludeUserId)))
   return total
 }
 
 userRoutes.get('/users', requireRole('admin'), async (c) => {
-  const db = drizzle(c.env.giapha_db)
+  const db = drizzle(c.env.giapha_db) as DB
   const rows = await db.select().from(users).all()
   return c.json({ users: rows.map(toPublicUser) })
 })
 
 userRoutes.post('/users', requireRole('admin'), async (c) => {
-  const db = drizzle(c.env.giapha_db)
+  const db = drizzle(c.env.giapha_db) as DB
   const body = await c.req.json<{ username: string; password: string; role: 'admin' | 'editor' | 'viewer'; email: string; personId?: string }>()
   if (!body.username?.trim() || !body.password || !body.email?.trim()) {
     return c.json({ error: 'Thiếu username, password hoặc email' }, 400)
@@ -45,7 +46,7 @@ userRoutes.post('/users', requireRole('admin'), async (c) => {
 })
 
 userRoutes.put('/users/:id', requireRole('admin'), async (c) => {
-  const db = drizzle(c.env.giapha_db)
+  const db = drizzle(c.env.giapha_db) as DB
   const id = c.req.param('id')
   const target = await db.select().from(users).where(eq(users.id, id)).get()
   if (!target) return c.json({ error: 'Không tìm thấy người dùng' }, 404)
@@ -70,7 +71,7 @@ userRoutes.put('/users/:id', requireRole('admin'), async (c) => {
 })
 
 userRoutes.delete('/users/:id', requireRole('admin'), async (c) => {
-  const db = drizzle(c.env.giapha_db)
+  const db = drizzle(c.env.giapha_db) as DB
   const id = c.req.param('id')
   const target = await db.select().from(users).where(eq(users.id, id)).get()
   if (!target) return c.json({ error: 'Không tìm thấy người dùng' }, 404)

@@ -6,6 +6,7 @@ import { users } from '../db/schema'
 import { hashPassword, verifyPassword } from '../lib/password'
 import { createSession, deleteSession, SESSION_COOKIE_NAME, SESSION_DURATION_MS } from '../lib/session'
 import type { HonoEnv } from '../types'
+import type { DB } from '../lib/reshape'
 
 const authRoutes = new Hono<HonoEnv>()
 
@@ -20,14 +21,14 @@ function setSessionCookie(c: Context<HonoEnv>, token: string) {
 }
 
 authRoutes.get('/auth/me', async (c) => {
-  const db = drizzle(c.env.giapha_db)
+  const db = drizzle(c.env.giapha_db) as DB
   const [{ total }] = await db.select({ total: count() }).from(users)
   const user = c.get('user')
   return c.json({ user, setupNeeded: total === 0 })
 })
 
 authRoutes.post('/auth/setup', async (c) => {
-  const db = drizzle(c.env.giapha_db)
+  const db = drizzle(c.env.giapha_db) as DB
   const [{ total }] = await db.select({ total: count() }).from(users)
   if (total > 0) return c.json({ error: 'Hệ thống đã có người quản trị' }, 409)
 
@@ -44,7 +45,7 @@ authRoutes.post('/auth/setup', async (c) => {
 })
 
 authRoutes.post('/auth/login', async (c) => {
-  const db = drizzle(c.env.giapha_db)
+  const db = drizzle(c.env.giapha_db) as DB
   const body = await c.req.json<{ username: string; password: string }>()
   const identifier = body.username ?? ''
   // Accepts either username or email in the same field, per spec ("username-hoặc-email + password").
@@ -60,7 +61,7 @@ authRoutes.post('/auth/login', async (c) => {
 })
 
 authRoutes.post('/auth/logout', async (c) => {
-  const db = drizzle(c.env.giapha_db)
+  const db = drizzle(c.env.giapha_db) as DB
   const token = getCookie(c, SESSION_COOKIE_NAME)
   if (token) await deleteSession(db, token)
   deleteCookie(c, SESSION_COOKIE_NAME, { path: '/' })
