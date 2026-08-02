@@ -371,7 +371,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
                 checked={!form.laThanhVienHo}
                 onChange={e => setForm(f => ({ ...f, laThanhVienHo: !e.target.checked }))}
               />
-              Người ngoài họ
+              Dâu/Rể
             </label>
 
             <div className="flex flex-col gap-3 sm:flex-row">

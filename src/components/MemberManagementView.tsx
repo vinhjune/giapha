@@ -31,7 +31,7 @@ const COLUMNS: Array<{ key: RowField; label: string }> = [
   { key: 'hoTen', label: 'Họ tên' },
   { key: 'thuTuDoi', label: 'Đời' },
   { key: 'gioiTinh', label: 'Giới tính' },
-  { key: 'laThanhVienHo', label: 'Ngoại tộc' },
+  { key: 'laThanhVienHo', label: 'Dâu/Rể' },
   { key: 'thuTuAnhChi', label: 'Thứ tự anh/chị' },
   { key: 'namSinh', label: 'Ngày sinh' },
   { key: 'namMat', label: 'Ngày mất' },
@@ -374,7 +374,7 @@ export default function MemberManagementView() {
                           type="checkbox"
                           checked={row.laThanhVienHo === 'false'}
                           onChange={e => handleCellChange(rowIndex, col.key, String(!e.target.checked))}
-                          aria-label={`Ngoại tộc dòng ${rowIndex + 1}`}
+                          aria-label={`Dâu/Rể dòng ${rowIndex + 1}`}
                           data-testid={`${col.key}-${rowIndex}`}
                           className="h-4 w-4"
                         />

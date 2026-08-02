@@ -172,7 +172,7 @@ describe('PersonForm outside-clan marker', () => {
     useGiaphaStore.setState({ data })
 
     const { getByLabelText } = render(<PersonForm onClose={() => {}} />)
-    const outsideCheckbox = getByLabelText('Người ngoài họ') as HTMLInputElement
+    const outsideCheckbox = getByLabelText('Dâu/Rể') as HTMLInputElement
 
     expect(outsideCheckbox.checked).toBe(false)
   })
@@ -186,7 +186,7 @@ describe('PersonForm outside-clan marker', () => {
     fireEvent.click(getByText('Chọn vợ/chồng'))
     fireEvent.click(getAllByText('Bố')[1])
 
-    const outsideCheckbox = getByLabelText('Người ngoài họ') as HTMLInputElement
+    const outsideCheckbox = getByLabelText('Dâu/Rể') as HTMLInputElement
     expect(outsideCheckbox.checked).toBe(true)
   })
 
@@ -204,7 +204,7 @@ describe('PersonForm outside-clan marker', () => {
     fireEvent.click(getByText('Chọn vợ/chồng'))
     fireEvent.click(getAllByText('Bố')[1])
 
-    const outsideCheckbox = getByLabelText('Người ngoài họ') as HTMLInputElement
+    const outsideCheckbox = getByLabelText('Dâu/Rể') as HTMLInputElement
     expect(outsideCheckbox.checked).toBe(true)
     fireEvent.click(outsideCheckbox)
     expect(outsideCheckbox.checked).toBe(false)
@@ -227,7 +227,7 @@ describe('PersonForm outside-clan marker', () => {
     }
 
     const { getByLabelText } = render(<PersonForm editPerson={editPerson} onClose={() => {}} />)
-    const outsideCheckbox = getByLabelText('Người ngoài họ') as HTMLInputElement
+    const outsideCheckbox = getByLabelText('Dâu/Rể') as HTMLInputElement
 
     expect(outsideCheckbox.checked).toBe(true)
   })
