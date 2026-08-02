@@ -3,7 +3,7 @@ import type { GiaphaData, Person } from '../types/giapha'
 import * as api from '../services/api'
 import { taoCanhBaoQuanHeVongLap } from '../utils/familyTree'
 
-export type ViewMode = 'tree' | 'list' | 'members'
+export type ViewMode = 'tree' | 'list'
 
 const HIEN_THI_THU_TU_DOI_KEY = 'giaphaHienThiThuTuDoi'
 

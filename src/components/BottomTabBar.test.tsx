@@ -40,12 +40,4 @@ describe('BottomTabBar', () => {
     render(<BottomTabBar onAddClick={() => {}} />)
     expect(screen.getByRole('button', { name: 'Cây' })).toHaveAttribute('aria-current', 'page')
   })
-
-  it('highlights no tab while viewing Quản lý thành viên', () => {
-    useGiaphaStore.setState({ viewMode: 'members' })
-    render(<BottomTabBar onAddClick={() => {}} />)
-
-    expect(screen.getByRole('button', { name: 'Cây' })).not.toHaveAttribute('aria-current')
-    expect(screen.getByRole('button', { name: 'Danh sách' })).not.toHaveAttribute('aria-current')
-  })
 })

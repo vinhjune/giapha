@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import HomePage from './HomePage'
 import { useGiaphaStore } from '../store/useGiaphaStore'
+import { useAuthStore } from '../store/useAuthStore'
 import type { GiaphaData } from '../types/giapha'
 import { mockMatchMedia } from '../test-setup'
 
@@ -12,10 +13,13 @@ const data: GiaphaData = {
   },
 }
 
+const editorUser = { id: 'u1', username: 'editor1', email: 'e@x.com', role: 'editor' as const, personId: null }
+
 describe('HomePage person click flow', () => {
   beforeEach(() => {
     // jsdom doesn't implement Element.scrollTo; TreeView's scroll-to-highlighted effect calls it.
     Element.prototype.scrollTo = vi.fn()
+    useAuthStore.setState({ user: editorUser })
     useGiaphaStore.setState({
       data,
       viewMode: 'tree',
@@ -63,6 +67,7 @@ describe('HomePage person click flow', () => {
 describe('HomePage in-modal relation navigation', () => {
   beforeEach(() => {
     Element.prototype.scrollTo = vi.fn()
+    useAuthStore.setState({ user: editorUser })
   })
 
   const navData: GiaphaData = {
@@ -101,6 +106,7 @@ describe('HomePage in-modal relation navigation', () => {
 describe('HomePage mobile navigation', () => {
   beforeEach(() => {
     Element.prototype.scrollTo = vi.fn()
+    useAuthStore.setState({ user: editorUser })
     useGiaphaStore.setState({
       data,
       viewMode: 'tree',
@@ -135,5 +141,36 @@ describe('HomePage mobile navigation', () => {
     const fab = screen.getByTitle('Thêm người mới')
     expect(fab.className).toContain('hidden')
     expect(fab.className).toContain('sm:flex')
+  })
+})
+
+describe('HomePage anonymous (read-only) access', () => {
+  beforeEach(() => {
+    Element.prototype.scrollTo = vi.fn()
+    useAuthStore.setState({ user: null })
+    useGiaphaStore.setState({
+      data,
+      viewMode: 'tree',
+      selectedPersonId: null,
+      focusedPersonId: null,
+      hienThiThuTuDoi: false,
+      cyclicRelationshipWarnings: [],
+    })
+  })
+
+  it('hides the floating add button for anonymous users', () => {
+    mockMatchMedia(false)
+    render(<HomePage />)
+
+    expect(screen.queryByTitle('Thêm người mới')).toBeNull()
+  })
+
+  it('opens a read-only detail panel instead of the edit modal when a person is clicked', () => {
+    render(<HomePage />)
+
+    fireEvent.click(screen.getByText('Tổ'))
+
+    expect(screen.queryByTestId('person-form-modal')).toBeNull()
+    expect(screen.getByLabelText('Đóng')).toBeInTheDocument()
   })
 })

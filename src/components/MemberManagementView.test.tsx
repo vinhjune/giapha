@@ -28,7 +28,7 @@ describe('MemberManagementView', () => {
     vi.clearAllMocks()
     useGiaphaStore.setState({
       data,
-      viewMode: 'members',
+      viewMode: 'tree',
       selectedPersonId: null,
       focusedPersonId: null,
     })
@@ -222,7 +222,7 @@ describe('MemberManagementView', () => {
         metadata: data.metadata,
         persons: { '1': data.persons['1'], '2': { ...data.persons['2'], thuTuDoi: undefined } },
       },
-      viewMode: 'members',
+      viewMode: 'tree',
       selectedPersonId: null,
       focusedPersonId: null,
     })
@@ -247,7 +247,7 @@ describe('MemberManagementView', () => {
           '3': { id: '3', hoTen: 'Người cô lập', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: [] },
         },
       },
-      viewMode: 'members',
+      viewMode: 'tree',
       selectedPersonId: null,
       focusedPersonId: null,
     })
@@ -316,7 +316,7 @@ describe('MemberManagementView — editor pending-request flow', () => {
     vi.clearAllMocks()
     useGiaphaStore.setState({
       data,
-      viewMode: 'members',
+      viewMode: 'tree',
       selectedPersonId: null,
       focusedPersonId: null,
     })
