@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
-import { persons, families, familyMembers } from '../db/schema'
+import { eq } from 'drizzle-orm'
+import { persons, families, familyMembers, editorRequests } from '../db/schema'
 import { buildMetadata, mapGenderToGioiTinh, toNgayThang } from '../lib/reshape'
 import type { DB } from '../lib/reshape'
 import type { HonoEnv } from '../types'
@@ -13,11 +14,18 @@ type MemberRow = typeof familyMembers.$inferSelect
 treeRoutes.get('/tree', async (c) => {
   const db = drizzle(c.env.giapha_db) as DB
 
-  const [allPersons, allFamilies, allMembers] = await Promise.all([
+  const [allPersons, allFamilies, allMembers, pendingRequests] = await Promise.all([
     db.select().from(persons).all(),
     db.select().from(families).all(),
     db.select().from(familyMembers).all(),
+    db.select({ id: editorRequests.id, personId: editorRequests.personId })
+      .from(editorRequests)
+      .where(eq(editorRequests.status, 'pending'))
+      .all(),
   ])
+  const pendingRequestByPersonId = new Map(
+    pendingRequests.filter(r => r.personId).map(r => [r.personId as string, r.id]),
+  )
 
   // personId -> family_members row (this person as a child)
   const childOf = new Map<string, MemberRow>(allMembers.map(m => [m.personId, m]))
@@ -71,6 +79,7 @@ treeRoutes.get('/tree', async (c) => {
       // A person can be a parent in multiple families (remarriage) — union children across all of them.
       conCaiIds: marriages.flatMap(f => childrenOf.get(f.id) ?? []),
       ghiChu: p.notes ?? undefined,
+      pendingRequestId: pendingRequestByPersonId.get(p.id),
     }
   }
 
