@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import { useAuthStore } from '../store/useAuthStore'
 import PersonPicker from './PersonPicker'
@@ -128,6 +128,8 @@ export default function MemberManagementView() {
   const [picker, setPicker] = useState<PickerState | null>(null)
   const [autoComputeWarnings, setAutoComputeWarnings] = useState<string[]>([])
   const [sortState, setSortState] = useState<SortState>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const originalIds = useMemo(() => new Set(data ? Object.keys(data.persons) : []), [data])
   const rowDirtyInfo = useMemo(() => rows.map(row => {
@@ -145,6 +147,24 @@ export default function MemberManagementView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- getName is redefined each render but only reads `data`, already a dependency
     [rows, sortState, data],
   )
+
+  const matchedRowKey = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return null
+    const match = displayRows.find(({ row }) => row.hoTen.toLowerCase().includes(query))
+    return match?.row._key ?? null
+  }, [searchQuery, displayRows])
+
+  useEffect(() => {
+    if (!matchedRowKey) return
+    const container = scrollContainerRef.current
+    const rowEl = container?.querySelector<HTMLElement>(`[data-row-key="${matchedRowKey}"]`)
+    if (!container || !rowEl) return
+    // thead is sticky top-0 inside the scroll container; offset by its height so the
+    // matched row lands as the first fully-visible data row, not hidden underneath it.
+    const headerHeight = container.querySelector('thead')?.getBoundingClientRect().height ?? 0
+    container.scrollTop = rowEl.offsetTop - headerHeight
+  }, [matchedRowKey])
 
   function handleHeaderSortClick(field: RowField) {
     if (!SORTABLE_FIELDS.has(field)) return
@@ -284,6 +304,14 @@ export default function MemberManagementView() {
       <div className="mb-3 flex items-center justify-between gap-2 shrink-0">
         <h2 className="text-base font-semibold text-gray-800">Quản lý thành viên</h2>
         <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Tìm theo họ tên..."
+            aria-label="Tìm theo họ tên"
+            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md w-48"
+          />
           <button
             onClick={handleAddRow}
             className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
@@ -314,6 +342,7 @@ export default function MemberManagementView() {
 
       <div className="flex-1 min-h-0 border border-gray-200 rounded-lg overflow-hidden">
         <div
+          ref={scrollContainerRef}
           data-testid="member-table-scroll"
           className="h-full overflow-auto"
         >
@@ -360,6 +389,7 @@ export default function MemberManagementView() {
               return (
               <tr
                 key={row._key}
+                data-row-key={row._key}
                 className={`hover:bg-blue-50/30${dirty.isNew ? ' bg-emerald-50/60' : ''}`}
               >
                 {VISIBLE_COLUMNS.map(col => {
