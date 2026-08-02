@@ -3,15 +3,18 @@ import { logger } from 'hono/logger'
 import treeRoutes from './routes/tree'
 import editorRoutes from './routes/editor'
 import csvRoutes from './routes/csv'
+import authRoutes from './routes/auth'
+import { attachUser } from './middleware/auth'
 import type { HonoEnv } from './types'
 
 const app = new Hono<HonoEnv>()
 
 app.use('*', logger())
-// No auth middleware, no CORS middleware (auth intentionally removed for this
-// migration period; API and frontend share the same Worker origin).
+// No CORS middleware (API and frontend share the same Worker origin).
+app.use('*', attachUser)
 
 app.get('/api/health', (c) => c.json({ ok: true }))
+app.route('/api', authRoutes)
 app.route('/api', treeRoutes)
 app.route('/api', editorRoutes)
 app.route('/api', csvRoutes)
