@@ -280,8 +280,8 @@ export default function MemberManagementView() {
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-white p-3">
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white p-3">
+      <div className="mb-3 flex items-center justify-between gap-2 shrink-0">
         <h2 className="text-base font-semibold text-gray-800">Quản lý thành viên</h2>
         <div className="flex items-center gap-2">
           <button
@@ -312,10 +312,10 @@ export default function MemberManagementView() {
         </div>
       </div>
 
-      <div className="border border-gray-200 rounded-lg">
+      <div className="flex-1 min-h-0 border border-gray-200 rounded-lg overflow-hidden">
         <div
           data-testid="member-table-scroll"
-          className="max-h-[calc(100vh-220px)] overflow-auto"
+          className="h-full overflow-auto"
         >
         <table className="min-w-[2400px] w-full text-xs">
           <thead className="bg-gray-50 sticky top-0 z-10">
@@ -507,28 +507,30 @@ export default function MemberManagementView() {
         </div>
       </div>
 
-      <p className="mt-2 text-xs text-gray-500">
-        <span className="inline-block h-3 w-3 rounded-sm bg-emerald-50 ring-1 ring-inset ring-emerald-300 align-middle" /> Dòng mới ·{' '}
-        <span className="inline-block h-3 w-3 rounded-sm bg-amber-50 ring-1 ring-inset ring-amber-300 align-middle" /> Trường đã sửa, chưa lưu
-      </p>
+      <div className="shrink-0 max-h-[30vh] overflow-y-auto">
+        <p className="mt-2 text-xs text-gray-500">
+          <span className="inline-block h-3 w-3 rounded-sm bg-emerald-50 ring-1 ring-inset ring-emerald-300 align-middle" /> Dòng mới ·{' '}
+          <span className="inline-block h-3 w-3 rounded-sm bg-amber-50 ring-1 ring-inset ring-amber-300 align-middle" /> Trường đã sửa, chưa lưu
+        </p>
 
-      {saveMessage && <p className="mt-3 text-sm text-green-700">{saveMessage}</p>}
-      {errorMessages.length > 0 && (
-        <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3">
-          <p className="text-sm font-medium text-red-700 mb-1">Không thể áp dụng một số thay đổi:</p>
-          <ul className="text-xs text-red-700 list-disc pl-5 space-y-1">
-            {errorMessages.slice(0, 10).map((msg, idx) => <li key={idx}>{msg}</li>)}
-          </ul>
-        </div>
-      )}
-      {autoComputeWarnings.length > 0 && (
-        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
-          <p className="text-sm font-medium text-amber-800 mb-1">Một số thành viên không thể tính tự động:</p>
-          <ul className="text-xs text-amber-800 list-disc pl-5 space-y-1">
-            {autoComputeWarnings.slice(0, 10).map((msg, idx) => <li key={idx}>{msg}</li>)}
-          </ul>
-        </div>
-      )}
+        {saveMessage && <p className="mt-3 text-sm text-green-700">{saveMessage}</p>}
+        {errorMessages.length > 0 && (
+          <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3">
+            <p className="text-sm font-medium text-red-700 mb-1">Không thể áp dụng một số thay đổi:</p>
+            <ul className="text-xs text-red-700 list-disc pl-5 space-y-1">
+              {errorMessages.slice(0, 10).map((msg, idx) => <li key={idx}>{msg}</li>)}
+            </ul>
+          </div>
+        )}
+        {autoComputeWarnings.length > 0 && (
+          <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+            <p className="text-sm font-medium text-amber-800 mb-1">Một số thành viên không thể tính tự động:</p>
+            <ul className="text-xs text-amber-800 list-disc pl-5 space-y-1">
+              {autoComputeWarnings.slice(0, 10).map((msg, idx) => <li key={idx}>{msg}</li>)}
+            </ul>
+          </div>
+        )}
+      </div>
 
       {picker && (() => {
         const row = rows[picker.rowIndex]
