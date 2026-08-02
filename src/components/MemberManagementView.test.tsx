@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import MemberManagementView from './MemberManagementView'
 import { useGiaphaStore } from '../store/useGiaphaStore'
+import { useAuthStore } from '../store/useAuthStore'
 import type { GiaphaData } from '../types/giapha'
 
 vi.mock('../services/api', () => ({
@@ -307,5 +308,32 @@ describe('MemberManagementView', () => {
       expect(screen.queryByDisplayValue('Con Trai')).not.toBeInTheDocument()
       expect(screen.getByDisplayValue('Ông Tổ')).toBeInTheDocument()
     })
+  })
+})
+
+describe('MemberManagementView — editor pending-request flow', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useGiaphaStore.setState({
+      data,
+      viewMode: 'members',
+      selectedPersonId: null,
+      focusedPersonId: null,
+    })
+    useAuthStore.setState({ user: { id: 'editor-1', username: 'ed1', email: 'e@example.com', role: 'editor', personId: null } })
+  })
+
+  it('shows a "sent for approval" message when api.createPerson returns pending:true', async () => {
+    vi.mocked(api.createPerson).mockResolvedValue({ pending: true, requestId: 'req-1' })
+    vi.mocked(api.getTree).mockResolvedValue(data)
+
+    const user = userEvent.setup()
+    render(<MemberManagementView />)
+
+    await user.click(screen.getByRole('button', { name: 'Thêm dòng mới' }))
+    await user.type(screen.getByTestId('hoTen-0'), 'Thành viên mới')
+    await user.click(screen.getByRole('button', { name: 'Áp dụng thay đổi' }))
+
+    expect(await screen.findByText(/Đã gửi 1 thay đổi để chờ admin duyệt/)).toBeInTheDocument()
   })
 })

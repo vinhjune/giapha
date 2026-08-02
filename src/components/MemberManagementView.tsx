@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useGiaphaStore } from '../store/useGiaphaStore'
+import { useAuthStore } from '../store/useAuthStore'
 import PersonPicker from './PersonPicker'
 import NgayThangInput from './NgayThangInput'
 import * as api from '../services/api'
@@ -116,6 +117,7 @@ function rowToPersonPayload(row: EditableRow): Omit<Person, 'id'> {
 
 export default function MemberManagementView() {
   const { data, loadData } = useGiaphaStore()
+  const { user } = useAuthStore()
   const [rows, setRows] = useState<EditableRow[]>(() => {
     if (!data) return []
     return Object.values(data.persons).map(personToRow)
@@ -216,15 +218,20 @@ export default function MemberManagementView() {
     const remainingIds = new Set(rows.map(r => r.id.trim()).filter(Boolean))
     const deletedIds = [...originalIds].filter(id => !remainingIds.has(id))
 
+    let deletedDirect = 0
+    let deletedPending = 0
     for (const id of deletedIds) {
       try {
-        await api.deletePerson(id)
+        const result = await api.deletePerson(id)
+        if (result?.pending) deletedPending++
+        else deletedDirect++
       } catch (e) {
         errors.push(`Xóa ${id}: ${(e as Error).message}`)
       }
     }
 
-    let savedCount = 0
+    let savedDirect = 0
+    let savedPending = 0
     let skippedCount = 0
     for (const row of rows) {
       if (!row.hoTen.trim()) continue
@@ -235,17 +242,19 @@ export default function MemberManagementView() {
       const payload = rowToPersonPayload(row)
       const trimmedId = row.id.trim()
       try {
+        let result: { pending?: boolean }
         if (!isNewRow(row, originalIds)) {
           const changed = getChangedFields(row, personToRow(data.persons[trimmedId]))
           if (changed.length === 0) {
             skippedCount++
             continue
           }
-          await api.updatePerson(trimmedId, payload)
+          result = await api.updatePerson(trimmedId, payload)
         } else {
-          await api.createPerson(payload)
+          result = await api.createPerson(payload)
         }
-        savedCount++
+        if (result?.pending) savedPending++
+        else savedDirect++
       } catch (e) {
         errors.push(`${row.hoTen || row._key}: ${(e as Error).message}`)
       }
@@ -259,7 +268,15 @@ export default function MemberManagementView() {
       return
     }
     setErrorMessages([])
-    setSaveMessage(`Đã cập nhật ${savedCount} thành viên, bỏ qua ${skippedCount} không đổi.`)
+
+    const totalPending = savedPending + deletedPending
+    const totalDirect = savedDirect + deletedDirect
+    if (totalPending > 0 && user?.role === 'editor') {
+      const directPart = totalDirect > 0 ? `Đã cập nhật ${totalDirect} thành viên. ` : ''
+      setSaveMessage(`${directPart}Đã gửi ${totalPending} thay đổi để chờ admin duyệt. Bỏ qua ${skippedCount} không đổi.`)
+    } else {
+      setSaveMessage(`Đã cập nhật ${totalDirect} thành viên, bỏ qua ${skippedCount} không đổi.`)
+    }
   }
 
   return (
