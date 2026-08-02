@@ -33,7 +33,7 @@ describe('Navbar (anonymous)', () => {
     expect(screen.queryByText('Quản lý thành viên')).not.toBeInTheDocument()
     expect(screen.queryByText('Nhập CSV')).not.toBeInTheDocument()
     expect(screen.queryByText('Xuất CSV')).not.toBeInTheDocument()
-    expect(screen.queryByText('Control Panel')).not.toBeInTheDocument()
+    expect(screen.queryByText('Quản lý')).not.toBeInTheDocument()
   })
 
   it('opens the LoginModal when "Đăng nhập" is clicked', () => {
@@ -65,12 +65,12 @@ describe('Navbar (logged in)', () => {
     useAuthStore.setState({ user: { id: '1', username: 'admin1', email: 'a@example.com', role: 'admin', personId: null } })
   })
 
-  it('shows username, role badge, and Control Panel + Đăng xuất in the dropdown', () => {
+  it('shows username, role badge, and Quản lý + Đăng xuất in the dropdown', () => {
     renderNavbar()
     expect(screen.getByText('admin1')).toBeInTheDocument()
     expect(screen.getByText('Admin')).toBeInTheDocument()
     fireEvent.click(screen.getByLabelText('Mở menu'))
-    expect(screen.getByText('Control Panel')).toBeInTheDocument()
+    expect(screen.getByText('Quản lý')).toBeInTheDocument()
     expect(screen.getByText('Đăng xuất')).toBeInTheDocument()
     expect(screen.queryByText('Đăng nhập')).not.toBeInTheDocument()
   })

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../store/useAuthStore'
+import Navbar from '../components/Navbar'
 import MemberManagementView from '../components/MemberManagementView'
 import PendingRequestsPanel from '../components/PendingRequestsPanel'
 import CsvPanel from '../components/CsvPanel'
@@ -23,8 +24,9 @@ export default function ControlPanelPage() {
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden bg-white">
+      <Navbar />
       <div className="border-b border-gray-200 px-4 py-3">
-        <h1 className="text-lg font-bold text-ink">Control Panel</h1>
+        <h1 className="text-lg font-bold text-ink">Quản lý</h1>
       </div>
       <div className="border-b border-gray-200 px-4 flex gap-1 overflow-x-auto">
         {tabs.map(t => (

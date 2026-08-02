@@ -92,7 +92,7 @@ export default function Navbar() {
                 onClick={() => setMenuOpen(false)}
                 className="block w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
               >
-                Control Panel
+                Quản lý
               </Link>
             )}
 
