@@ -1,0 +1,50 @@
+import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
+import { useAuthStore } from '../store/useAuthStore'
+import MemberManagementView from '../components/MemberManagementView'
+import PendingRequestsPanel from '../components/PendingRequestsPanel'
+import CsvPanel from '../components/CsvPanel'
+import UserManagementPanel from '../components/UserManagementPanel'
+
+type Tab = 'members' | 'requests' | 'csv' | 'users'
+
+export default function ControlPanelPage() {
+  const { user } = useAuthStore()
+  const [tab, setTab] = useState<Tab>('members')
+
+  if (!user) return <Navigate to="/" replace />
+
+  const isAdmin = user.role === 'admin'
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'members', label: 'Thành viên' },
+    { key: 'requests', label: isAdmin ? 'Yêu cầu chờ duyệt' : 'Yêu cầu của tôi' },
+    ...(isAdmin ? [{ key: 'csv' as Tab, label: 'CSV' }, { key: 'users' as Tab, label: 'Quản lý User' }] : []),
+  ]
+
+  return (
+    <div className="h-dvh flex flex-col overflow-hidden bg-white">
+      <div className="border-b border-gray-200 px-4 py-3">
+        <h1 className="text-lg font-bold text-ink">Control Panel</h1>
+      </div>
+      <div className="border-b border-gray-200 px-4 flex gap-1 overflow-x-auto">
+        {tabs.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-3 py-2 text-sm border-b-2 whitespace-nowrap ${
+              tab === t.key ? 'border-blue-600 text-blue-700 font-medium' : 'border-transparent text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 overflow-auto">
+        {tab === 'members' && <MemberManagementView />}
+        {tab === 'requests' && <PendingRequestsPanel />}
+        {tab === 'csv' && isAdmin && <CsvPanel />}
+        {tab === 'users' && isAdmin && <UserManagementPanel />}
+      </div>
+    </div>
+  )
+}
