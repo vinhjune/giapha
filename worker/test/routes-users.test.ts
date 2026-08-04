@@ -58,11 +58,24 @@ describe('POST /api/users', () => {
     const { token } = await makeAdmin()
     await SELF.fetch('http://example.com/api/users', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
-      body: JSON.stringify({ username: 'dup', password: 'password123', role: 'editor', email: 'a@example.com' }),
+      body: JSON.stringify({ username: 'dup', password: 'password123', role: 'editor', email: 'dup1@example.com' }),
     })
     const res = await SELF.fetch('http://example.com/api/users', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
-      body: JSON.stringify({ username: 'dup', password: 'password123', role: 'editor', email: 'b@example.com' }),
+      body: JSON.stringify({ username: 'dup', password: 'password123', role: 'editor', email: 'dup2@example.com' }),
+    })
+    expect(res.status).toBe(409)
+  })
+
+  it('rejects a duplicate email with 409', async () => {
+    const { token } = await makeAdmin()
+    await SELF.fetch('http://example.com/api/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ username: 'first-user', password: 'password123', role: 'editor', email: 'dup@example.com' }),
+    })
+    const res = await SELF.fetch('http://example.com/api/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ username: 'second-user', password: 'password123', role: 'editor', email: 'dup@example.com' }),
     })
     expect(res.status).toBe(409)
   })
@@ -93,6 +106,83 @@ describe('PUT /api/users/:id', () => {
       body: JSON.stringify({ role: 'editor' }),
     })
     expect(res.status).toBe(409)
+  })
+
+  it('admin edits username, email and password for an existing user', async () => {
+    const { token } = await makeAdmin()
+    const createRes = await SELF.fetch('http://example.com/api/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ username: 'edit-me', password: 'password123', role: 'editor', email: 'edit-me@example.com' }),
+    })
+    const { user } = await createRes.json<{ user: { id: string } }>()
+
+    const res = await SELF.fetch(`http://example.com/api/users/${user.id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ username: 'edited-name', email: 'edited@example.com', password: 'newpassword123' }),
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json<{ user: { username: string; email: string } }>()
+    expect(body.user).toMatchObject({ username: 'edited-name', email: 'edited@example.com' })
+    expect(body.user).not.toHaveProperty('passwordHash')
+
+    const db = drizzle(env.giapha_db)
+    const row = await db.select().from(users).where(eq(users.id, user.id)).get()
+    expect(row?.username).toBe('edited-name')
+    expect(row?.email).toBe('edited@example.com')
+    expect(row?.passwordHash).not.toBe('') // hash was actually replaced
+  })
+
+  it('rejects renaming a user to a username already taken by someone else with 409', async () => {
+    const { token } = await makeAdmin()
+    await SELF.fetch('http://example.com/api/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ username: 'taken-name', password: 'password123', role: 'editor', email: 'taken@example.com' }),
+    })
+    const createRes = await SELF.fetch('http://example.com/api/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ username: 'renamer', password: 'password123', role: 'editor', email: 'renamer@example.com' }),
+    })
+    const { user } = await createRes.json<{ user: { id: string } }>()
+
+    const res = await SELF.fetch(`http://example.com/api/users/${user.id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ username: 'taken-name' }),
+    })
+    expect(res.status).toBe(409)
+  })
+
+  it('rejects updating a user email to one already taken by someone else with 409', async () => {
+    const { token } = await makeAdmin()
+    await SELF.fetch('http://example.com/api/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ username: 'owner', password: 'password123', role: 'editor', email: 'taken-email@example.com' }),
+    })
+    const createRes = await SELF.fetch('http://example.com/api/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ username: 'other', password: 'password123', role: 'editor', email: 'other@example.com' }),
+    })
+    const { user } = await createRes.json<{ user: { id: string } }>()
+
+    const res = await SELF.fetch(`http://example.com/api/users/${user.id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ email: 'taken-email@example.com' }),
+    })
+    expect(res.status).toBe(409)
+  })
+
+  it('allows keeping the same username/email unchanged when editing other fields', async () => {
+    const { token } = await makeAdmin()
+    const createRes = await SELF.fetch('http://example.com/api/users', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ username: 'unchanged', password: 'password123', role: 'editor', email: 'unchanged@example.com' }),
+    })
+    const { user } = await createRes.json<{ user: { id: string } }>()
+
+    const res = await SELF.fetch(`http://example.com/api/users/${user.id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ username: 'unchanged', email: 'unchanged@example.com', role: 'viewer' }),
+    })
+    expect(res.status).toBe(200)
   })
 })
 

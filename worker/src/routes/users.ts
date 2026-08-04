@@ -32,14 +32,18 @@ userRoutes.post('/users', requireRole('admin'), async (c) => {
   if (!body.username?.trim() || !body.password || !body.email?.trim()) {
     return c.json({ error: 'Thiếu username, password hoặc email' }, 400)
   }
-  const existing = await db.select({ id: users.id }).from(users).where(eq(users.username, body.username.trim())).get()
-  if (existing) return c.json({ error: 'Tên đăng nhập đã tồn tại' }, 409)
+  const username = body.username.trim()
+  const email = body.email.trim()
+  const existingUsername = await db.select({ id: users.id }).from(users).where(eq(users.username, username)).get()
+  if (existingUsername) return c.json({ error: 'Tên đăng nhập đã tồn tại' }, 409)
+  const existingEmail = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).get()
+  if (existingEmail) return c.json({ error: 'Email đã được sử dụng' }, 409)
 
   const id = crypto.randomUUID()
   const passwordHash = await hashPassword(body.password)
   await db.insert(users).values({
-    id, username: body.username.trim(), passwordHash, role: body.role,
-    email: body.email.trim(), personId: body.personId ?? null,
+    id, username, passwordHash, role: body.role,
+    email, personId: body.personId ?? null,
   })
   const row = await db.select().from(users).where(eq(users.id, id)).get()
   return c.json({ user: toPublicUser(row!) }, 201)
@@ -51,7 +55,7 @@ userRoutes.put('/users/:id', requireRole('admin'), async (c) => {
   const target = await db.select().from(users).where(eq(users.id, id)).get()
   if (!target) return c.json({ error: 'Không tìm thấy người dùng' }, 404)
 
-  const body = await c.req.json<{ role?: 'admin' | 'editor' | 'viewer'; email?: string; personId?: string | null; isActive?: boolean; password?: string }>()
+  const body = await c.req.json<{ username?: string; role?: 'admin' | 'editor' | 'viewer'; email?: string; personId?: string | null; isActive?: boolean; password?: string }>()
 
   if (body.role && body.role !== 'admin' && target.role === 'admin') {
     const otherAdmins = await countOtherAdmins(db, id)
@@ -59,8 +63,26 @@ userRoutes.put('/users/:id', requireRole('admin'), async (c) => {
   }
 
   const updates: Partial<typeof users.$inferInsert> = {}
+
+  if (body.username !== undefined) {
+    const username = body.username.trim()
+    if (!username) return c.json({ error: 'Tên đăng nhập không được để trống' }, 400)
+    if (username !== target.username) {
+      const existing = await db.select({ id: users.id }).from(users).where(and(eq(users.username, username), ne(users.id, id))).get()
+      if (existing) return c.json({ error: 'Tên đăng nhập đã tồn tại' }, 409)
+    }
+    updates.username = username
+  }
+  if (body.email !== undefined) {
+    const email = body.email.trim()
+    if (!email) return c.json({ error: 'Email không được để trống' }, 400)
+    if (email !== target.email) {
+      const existing = await db.select({ id: users.id }).from(users).where(and(eq(users.email, email), ne(users.id, id))).get()
+      if (existing) return c.json({ error: 'Email đã được sử dụng' }, 409)
+    }
+    updates.email = email
+  }
   if (body.role !== undefined) updates.role = body.role
-  if (body.email !== undefined) updates.email = body.email.trim()
   if (body.personId !== undefined) updates.personId = body.personId
   if (body.isActive !== undefined) updates.isActive = body.isActive
   if (body.password) updates.passwordHash = await hashPassword(body.password)

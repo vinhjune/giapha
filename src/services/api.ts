@@ -108,7 +108,7 @@ export function createUser(input: { username: string; password: string; role: st
   })
 }
 
-export function updateUser(id: string, input: Partial<{ role: string; email: string; personId: string | null; isActive: boolean; password: string }>): Promise<{ user: ManagedUser }> {
+export function updateUser(id: string, input: Partial<{ username: string; role: string; email: string; personId: string | null; isActive: boolean; password: string }>): Promise<{ user: ManagedUser }> {
   return request<{ user: ManagedUser }>(`/api/users/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

@@ -12,6 +12,11 @@ export default function UserManagementPanel() {
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<UserRole>('editor')
 
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editUsername, setEditUsername] = useState('')
+  const [editEmail, setEditEmail] = useState('')
+  const [editPassword, setEditPassword] = useState('')
+
   async function refresh() {
     setLoading(true)
     try {
@@ -53,6 +58,38 @@ export default function UserManagementPanel() {
     setError(null)
     try {
       await api.updateUser(id, { role: newRole })
+      await refresh()
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
+  function startEdit(u: ManagedUser) {
+    setError(null)
+    setEditingId(u.id)
+    setEditUsername(u.username)
+    setEditEmail(u.email)
+    setEditPassword('')
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditUsername(''); setEditEmail(''); setEditPassword('')
+  }
+
+  async function handleSaveEdit(e: React.FormEvent, id: string) {
+    e.preventDefault()
+    setError(null)
+    try {
+      const update: Partial<{ username: string; email: string; password: string }> = {
+        username: editUsername.trim(),
+        email: editEmail.trim(),
+      }
+      // Blank password field means "leave unchanged" — never sent, so the
+      // stored hash is never overwritten with an empty/plaintext value.
+      if (editPassword) update.password = editPassword
+      await api.updateUser(id, update)
+      cancelEdit()
       await refresh()
     } catch (e) {
       setError((e as Error).message)
@@ -110,32 +147,82 @@ export default function UserManagementPanel() {
 
       <ul className="space-y-2">
         {users.map(u => (
-          <li key={u.id} className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-gray-800">{u.username}</p>
-              <p className="text-xs text-gray-500">{u.email}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <select
-                aria-label={`Vai trò của ${u.username}`}
-                value={u.role}
-                onChange={e => handleRoleChange(u.id, e.target.value as UserRole)}
-                className="px-2 py-1 text-sm border border-gray-300 rounded-md"
-              >
-                <option value="editor">Editor</option>
-                <option value="admin">Admin</option>
-                <option value="viewer">Viewer</option>
-              </select>
-              <button
-                onClick={() => handleDelete(u.id)}
-                className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                Xóa
-              </button>
-            </div>
+          <li key={u.id} className="border border-gray-200 rounded-lg p-3">
+            {editingId === u.id ? (
+              <form onSubmit={e => handleSaveEdit(e, u.id)} className="flex flex-col gap-3 max-w-sm">
+                <div>
+                  <label htmlFor={`edit-username-${u.id}`} className="block text-sm text-gray-600 mb-1">Tên đăng nhập</label>
+                  <input
+                    id={`edit-username-${u.id}`}
+                    value={editUsername}
+                    onChange={e => setEditUsername(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`edit-email-${u.id}`} className="block text-sm text-gray-600 mb-1">Email</label>
+                  <input
+                    id={`edit-email-${u.id}`}
+                    type="email"
+                    value={editEmail}
+                    onChange={e => setEditEmail(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`edit-password-${u.id}`} className="block text-sm text-gray-600 mb-1">Mật khẩu mới (để trống nếu không đổi)</label>
+                  <input
+                    id={`edit-password-${u.id}`}
+                    type="password"
+                    value={editPassword}
+                    onChange={e => setEditPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button type="button" onClick={cancelEdit} className="px-4 py-2 text-sm rounded-md border border-gray-300 hover:bg-gray-50">Hủy</button>
+                  <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">Lưu</button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{u.username}</p>
+                  <p className="text-xs text-gray-500">{u.email}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <select
+                    aria-label={`Vai trò của ${u.username}`}
+                    value={u.role}
+                    onChange={e => handleRoleChange(u.id, e.target.value as UserRole)}
+                    className="px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  >
+                    <option value="editor">Editor</option>
+                    <option value="admin">Admin</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                  <button
+                    onClick={() => startEdit(u)}
+                    className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                  >
+                    Sửa
+                  </button>
+                  <button
+                    onClick={() => handleDelete(u.id)}
+                    className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              </div>
+            )}
           </li>
         ))}
       </ul>
     </div>
   )
 }
+

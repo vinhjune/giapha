@@ -51,4 +51,50 @@ describe('UserManagementPanel', () => {
     fireEvent.click(screen.getAllByText('Xóa')[0])
     await waitFor(() => expect(screen.getByText('Không thể xóa admin cuối cùng')).toBeInTheDocument())
   })
+
+  it('edits username and email for an existing user, masking the password field', async () => {
+    vi.mocked(api.updateUser).mockResolvedValue({ user: { ...sampleUsers[1], username: 'ed1-renamed', email: 'renamed@example.com' } })
+    render(<UserManagementPanel />)
+    await waitFor(() => screen.getByText('ed1'))
+
+    fireEvent.click(screen.getAllByText('Sửa')[1])
+    const usernameInput = screen.getByLabelText('Tên đăng nhập') as HTMLInputElement
+    const passwordInput = screen.getByLabelText('Mật khẩu mới (để trống nếu không đổi)') as HTMLInputElement
+    expect(passwordInput.type).toBe('password')
+    expect(passwordInput.value).toBe('')
+
+    fireEvent.change(usernameInput, { target: { value: 'ed1-renamed' } })
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'renamed@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+
+    await waitFor(() => expect(api.updateUser).toHaveBeenCalledWith('u2', {
+      username: 'ed1-renamed', email: 'renamed@example.com',
+    }))
+  })
+
+  it('only sends a new password when the field is filled in', async () => {
+    vi.mocked(api.updateUser).mockResolvedValue({ user: sampleUsers[1] })
+    render(<UserManagementPanel />)
+    await waitFor(() => screen.getByText('ed1'))
+
+    fireEvent.click(screen.getAllByText('Sửa')[1])
+    fireEvent.change(screen.getByLabelText('Mật khẩu mới (để trống nếu không đổi)'), { target: { value: 'newpass123' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+
+    await waitFor(() => expect(api.updateUser).toHaveBeenCalledWith('u2', {
+      username: 'ed1', email: 'e@example.com', password: 'newpass123',
+    }))
+  })
+
+  it('shows the backend error when saving an edit with a duplicate email fails', async () => {
+    vi.mocked(api.updateUser).mockRejectedValue(new Error('Email đã được sử dụng'))
+    render(<UserManagementPanel />)
+    await waitFor(() => screen.getByText('ed1'))
+
+    fireEvent.click(screen.getAllByText('Sửa')[1])
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+
+    await waitFor(() => expect(screen.getByText('Email đã được sử dụng')).toBeInTheDocument())
+  })
 })

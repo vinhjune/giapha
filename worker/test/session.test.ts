@@ -8,7 +8,7 @@ describe('session helpers', () => {
   async function makeUser() {
     const db = drizzle(env.giapha_db)
     const id = crypto.randomUUID()
-    await db.insert(users).values({ id, username: `u-${id}`, passwordHash: 'x', role: 'admin', email: 'a@example.com' })
+    await db.insert(users).values({ id, username: `u-${id}`, passwordHash: 'x', role: 'admin', email: `${id}@example.com` })
     return id
   }
 

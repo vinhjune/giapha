@@ -19,7 +19,7 @@ function buildApp() {
 async function makeUserAndToken(role: 'admin' | 'editor' | 'viewer') {
   const db = drizzle(env.giapha_db)
   const id = crypto.randomUUID()
-  await db.insert(users).values({ id, username: `u-${id}`, passwordHash: 'x', role, email: 'a@example.com' })
+  await db.insert(users).values({ id, username: `u-${id}`, passwordHash: 'x', role, email: `${id}@example.com` })
   const token = await createSession(db, id)
   return token
 }
