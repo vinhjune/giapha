@@ -14,6 +14,7 @@ articleCategoryRoutes.get('/article-categories', async (c) => {
     db.select().from(articleCategories).orderBy(asc(articleCategories.displayOrder)).all(),
     db.select({ categoryId: articles.categoryId, articleCount: count() })
       .from(articles)
+      .where(eq(articles.status, 'published'))
       .groupBy(articles.categoryId)
       .all(),
   ])

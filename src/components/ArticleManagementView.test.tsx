@@ -82,8 +82,8 @@ describe('ArticleManagementView', () => {
     await waitFor(() => screen.getByText('Về nguồn'))
     fireEvent.click(screen.getByText('Quản lý chuyên mục'))
 
-    expect(screen.getByText('Giới thiệu dòng họ (2)')).toBeInTheDocument()
-    expect(screen.getByText('Tin tức (0)')).toBeInTheDocument()
+    expect(screen.getByText('Giới thiệu dòng họ (1)')).toBeInTheDocument()
+    expect(screen.getByText('Tin tức (1)')).toBeInTheDocument()
   })
 
   it('creates a new article via the form', async () => {

@@ -49,6 +49,27 @@ describe('GET /api/article-categories', () => {
       expect.objectContaining({ id: 'cat-hieu-hoc', slug: 'truyen-thong-hieu-hoc', name: 'Truyền thống hiếu học', articleCount: expect.any(Number) }),
     ]))
   })
+
+  it('does not count draft articles in the public articleCount', async () => {
+    const db = drizzle(env.giapha_db)
+    const { userId } = await makeUser('editor')
+    await db.insert(articles).values({
+      id: crypto.randomUUID(),
+      slug: 'ban-thao-rieng-tu',
+      categoryId: 'cat-gioi-thieu',
+      title: 'Bản thảo riêng tư',
+      summary: 'Chưa đăng',
+      body: 'Nội dung nháp',
+      status: 'draft',
+      authorId: userId,
+    })
+
+    const app = buildApp()
+    const res = await app.request('/api/article-categories', undefined, env)
+    const body = await res.json<Array<{ id: string; articleCount: number }>>()
+    const gioiThieu = body.find((c) => c.id === 'cat-gioi-thieu')
+    expect(gioiThieu?.articleCount).toBe(0)
+  })
 })
 
 describe('POST /api/article-categories', () => {

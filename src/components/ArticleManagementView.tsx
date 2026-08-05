@@ -213,7 +213,9 @@ export default function ArticleManagementView() {
           <div className="space-y-2 mb-3">
             {categories.map(category => (
               <div key={category.id} className="flex items-center justify-between gap-3">
-                <p className="text-sm text-gray-700">{category.name} ({category.articleCount})</p>
+                <p className="text-sm text-gray-700">
+                  {category.name} ({articles.filter(article => article.categoryId === category.id).length})
+                </p>
                 <button
                   onClick={() => handleDeleteCategory(category.id)}
                   aria-label={`Xóa chuyên mục ${category.name}`}
