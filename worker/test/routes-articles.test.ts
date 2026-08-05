@@ -239,6 +239,27 @@ describe('POST /api/articles', () => {
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({ error: 'Trạng thái bài viết không hợp lệ' })
   })
+
+  it('sanitizes the rich-text body, keeping safe formatting but stripping scripts and event handlers', async () => {
+    const app = buildApp()
+    const { token } = await makeUser('admin')
+
+    const res = await app.request('/api/articles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({
+        slug: `sanitize-${crypto.randomUUID()}`,
+        categoryId: 'cat-gioi-thieu',
+        title: 'Bài viết định dạng',
+        summary: 'Tóm tắt',
+        body: '<p>Xin <strong>chào</strong> <img src="/api/avatars/x.jpg" onerror="alert(1)"></p><script>alert(2)</script>',
+      }),
+    }, env)
+
+    expect(res.status).toBe(201)
+    const created = await res.json<{ body: string }>()
+    expect(created.body).toBe('<p>Xin <strong>chào</strong> <img src="/api/avatars/x.jpg"></p>')
+  })
 })
 
 describe('PUT /api/articles/:id', () => {
@@ -342,6 +363,22 @@ describe('PUT /api/articles/:id', () => {
     expect(res.status).toBe(400)
     expect(await res.json()).toEqual({ error: 'Trạng thái bài viết không hợp lệ' })
   })
+
+  it('sanitizes the rich-text body on update as well', async () => {
+    const app = buildApp()
+    const { token } = await makeUser('editor')
+    const article = await createArticle(app, token, { slug: `sanitize-update-${crypto.randomUUID()}` })
+
+    const res = await app.request(`/api/articles/${article.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ body: '<h2 onclick="steal()">Tiêu đề phụ</h2><iframe src="evil.com"></iframe>' }),
+    }, env)
+
+    expect(res.status).toBe(200)
+    const updated = await res.json<{ body: string }>()
+    expect(updated.body).toBe('<h2>Tiêu đề phụ</h2>')
+  })
 })
 
 describe('DELETE /api/articles/:id', () => {
@@ -394,5 +431,49 @@ describe('POST /api/articles/:id/cover', () => {
     const body = await res.json<{ id: string; coverImageKey: string | null }>()
     expect(body.id).toBe(article.id)
     expect(body.coverImageKey).toBe(`article-covers/${article.id}.png`)
+  })
+})
+
+describe('POST /api/article-images', () => {
+  it('returns 401 without auth', async () => {
+    const app = buildApp()
+
+    const res = await app.request('/api/article-images', { method: 'POST', body: new FormData() }, env)
+
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 400 when no file is provided', async () => {
+    const app = buildApp()
+    const { token } = await makeUser('editor')
+
+    const res = await app.request('/api/article-images', {
+      method: 'POST',
+      headers: { Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: new FormData(),
+    }, env)
+
+    expect(res.status).toBe(400)
+    expect(await res.json()).toEqual({ error: 'Thiếu tệp ảnh' })
+  })
+
+  it('uploads an inline content image and returns a fetchable url, without requiring an existing article', async () => {
+    const app = buildApp()
+    const { token } = await makeUser('editor')
+    const formData = new FormData()
+    formData.set('file', new File([new Blob(['hello inline image'])], 'photo.jpg', { type: 'image/jpeg' }))
+
+    const res = await app.request('/api/article-images', {
+      method: 'POST',
+      headers: { Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: formData,
+    }, env)
+
+    expect(res.status).toBe(201)
+    const body = await res.json<{ url: string }>()
+    expect(body.url).toMatch(/^\/api\/avatars\/article-content\/[0-9a-f-]+\.jpg$/)
+
+    const stored = await env.giapha_avatars.get(body.url.replace('/api/avatars/', ''))
+    expect(await stored?.text()).toBe('hello inline image')
   })
 })

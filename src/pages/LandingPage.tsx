@@ -37,7 +37,8 @@ function formatArticleDate(publishedAt: string | null): string {
 }
 
 function estimateReadingMinutes(body: string): string {
-  const wordCount = body.trim().split(/\s+/).filter(Boolean).length
+  const plainText = body.replace(/<[^>]*>/g, ' ')
+  const wordCount = plainText.trim().split(/\s+/).filter(Boolean).length
   const minutes = Math.max(1, Math.round(wordCount / 200))
   return `${minutes} phút đọc`
 }
@@ -75,13 +76,6 @@ function pickNearestUpcomingEvent(events: EventItem[]): EventItem | null {
 
 function getCategoryAnchorId(category: ArticleCategory) {
   return `category-${category.slug || category.id}`
-}
-
-function splitBodyIntoParagraphs(body: string): string[] {
-  return body
-    .split(/\n{2,}/)
-    .map(paragraph => paragraph.trim())
-    .filter(Boolean)
 }
 
 export default function LandingPage() {
@@ -296,11 +290,12 @@ export default function LandingPage() {
                       </div>
                     )}
                     <p className="lp-article-summary">{activeArticle.summary}</p>
-                    <div className="lp-article-body">
-                      {splitBodyIntoParagraphs(activeArticle.body).map((paragraph, index) => (
-                        <p key={index}>{paragraph}</p>
-                      ))}
-                    </div>
+                    <div
+                      className="lp-article-body"
+                      // Body HTML is sanitized server-side (xss allowlist) on every
+                      // create/update, so it's safe to render directly here.
+                      dangerouslySetInnerHTML={{ __html: activeArticle.body }}
+                    />
                   </article>
                 </>
               ) : (

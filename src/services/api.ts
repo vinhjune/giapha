@@ -208,6 +208,13 @@ export function uploadArticleCover(id: string, file: File): Promise<Article> {
   return request<Article>(`/api/articles/${id}/cover`, { method: 'POST', body: formData })
 }
 
+/** Uploads an image for inline use in a rich-text article body (not tied to any article id). */
+export function uploadArticleImage(file: File): Promise<{ url: string }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request<{ url: string }>('/api/article-images', { method: 'POST', body: formData })
+}
+
 export function listEvents(): Promise<EventItem[]> {
   return request<EventItem[]>('/api/events')
 }

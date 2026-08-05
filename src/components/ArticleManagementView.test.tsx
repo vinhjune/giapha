@@ -5,6 +5,17 @@ import * as api from '../services/api'
 
 vi.mock('../services/api')
 
+// RichTextEditor wraps Tiptap/ProseMirror, which relies on real-browser
+// contenteditable/selection APIs not available in jsdom. Stub it with a plain
+// textarea driven by the same value/onChange/id/ariaLabel contract so these
+// tests can keep exercising ArticleManagementView's own form wiring; the
+// editor's own behavior is covered by RichTextEditor.test.tsx.
+vi.mock('./RichTextEditor', () => ({
+  default: ({ id, value, onChange }: { id?: string; value: string; onChange: (v: string) => void }) => (
+    <textarea id={id} value={value} onChange={e => onChange(e.target.value)} />
+  ),
+}))
+
 const sampleCategories = [
   {
     id: 'cat-1',

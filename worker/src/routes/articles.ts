@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { asc, and, eq, ne } from 'drizzle-orm'
 import { articleCategories, articles } from '../db/schema'
 import { requireRole } from '../middleware/auth'
+import { sanitizeArticleBody } from '../lib/sanitize-html'
 import type { HonoEnv } from '../types'
 import type { DB } from '../lib/reshape'
 
@@ -78,7 +79,7 @@ articleRoutes.post('/articles', requireRole('admin', 'editor'), async (c) => {
     categoryId,
     title,
     summary,
-    body: content,
+    body: sanitizeArticleBody(content),
     status,
     displayOrder: body.displayOrder ?? 0,
     publishedAt: status === 'published' ? new Date().toISOString() : null,
@@ -147,7 +148,7 @@ articleRoutes.put('/articles/:id', requireRole('admin', 'editor'), async (c) => 
   if (body.body !== undefined) {
     const content = body.body.trim()
     if (!content) return c.json({ error: 'Nội dung không được để trống' }, 400)
-    updates.body = content
+    updates.body = sanitizeArticleBody(content)
   }
 
   if (body.status !== undefined) updates.status = body.status
@@ -202,6 +203,25 @@ articleRoutes.post('/articles/:id/cover', requireRole('admin', 'editor'), async 
 
   const row = await db.select().from(articles).where(eq(articles.id, id)).get()
   return c.json(row!)
+})
+
+// Uploads an image to embed inline within an article's rich-text body (via the
+// Tiptap editor's image button). Unlike the cover endpoint above, this isn't
+// tied to a specific article id — an article may embed any number of these
+// images, and the editor needs to upload images while composing a brand new
+// (not-yet-saved) article too.
+articleRoutes.post('/article-images', requireRole('admin', 'editor'), async (c) => {
+  const formData = await c.req.formData()
+  const file = formData.get('file') as File | null
+  if (!file) return c.json({ error: 'Thiếu tệp ảnh' }, 400)
+
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const key = `article-content/${crypto.randomUUID()}.${ext}`
+  await c.env.giapha_avatars.put(key, await file.arrayBuffer(), {
+    httpMetadata: { contentType: file.type },
+  })
+
+  return c.json({ url: `/api/avatars/${key}` }, 201)
 })
 
 export default articleRoutes

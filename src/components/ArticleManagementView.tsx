@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import * as api from '../services/api'
 import type { Article, ArticleCategory } from '../types/giapha'
+import RichTextEditor from './RichTextEditor'
 
 type ArticleStatus = 'draft' | 'published'
 
@@ -316,14 +317,7 @@ export default function ArticleManagementView() {
           </div>
           <div>
             <label htmlFor="new-article-body" className="block text-sm text-gray-600 mb-1">Nội dung</label>
-            <textarea
-              id="new-article-body"
-              value={body}
-              onChange={e => setBody(e.target.value)}
-              required
-              rows={6}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
-            />
+            <RichTextEditor id="new-article-body" value={body} onChange={setBody} ariaLabel="Nội dung bài viết mới" />
           </div>
           <div>
             <label htmlFor="new-article-status" className="block text-sm text-gray-600 mb-1">Trạng thái</label>
@@ -409,13 +403,11 @@ export default function ArticleManagementView() {
                 </div>
                 <div>
                   <label htmlFor={`edit-body-${article.id}`} className="block text-sm text-gray-600 mb-1">Nội dung</label>
-                  <textarea
+                  <RichTextEditor
                     id={`edit-body-${article.id}`}
                     value={editBody}
-                    onChange={e => setEditBody(e.target.value)}
-                    required
-                    rows={6}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md"
+                    onChange={setEditBody}
+                    ariaLabel={`Nội dung bài viết ${article.title}`}
                   />
                 </div>
                 <div>
