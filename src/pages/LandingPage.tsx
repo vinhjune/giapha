@@ -241,7 +241,7 @@ export default function LandingPage() {
                   href={`#${getCategoryAnchorId(category)}`}
                   className={`lp-category${index === 0 ? ' lp-active' : ''}`}
                 >
-                  <span>{category.name}</span>
+                  {category.name}
                   <span>{articleCounts[category.id] ?? 0}</span>
                 </a>
               ))}
