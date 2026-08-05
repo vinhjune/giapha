@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import LandingPage from './LandingPage'
 import * as api from '../services/api'
@@ -164,10 +164,11 @@ describe('LandingPage', () => {
   it('renders the nearest upcoming event when events exist', async () => {
     await renderPage()
 
-    await waitFor(() => expect(screen.getByText('Sự kiện gần nhất')).toBeInTheDocument())
+    const eventNote = await screen.findByTestId('nearest-event')
 
-    expect(screen.getByText('Lễ giỗ tổ')).toBeInTheDocument()
-    expect(screen.getByText('20/08/2099')).toBeInTheDocument()
+    expect(within(eventNote).getByText('Lễ giỗ tổ')).toBeInTheDocument()
+    expect(within(eventNote).getByText('Tháng 8')).toBeInTheDocument()
+    expect(within(eventNote).getByText('20')).toBeInTheDocument()
     expect(screen.queryByText('Họp mặt đầu năm')).not.toBeInTheDocument()
   })
 
