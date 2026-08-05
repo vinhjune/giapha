@@ -6,6 +6,9 @@ import csvRoutes from './routes/csv'
 import authRoutes from './routes/auth'
 import requestRoutes from './routes/requests'
 import userRoutes from './routes/users'
+import articleCategoryRoutes from './routes/article-categories'
+import articleRoutes from './routes/articles'
+import eventRoutes from './routes/events'
 import { attachUser } from './middleware/auth'
 import type { HonoEnv } from './types'
 
@@ -22,6 +25,9 @@ app.route('/api', editorRoutes)
 app.route('/api', csvRoutes)
 app.route('/api', requestRoutes)
 app.route('/api', userRoutes)
+app.route('/api', articleCategoryRoutes)
+app.route('/api', articleRoutes)
+app.route('/api', eventRoutes)
 
 // Serve R2 avatars — public read, no auth required
 app.get('/api/avatars/:key{.+}', async (c) => {
