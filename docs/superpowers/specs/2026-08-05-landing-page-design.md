@@ -43,10 +43,16 @@ content-management flow in the Control Panel, not hardcoded copy.
    becomes the new landing page. Existing deep links to `/` will now show the
    landing page instead of the tree — acceptable, since "Xem gia phả" is one
    click away.
-2. **Permissions:** article/category management follows the same pattern as
-   person editing — `admin` and `editor` roles can create/edit/publish/delete
-   directly (no approval queue, matching `editor.ts`'s persons routes).
-   `viewer`/anonymous visitors only see published articles.
+2. **Permissions:** unlike `persons` (where `editor` writes go through an
+   `editor_requests` approval queue that `admin` must approve/reject — see
+   `worker/src/routes/editor.ts`), articles/categories skip that queue:
+   `admin` and `editor` both write directly. This is a deliberate
+   simplification, not an oversight — the `status: draft/published` field
+   already acts as a lightweight publish gate (a draft is invisible to the
+   public regardless of who wrote it), and content articles carry much less
+   risk than mutating genealogical records, so the heavier
+   propose-then-approve workflow isn't justified here.
+   `viewer`/anonymous visitors only ever see published articles.
 3. **Events management UI:** since `events` has no UI yet, this project also
    adds a minimal "Sự kiện" management panel (reusing the existing table) so
    the landing page's events section isn't empty. Full event-editing UX
