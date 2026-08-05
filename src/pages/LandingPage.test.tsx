@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import LandingPage from './LandingPage'
 import * as api from '../services/api'
 
@@ -112,6 +112,17 @@ async function renderPage() {
   )
 }
 
+async function renderPageAt(path: string) {
+  render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/bai-viet/:slug" element={<LandingPage />} />
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
 describe('LandingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -186,5 +197,33 @@ describe('LandingPage', () => {
     await renderPage()
 
     await waitFor(() => expect(screen.getByText('Lỗi tải dữ liệu: Mạng không ổn định')).toBeInTheDocument())
+  })
+
+  it('renders the article content inline within the feed section when navigating to /bai-viet/:slug, keeping the header and sidebar mounted', async () => {
+    await renderPageAt('/bai-viet/tu-mai-nha-chung')
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Từ mái nhà chung' })).toBeInTheDocument())
+
+    // Header/masthead/sidebar remain visible.
+    expect(screen.getByLabelText('Trang chủ Sử nhà dòng họ')).toBeInTheDocument()
+    expect(screen.getByLabelText('Điều hướng chuyên mục')).toBeInTheDocument()
+
+    // Full body content is rendered in place of the normal article list, inside the lp-feed section.
+    const feedSection = screen.getByLabelText('Dòng bài viết')
+    expect(within(feedSection).getByText('Câu chuyện mở đầu của dòng họ.')).toBeInTheDocument()
+    expect(within(feedSection).getByText('Nội dung bài viết mở đầu.')).toBeInTheDocument()
+    expect(within(feedSection).getByRole('link', { name: /quay lại/i })).toHaveAttribute('href', '/')
+
+    // The normal article list is no longer shown.
+    expect(screen.queryByText('Gia phả giấy còn lưu lại')).not.toBeInTheDocument()
+  })
+
+  it('shows an inline not-found state when the slug does not match a published article', async () => {
+    await renderPageAt('/bai-viet/khong-ton-tai')
+
+    await waitFor(() => expect(screen.getByText('Không tìm thấy bài viết này.')).toBeInTheDocument())
+
+    expect(screen.getByLabelText('Trang chủ Sử nhà dòng họ')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /quay lại trang chủ/i })).toHaveAttribute('href', '/')
   })
 })

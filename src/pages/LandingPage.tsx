@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { listArticleCategories, listArticles, listEvents } from '../services/api'
 import type { Article, ArticleCategory, EventItem } from '../types/giapha'
 import { useAuthStore } from '../store/useAuthStore'
@@ -77,7 +77,15 @@ function getCategoryAnchorId(category: ArticleCategory) {
   return `category-${category.slug || category.id}`
 }
 
+function splitBodyIntoParagraphs(body: string): string[] {
+  return body
+    .split(/\n{2,}/)
+    .map(paragraph => paragraph.trim())
+    .filter(Boolean)
+}
+
 export default function LandingPage() {
+  const { slug } = useParams<{ slug?: string }>()
   const [categories, setCategories] = useState<ArticleCategory[]>([])
   const [articles, setArticles] = useState<Article[]>([])
   const [events, setEvents] = useState<EventItem[]>([])
@@ -146,6 +154,16 @@ export default function LandingPage() {
 
   const featuredArticle = sortedArticles[0] ?? null
   const nearestEvent = useMemo(() => pickNearestUpcomingEvent(events), [events])
+
+  const activeArticle = useMemo(() => {
+    if (!slug) return null
+    return sortedArticles.find(article => article.slug === slug) ?? null
+  }, [slug, sortedArticles])
+
+  const activeCategory = useMemo(() => {
+    if (!activeArticle) return null
+    return sortedCategories.find(category => category.id === activeArticle.categoryId) ?? null
+  }, [activeArticle, sortedCategories])
 
   if (loading) {
     return (
@@ -235,32 +253,78 @@ export default function LandingPage() {
           <aside className="lp-sidebar" aria-label="Điều hướng chuyên mục">
             <p className="lp-side-label">Chuyên mục</p>
             <nav className="lp-categories">
-              {sortedCategories.map((category, index) => (
-                <a
-                  key={category.id}
-                  href={`#${getCategoryAnchorId(category)}`}
-                  className={`lp-category${index === 0 ? ' lp-active' : ''}`}
-                >
-                  {category.name}
-                  <span>{articleCounts[category.id] ?? 0}</span>
-                </a>
-              ))}
+              {sortedCategories.map((category, index) => {
+                const isActive = activeArticle ? category.id === activeCategory?.id : index === 0
+                return (
+                  <a
+                    key={category.id}
+                    href={`/#${getCategoryAnchorId(category)}`}
+                    className={`lp-category${isActive ? ' lp-active' : ''}`}
+                  >
+                    {category.name}
+                    <span>{articleCounts[category.id] ?? 0}</span>
+                  </a>
+                )
+              })}
             </nav>
           </aside>
 
           <section aria-label="Dòng bài viết" className="lp-feed">
-            <div className="lp-feed-head">
-              <div>
-                <span className="lp-edition">Trang đầu</span>
-                <h2>Bài viết mới</h2>
-              </div>
-              <span>{sortedArticles.length} tư liệu đã được lưu giữ</span>
-            </div>
+            {slug ? (
+              activeArticle ? (
+                <>
+                  <div className="lp-feed-head">
+                    <div>
+                      <Link to="/" className="lp-edition lp-back-link">
+                        ← Quay lại
+                      </Link>
+                      <h2>{activeArticle.title}</h2>
+                    </div>
+                    <span>
+                      {activeCategory?.name ?? 'Bài viết'} · {formatArticleDate(activeArticle.publishedAt)}
+                    </span>
+                  </div>
 
-            {sortedArticles.length === 0 ? (
-              <div className="lp-empty">Chưa có bài viết nào.</div>
+                  <article className="lp-article">
+                    {activeArticle.coverImageKey && (
+                      <div className="lp-article-cover">
+                        <img
+                          src={`/api/avatars/${activeArticle.coverImageKey}`}
+                          alt=""
+                          className="lp-article-cover-img"
+                        />
+                      </div>
+                    )}
+                    <p className="lp-article-summary">{activeArticle.summary}</p>
+                    <div className="lp-article-body">
+                      {splitBodyIntoParagraphs(activeArticle.body).map((paragraph, index) => (
+                        <p key={index}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </article>
+                </>
+              ) : (
+                <div className="lp-empty lp-not-found">
+                  <p>Không tìm thấy bài viết này.</p>
+                  <Link to="/" className="lp-back-link">
+                    ← Quay lại trang chủ
+                  </Link>
+                </div>
+              )
             ) : (
               <>
+                <div className="lp-feed-head">
+                  <div>
+                    <span className="lp-edition">Trang đầu</span>
+                    <h2>Bài viết mới</h2>
+                  </div>
+                  <span>{sortedArticles.length} tư liệu đã được lưu giữ</span>
+                </div>
+
+                {sortedArticles.length === 0 ? (
+                  <div className="lp-empty">Chưa có bài viết nào.</div>
+                ) : (
+                  <>
                 {featuredArticle && (() => {
                   const category = sortedCategories.find(c => c.id === featuredArticle.categoryId)
                   return (
@@ -335,21 +399,23 @@ export default function LandingPage() {
                 <div className="lp-entry-footer">
                   <p>Các bài viết và chuyên mục mới có thể được bổ sung từ trang quản trị.</p>
                 </div>
-              </>
-            )}
+                  </>
+                )}
 
-            {nearestEvent && (
-              <aside className="lp-event-note" aria-label="Sự kiện gần nhất" data-testid="nearest-event">
-                <div className="lp-event-date">
-                  {nearestEvent.month ? <span>{VIETNAMESE_MONTH_LABEL(nearestEvent.month)}</span> : null}
-                  <strong>{nearestEvent.day ?? formatEventDate(nearestEvent)}</strong>
-                </div>
-                <div>
-                  <h3>{nearestEvent.title}</h3>
-                  <p>{nearestEvent.description || nearestEvent.dateText || 'Thông tin sự kiện đang được cập nhật.'}</p>
-                </div>
-                <Link to="/gia-pha">Xem lịch sự kiện →</Link>
-              </aside>
+                {nearestEvent && (
+                  <aside className="lp-event-note" aria-label="Sự kiện gần nhất" data-testid="nearest-event">
+                    <div className="lp-event-date">
+                      {nearestEvent.month ? <span>{VIETNAMESE_MONTH_LABEL(nearestEvent.month)}</span> : null}
+                      <strong>{nearestEvent.day ?? formatEventDate(nearestEvent)}</strong>
+                    </div>
+                    <div>
+                      <h3>{nearestEvent.title}</h3>
+                      <p>{nearestEvent.description || nearestEvent.dateText || 'Thông tin sự kiện đang được cập nhật.'}</p>
+                    </div>
+                    <Link to="/gia-pha">Xem lịch sự kiện →</Link>
+                  </aside>
+                )}
+              </>
             )}
           </section>
         </div>
