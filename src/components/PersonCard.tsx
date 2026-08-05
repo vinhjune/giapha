@@ -33,7 +33,7 @@ export default function PersonCard({ person, displayName, isSelected, isHighligh
         relative w-full h-full rounded-xl border p-2 cursor-pointer text-left
         ${isSpouse ? 'bg-card-spouse' : 'bg-card'} shadow-sm transition-all hover:shadow-md hover:-translate-y-px
         ${isSelected ? 'outline outline-2 outline-accent outline-offset-1 bg-accent-soft border-accent-soft' : 'border-card-border'}
-        ${isHighlighted && !isSelected ? 'ring-2 ring-blue-400' : ''}
+        ${isHighlighted && !isSelected ? 'ring-2 ring-highlight' : ''}
       `}
     >
       {isMarriedIn && (
@@ -72,7 +72,7 @@ export default function PersonCard({ person, displayName, isSelected, isHighligh
             person.namSinh?.nam ? String(person.namSinh.nam) : null,
           ].filter(Boolean).join('/')}
           {person.namSinh?.amLich && <span className="ml-0.5 text-amber-600">ÂL</span>}
-          {person.namMat && <span className="ml-1 text-slate-400">†</span>}
+          {person.namMat && <span className="ml-1 text-muted">†</span>}
         </div>
       )}
     </div>

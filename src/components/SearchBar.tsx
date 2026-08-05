@@ -4,7 +4,11 @@ import { useGiaphaStore } from '../store/useGiaphaStore'
 import SearchResults from './SearchResults'
 import type { Person } from '../types/giapha'
 
-export default function SearchBar() {
+interface Props {
+  className?: string
+}
+
+export default function SearchBar({ className }: Props) {
   const data = useGiaphaStore(s => s.data)
   const focusPerson = useGiaphaStore(s => s.focusPerson)
   const [query, setQuery] = useState('')
@@ -43,7 +47,7 @@ export default function SearchBar() {
         value={query}
         onChange={handleChange}
         placeholder="Tìm kiếm theo tên..."
-        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+        className={className ? className : 'w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400'}
       />
       {open && <SearchResults results={results} onSelect={id => { focusPerson(id); setQuery(''); setOpen(false) }} />}
     </div>

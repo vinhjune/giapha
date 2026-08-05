@@ -18,7 +18,7 @@ export default function BottomTabBar({ onAddClick }: Props) {
         onClick={() => setViewMode('tree')}
         aria-current={viewMode === 'tree' ? 'page' : undefined}
         className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs ${
-          viewMode === 'tree' ? 'text-blue-600 font-semibold' : 'text-muted'
+          viewMode === 'tree' ? 'text-accent font-semibold' : 'text-muted'
         }`}
       >
         <span aria-hidden="true">🌳</span>
@@ -29,7 +29,7 @@ export default function BottomTabBar({ onAddClick }: Props) {
         onClick={() => setViewMode('list')}
         aria-current={viewMode === 'list' ? 'page' : undefined}
         className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs ${
-          viewMode === 'list' ? 'text-blue-600 font-semibold' : 'text-muted'
+          viewMode === 'list' ? 'text-accent font-semibold' : 'text-muted'
         }`}
       >
         <span aria-hidden="true">📋</span>
