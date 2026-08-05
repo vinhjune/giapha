@@ -1,0 +1,636 @@
+/* Landing page styling — ported 1:1 from mockup-3-split-hub.html ("Nhật ký phân mục"). */
+.landing-page {
+  --cream: #f5efdf;
+  --paper: #fbf7ec;
+  --ink: #2e281f;
+  --muted: #756c5e;
+  --brown: #4a2c24;
+  --brick: #8e342b;
+  --amber: #c18b2c;
+  --sage: #68735b;
+  --line: rgba(68, 49, 36, 0.18);
+  --header: 78px;
+
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(74, 44, 36, 0.025) 1px, transparent 1px) 0 0 / 28px 28px,
+    var(--paper);
+  font-family: 'Be Vietnam Pro', sans-serif;
+  min-height: 100vh;
+}
+
+.landing-page a {
+  color: inherit;
+}
+
+.landing-page .lp-container {
+  width: min(1240px, calc(100% - 40px));
+  margin-inline: auto;
+}
+
+.landing-page .lp-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: var(--header);
+  display: flex;
+  align-items: center;
+  color: #fff8e7;
+  background: rgba(74, 44, 36, 0.96);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.landing-page .lp-header-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 30px;
+}
+.landing-page .lp-brand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-right: auto;
+  text-decoration: none;
+}
+.landing-page .lp-seal {
+  width: 45px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--amber);
+  color: #f5d797;
+  font: 600 1.2rem 'IBM Plex Serif', serif;
+  transform: rotate(-3deg);
+  flex-shrink: 0;
+}
+.landing-page .lp-brand strong {
+  display: block;
+  font: 600 1.05rem 'IBM Plex Serif', serif;
+}
+.landing-page .lp-brand small {
+  display: block;
+  color: #d5c9b6;
+  font-size: 0.61rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.landing-page .lp-header-note {
+  color: #d5c9b6;
+  font: italic 500 0.82rem 'IBM Plex Serif', serif;
+}
+.landing-page .lp-login-link {
+  color: #f5d797;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: 500 0.78rem 'Be Vietnam Pro', sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  padding: 0;
+}
+.landing-page .lp-tree-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 0 20px;
+  color: var(--brown);
+  background: #e2b95e;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  transition: 0.2s;
+  border: none;
+  cursor: pointer;
+}
+.landing-page .lp-tree-button:hover {
+  transform: translateY(-2px);
+  background: #f0cb78;
+}
+
+.landing-page .lp-mobile-categories {
+  display: none;
+}
+
+.landing-page .lp-masthead {
+  padding: 62px 0 56px;
+  border-bottom: 1px solid var(--line);
+  background: var(--cream);
+}
+.landing-page .lp-masthead-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 72px;
+  align-items: end;
+}
+.landing-page .lp-edition {
+  color: var(--brick);
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.landing-page .lp-masthead h1 {
+  max-width: 840px;
+  margin: 12px 0 0;
+  font: 600 clamp(3.3rem, 7vw, 6.8rem) / 0.96 'IBM Plex Serif', serif;
+  letter-spacing: -0.045em;
+}
+.landing-page .lp-masthead p {
+  margin: 0;
+  color: var(--muted);
+  font: italic 500 1.06rem / 1.65 'IBM Plex Serif', serif;
+}
+
+.landing-page .lp-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 72px;
+  padding: 68px 0 120px;
+  align-items: start;
+}
+.landing-page .lp-sidebar {
+  position: sticky;
+  top: calc(var(--header) + 32px);
+}
+.landing-page .lp-side-label {
+  margin: 0 0 15px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.landing-page .lp-categories {
+  display: grid;
+  margin-bottom: 48px;
+  border-top: 1px solid var(--line);
+}
+.landing-page .lp-category {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 14px 2px;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  font: 500 0.96rem 'IBM Plex Serif', serif;
+  color: var(--ink);
+}
+.landing-page .lp-category span {
+  display: grid;
+  place-items: center;
+  min-width: 25px;
+  height: 20px;
+  border-radius: 99px;
+  color: var(--muted);
+  background: #ebe2d0;
+  font: 600 0.59rem 'Be Vietnam Pro', sans-serif;
+}
+.landing-page .lp-category:hover,
+.landing-page .lp-category.lp-active {
+  padding-left: 10px;
+  color: var(--brick);
+}
+.landing-page .lp-category.lp-active {
+  border-left: 3px solid var(--brick);
+  font-weight: 600;
+}
+
+.landing-page .lp-feed-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 28px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--ink);
+}
+.landing-page .lp-feed-head h2 {
+  margin: 5px 0 0;
+  font: 600 clamp(2rem, 4vw, 3.25rem) 'IBM Plex Serif', serif;
+}
+.landing-page .lp-feed-head > span {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.landing-page .lp-featured {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  min-height: 410px;
+  margin: 30px 0 18px;
+  overflow: hidden;
+  color: #fff8e7;
+  background: var(--brick);
+  border-radius: 5px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.landing-page .lp-featured:hover {
+  opacity: 0.95;
+}
+.landing-page .lp-featured-visual {
+  min-height: 360px;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, transparent 62%, rgba(142, 52, 43, 0.45)),
+    radial-gradient(circle at 25% 22%, #e8c475 0 7%, transparent 8%),
+    linear-gradient(140deg, #c49463 0 31%, #718064 32% 62%, #3f493d 63%);
+}
+.landing-page .lp-featured-visual-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+.landing-page .lp-featured-visual::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 0;
+  height: 42%;
+  opacity: 0.72;
+  background: #633027;
+  clip-path: polygon(0 40%, 50% 0, 100% 40%, 91% 40%, 91% 100%, 9% 100%, 9% 40%);
+  z-index: 1;
+}
+.landing-page .lp-featured-copy {
+  padding: clamp(30px, 4vw, 52px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.landing-page .lp-meta {
+  color: var(--amber);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+.landing-page .lp-featured h3 {
+  margin: 13px 0 16px;
+  font: 600 clamp(2rem, 3.5vw, 3.25rem) / 1.06 'IBM Plex Serif', serif;
+}
+.landing-page .lp-featured p {
+  color: #ead9cd;
+  font-size: 0.82rem;
+  line-height: 1.75;
+  margin: 0;
+}
+.landing-page .lp-read-link {
+  display: inline-flex;
+  width: fit-content;
+  gap: 8px;
+  margin-top: 15px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  text-underline-offset: 5px;
+}
+
+.landing-page .lp-entry {
+  display: grid;
+  grid-template-columns: 164px 1fr 120px;
+  gap: 30px;
+  align-items: start;
+  padding: 32px 0;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  color: inherit;
+}
+.landing-page .lp-entry-date {
+  color: var(--muted);
+  font-size: 0.65rem;
+  line-height: 1.55;
+}
+.landing-page .lp-entry-date strong {
+  display: block;
+  color: var(--brick);
+  font: 600 1rem 'IBM Plex Serif', serif;
+}
+.landing-page .lp-entry-body h3 {
+  margin: 7px 0 10px;
+  font: 600 clamp(1.45rem, 2.5vw, 2rem) / 1.18 'IBM Plex Serif', serif;
+}
+.landing-page .lp-entry-body p {
+  max-width: 630px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.72;
+}
+.landing-page .lp-entry-thumb {
+  width: 120px;
+  aspect-ratio: 1;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+.landing-page .lp-entry-thumb-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.landing-page .lp-thumb-0 {
+  background: repeating-linear-gradient(45deg, #e2cda4 0 14px, #d6bd8b 14px 28px);
+}
+.landing-page .lp-thumb-1 {
+  background:
+    linear-gradient(140deg, transparent 45%, rgba(31, 46, 34, 0.48) 46%),
+    linear-gradient(135deg, #6c795e, #d3ae5c);
+}
+.landing-page .lp-thumb-2 {
+  background: radial-gradient(circle at 50% 38%, #f0c668 0 12%, transparent 13%), linear-gradient(140deg, #81362e, #4c2924);
+}
+.landing-page .lp-thumb-3 {
+  background: linear-gradient(145deg, #d7c6a4 0 45%, #8c654d 46% 70%, #4f6255 71%);
+}
+
+.landing-page .lp-entry-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  margin-top: 28px;
+}
+.landing-page .lp-entry-footer p {
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin: 0;
+}
+.landing-page .lp-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.landing-page .lp-more:hover {
+  color: var(--brick);
+  border-color: var(--brick);
+}
+
+.landing-page .lp-event-note {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  gap: 24px;
+  align-items: center;
+  margin-top: 48px;
+  padding: 28px;
+  color: #fff8e7;
+  background: var(--sage);
+  border-radius: 5px;
+}
+.landing-page .lp-event-date {
+  padding-right: 22px;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: center;
+}
+.landing-page .lp-event-date span {
+  display: block;
+  color: #ead19a;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.landing-page .lp-event-date strong {
+  font: 600 2.7rem 'IBM Plex Serif', serif;
+}
+.landing-page .lp-event-note h3 {
+  margin: 0 0 5px;
+  font: 600 1.35rem 'IBM Plex Serif', serif;
+}
+.landing-page .lp-event-note p {
+  margin: 0;
+  color: #dde2d8;
+  font-size: 0.72rem;
+}
+.landing-page .lp-event-note a {
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-underline-offset: 5px;
+}
+
+.landing-page .lp-closing {
+  padding: 75px 0;
+  color: #fff8e7;
+  background: var(--brown);
+}
+.landing-page .lp-closing-inner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 40px;
+  align-items: center;
+}
+.landing-page .lp-closing h2 {
+  max-width: 760px;
+  margin: 0 0 8px;
+  font: 600 clamp(2.2rem, 4.5vw, 4rem) / 1.08 'IBM Plex Serif', serif;
+}
+.landing-page .lp-closing p {
+  margin: 0;
+  color: #d4c4b7;
+  font-size: 0.8rem;
+}
+
+.landing-page .lp-footer {
+  padding: 26px 0 80px;
+  color: var(--muted);
+  background: var(--cream);
+  font-size: 0.68rem;
+}
+.landing-page .lp-footer-inner {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.landing-page .lp-empty {
+  padding: 32px 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.landing-page .lp-back-link {
+  color: var(--brick);
+  text-decoration: none;
+  font-weight: 600;
+}
+.landing-page .lp-back-link:hover {
+  text-decoration: underline;
+}
+
+.landing-page .lp-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 48px 0;
+}
+
+.landing-page .lp-article {
+  margin: 30px 0 40px;
+}
+.landing-page .lp-article-cover {
+  width: 100%;
+  max-height: 420px;
+  margin-bottom: 28px;
+  overflow: hidden;
+  border-radius: 5px;
+}
+.landing-page .lp-article-cover-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.landing-page .lp-article-summary {
+  margin: 0 0 24px;
+  color: var(--brick);
+  font: italic 500 1.05rem/1.7 'IBM Plex Serif', serif;
+}
+.landing-page .lp-article-body p {
+  margin: 0 0 20px;
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.9;
+}
+
+@media (max-width: 960px) {
+  .landing-page {
+    --header: 70px;
+  }
+  .landing-page .lp-header-note {
+    display: none;
+  }
+  .landing-page .lp-masthead-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .landing-page .lp-layout {
+    grid-template-columns: 230px minmax(0, 1fr);
+    gap: 40px;
+  }
+  .landing-page .lp-entry {
+    grid-template-columns: 110px 1fr;
+  }
+  .landing-page .lp-entry-thumb {
+    display: none;
+  }
+  .landing-page .lp-featured {
+    grid-template-columns: 1fr;
+  }
+  .landing-page .lp-featured-copy {
+    min-height: 330px;
+  }
+}
+
+@media (max-width: 740px) {
+  .landing-page .lp-container {
+    width: min(100% - 28px, 1240px);
+  }
+  .landing-page .lp-brand small {
+    display: none;
+  }
+  .landing-page .lp-tree-button {
+    min-height: 40px;
+    padding: 0 13px;
+    font-size: 0.7rem;
+  }
+  .landing-page .lp-masthead {
+    padding: 42px 0 35px;
+  }
+  .landing-page .lp-masthead h1 {
+    font-size: clamp(3rem, 15vw, 4.8rem);
+  }
+  .landing-page .lp-mobile-categories {
+    position: sticky;
+    top: var(--header);
+    z-index: 30;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 11px 14px;
+    background: rgba(245, 239, 223, 0.95);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(12px);
+    scrollbar-width: none;
+  }
+  .landing-page .lp-mobile-categories::-webkit-scrollbar {
+    display: none;
+  }
+  .landing-page .lp-mobile-categories a {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    background: var(--paper);
+    text-decoration: none;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .landing-page .lp-mobile-categories a:first-child {
+    color: #fff8e7;
+    background: var(--brick);
+    border-color: var(--brick);
+  }
+  .landing-page .lp-layout {
+    display: block;
+    padding-top: 38px;
+  }
+  .landing-page .lp-sidebar {
+    display: none;
+  }
+  .landing-page .lp-feed-head {
+    align-items: start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .landing-page .lp-featured-visual {
+    min-height: 260px;
+  }
+  .landing-page .lp-featured-copy {
+    min-height: auto;
+  }
+  .landing-page .lp-entry {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 28px 0;
+  }
+  .landing-page .lp-entry-date strong {
+    display: inline;
+    margin-right: 6px;
+  }
+  .landing-page .lp-event-note {
+    grid-template-columns: 65px 1fr;
+    padding: 22px;
+  }
+  .landing-page .lp-event-note > a {
+    grid-column: 2;
+  }
+  .landing-page .lp-event-date {
+    padding-right: 14px;
+  }
+  .landing-page .lp-closing-inner {
+    grid-template-columns: 1fr;
+  }
+  .landing-page .lp-footer-inner {
+    flex-direction: column;
+  }
+}

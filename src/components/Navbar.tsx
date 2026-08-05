@@ -86,6 +86,14 @@ export default function Navbar() {
               </select>
             </div>
 
+            <Link
+              to="/"
+              onClick={() => setMenuOpen(false)}
+              className="block w-full px-3 py-1.5 text-sm rounded-md border border-card-border hover:bg-slate-50 text-left"
+            >
+              Trang chủ
+            </Link>
+
             {user && (
               <Link
                 to="/control-panel"

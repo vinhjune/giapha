@@ -11,9 +11,15 @@ import type { DB } from '../lib/reshape'
 const authRoutes = new Hono<HonoEnv>()
 
 function setSessionCookie(c: Context<HonoEnv>, token: string) {
+  // Only mark the cookie Secure when the request actually arrived over HTTPS. Forcing
+  // Secure unconditionally breaks local dev over plain http (wrangler dev / vite proxy)
+  // in some browser configurations that don't treat http://localhost as a trustworthy
+  // origin, silently dropping the cookie and making every authenticated request look
+  // logged-out even right after a successful login.
+  const isHttps = new URL(c.req.url).protocol === 'https:'
   setCookie(c, SESSION_COOKIE_NAME, token, {
     httpOnly: true,
-    secure: true,
+    secure: isHttps,
     sameSite: 'Lax',
     path: '/',
     maxAge: SESSION_DURATION_MS / 1000,

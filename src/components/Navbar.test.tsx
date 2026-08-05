@@ -36,6 +36,12 @@ describe('Navbar (anonymous)', () => {
     expect(screen.queryByText('Quản lý')).not.toBeInTheDocument()
   })
 
+  it('shows a "Trang chủ" link to the landing page', () => {
+    renderNavbar()
+    fireEvent.click(screen.getByLabelText('Mở menu'))
+    expect(screen.getByText('Trang chủ').closest('a')).toHaveAttribute('href', '/')
+  })
+
   it('opens the LoginModal when "Đăng nhập" is clicked', () => {
     renderNavbar()
     fireEvent.click(screen.getByLabelText('Mở menu'))

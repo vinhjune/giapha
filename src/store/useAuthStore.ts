@@ -6,6 +6,8 @@ interface AuthState {
   user: AuthUser | null
   setupNeeded: boolean
   loading: boolean
+  /** True once the initial session check (checkAuth) has resolved at least once. Guards against premature "not logged in" redirects while the check is still in flight (e.g. on a fresh page load of /control-panel). */
+  authChecked: boolean
   error: string | null
 
   checkAuth: () => Promise<void>
@@ -19,15 +21,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   setupNeeded: false,
   loading: false,
+  authChecked: false,
   error: null,
 
   checkAuth: async () => {
     set({ loading: true })
     try {
       const { user, setupNeeded } = await api.getAuthMe()
-      set({ user, setupNeeded, loading: false })
+      set({ user, setupNeeded, loading: false, authChecked: true })
     } catch {
-      set({ user: null, loading: false })
+      set({ user: null, loading: false, authChecked: true })
     }
   },
 

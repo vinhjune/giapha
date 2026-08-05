@@ -6,12 +6,23 @@ import MemberManagementView from '../components/MemberManagementView'
 import PendingRequestsPanel from '../components/PendingRequestsPanel'
 import CsvPanel from '../components/CsvPanel'
 import UserManagementPanel from '../components/UserManagementPanel'
+import EventManagementView from '../components/EventManagementView'
+import ArticleManagementView from '../components/ArticleManagementView'
 
-type Tab = 'members' | 'requests' | 'csv' | 'users'
+type Tab = 'members' | 'requests' | 'csv' | 'articles' | 'events' | 'users'
 
 export default function ControlPanelPage() {
-  const { user } = useAuthStore()
+  const { user, authChecked } = useAuthStore()
   const [tab, setTab] = useState<Tab>('members')
+
+  // Wait for the initial session check (fired once at app startup) to resolve before
+  // deciding to redirect — otherwise a fresh load/refresh of this route would bounce a
+  // logged-in user back to "/" before their session cookie has been verified.
+  if (!authChecked) {
+    return (
+      <div className="h-dvh flex items-center justify-center text-muted animate-pulse">Đang kiểm tra đăng nhập...</div>
+    )
+  }
 
   if (!user) return <Navigate to="/" replace />
 
@@ -19,7 +30,14 @@ export default function ControlPanelPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'members', label: 'Thành viên' },
     { key: 'requests', label: isAdmin ? 'Yêu cầu chờ duyệt' : 'Yêu cầu của tôi' },
-    ...(isAdmin ? [{ key: 'csv' as Tab, label: 'CSV' }, { key: 'users' as Tab, label: 'Quản lý User' }] : []),
+    { key: 'articles', label: 'Bài viết' },
+    { key: 'events', label: 'Sự kiện' },
+    ...(isAdmin
+      ? [
+          { key: 'csv' as Tab, label: 'CSV' },
+          { key: 'users' as Tab, label: 'Quản lý User' },
+        ]
+      : []),
   ]
 
   return (
@@ -47,6 +65,8 @@ export default function ControlPanelPage() {
           <div className="flex-1 min-h-0 overflow-auto">
             {tab === 'requests' && <PendingRequestsPanel />}
             {tab === 'csv' && isAdmin && <CsvPanel />}
+            {tab === 'articles' && <ArticleManagementView />}
+            {tab === 'events' && <EventManagementView />}
             {tab === 'users' && isAdmin && <UserManagementPanel />}
           </div>
         )}
