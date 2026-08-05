@@ -28,6 +28,16 @@ articleRoutes.get('/articles/all', requireRole('admin', 'editor'), async (c) => 
   return c.json(rows)
 })
 
+articleRoutes.get('/articles/slug/:slug', async (c) => {
+  const db = drizzle(c.env.giapha_db) as DB
+  const slug = c.req.param('slug')
+  const row = await db.select().from(articles)
+    .where(and(eq(articles.slug, slug), eq(articles.status, 'published')))
+    .get()
+  if (!row) return c.json({ error: 'Không tìm thấy bài viết' }, 404)
+  return c.json(row)
+})
+
 articleRoutes.post('/articles', requireRole('admin', 'editor'), async (c) => {
   const db = drizzle(c.env.giapha_db) as DB
   const user = c.get('user')!

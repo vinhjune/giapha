@@ -97,6 +97,42 @@ describe('GET /api/articles', () => {
   })
 })
 
+describe('GET /api/articles/slug/:slug', () => {
+  it('returns a published article by slug', async () => {
+    const app = buildApp()
+    const { token } = await makeUser('editor')
+    const published = await createArticle(app, token, {
+      slug: `chi-tiet-${crypto.randomUUID()}`,
+      status: 'published',
+      body: 'Nội dung đầy đủ của bài viết.',
+    })
+
+    const res = await app.request(`/api/articles/slug/${published.slug}`, undefined, env)
+
+    expect(res.status).toBe(200)
+    const body = await res.json<{ id: string; slug: string; body: string }>()
+    expect(body).toEqual(expect.objectContaining({ id: published.id, slug: published.slug, body: 'Nội dung đầy đủ của bài viết.' }))
+  })
+
+  it('returns 404 for a draft article (not publicly visible)', async () => {
+    const app = buildApp()
+    const { token } = await makeUser('editor')
+    const draft = await createArticle(app, token, { slug: `draft-detail-${crypto.randomUUID()}`, status: 'draft' })
+
+    const res = await app.request(`/api/articles/slug/${draft.slug}`, undefined, env)
+
+    expect(res.status).toBe(404)
+  })
+
+  it('returns 404 for an unknown slug', async () => {
+    const app = buildApp()
+
+    const res = await app.request('/api/articles/slug/khong-ton-tai', undefined, env)
+
+    expect(res.status).toBe(404)
+  })
+})
+
 describe('GET /api/articles/all', () => {
   it('returns 401 without auth and returns both draft and published for an editor', async () => {
     const app = buildApp()

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import HomePage from './pages/HomePage'
 import LandingPage from './pages/LandingPage'
+import ArticleDetailPage from './pages/ArticleDetailPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import ControlPanelPage from './pages/ControlPanelPage'
 import { useGiaphaStore } from './store/useGiaphaStore'
@@ -48,6 +49,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/bai-viet/:slug" element={<ArticleDetailPage />} />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/control-panel" element={<ControlPanelPage />} />
       <Route path="/gia-pha/*" element={<AppRoot />} />

@@ -305,7 +305,10 @@ export default function LandingPage() {
                     </div>
 
                     {hasFeaturedArticle && featuredArticle && (
-                      <article className="grid overflow-hidden rounded-3xl bg-ink text-white shadow-sm lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+                      <Link
+                        to={`/bai-viet/${featuredArticle.slug}`}
+                        className="grid overflow-hidden rounded-3xl bg-ink text-white shadow-sm transition hover:opacity-95 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
+                      >
                         {featuredArticle.coverImageKey ? (
                           <img
                             src={`/api/avatars/${featuredArticle.coverImageKey}`}
@@ -324,13 +327,17 @@ export default function LandingPage() {
                           </h4>
                           <p className="mt-4 text-sm leading-7 text-slate-200">{featuredArticle.summary}</p>
                         </div>
-                      </article>
+                      </Link>
                     )}
 
                     {remainingArticles.length > 0 ? (
                       <div className="mt-6 divide-y divide-card-border rounded-3xl border border-card-border bg-card">
                         {remainingArticles.map(article => (
-                          <article key={article.id} className="flex gap-4 px-5 py-5 sm:px-6">
+                          <Link
+                            to={`/bai-viet/${article.slug}`}
+                            key={article.id}
+                            className="flex gap-4 px-5 py-5 transition hover:bg-slate-50 sm:px-6"
+                          >
                             {article.coverImageKey && (
                               <img
                                 src={`/api/avatars/${article.coverImageKey}`}
@@ -345,7 +352,7 @@ export default function LandingPage() {
                               <h4 className="mt-2 text-2xl font-semibold text-ink">{article.title}</h4>
                               <p className="mt-3 text-sm leading-7 text-muted">{article.summary}</p>
                             </div>
-                          </article>
+                          </Link>
                         ))}
                       </div>
                     ) : !hasFeaturedArticle ? (

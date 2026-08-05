@@ -142,6 +142,16 @@ describe('LandingPage', () => {
     expect(img).not.toBeNull()
   })
 
+  it('links each article title to its detail page by slug', async () => {
+    await renderPage()
+
+    await waitFor(() => expect(screen.getByText('Từ mái nhà chung')).toBeInTheDocument())
+
+    expect(screen.getByText('Từ mái nhà chung').closest('a')).toHaveAttribute('href', '/bai-viet/tu-mai-nha-chung')
+    expect(screen.getByText('Gia phả giấy còn lưu lại').closest('a')).toHaveAttribute('href', '/bai-viet/gia-pha-giay')
+    expect(screen.getByText('Ngày giỗ tổ năm nay').closest('a')).toHaveAttribute('href', '/bai-viet/ngay-gio-to')
+  })
+
   it('renders the xem gia phả link to /gia-pha', async () => {
     await renderPage()
 

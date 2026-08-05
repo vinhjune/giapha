@@ -158,6 +158,10 @@ export function listArticles(): Promise<Article[]> {
   return request<Article[]>('/api/articles')
 }
 
+export function getArticleBySlug(slug: string): Promise<Article> {
+  return request<Article>(`/api/articles/slug/${encodeURIComponent(slug)}`)
+}
+
 export function listAllArticles(): Promise<Article[]> {
   return request<Article[]>('/api/articles/all')
 }
