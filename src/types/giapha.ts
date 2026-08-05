@@ -82,3 +82,43 @@ export interface MutationResult {
   pending?: boolean
   requestId?: string
 }
+
+export interface ArticleCategory {
+  id: string
+  slug: string
+  name: string
+  displayOrder: number
+  articleCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Article {
+  id: string
+  slug: string
+  categoryId: string
+  title: string
+  summary: string
+  body: string
+  coverImageKey: string | null
+  status: 'draft' | 'published'
+  displayOrder: number
+  publishedAt: string | null
+  authorId: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface EventItem {
+  id: string
+  title: string
+  description: string | null
+  dateText: string | null
+  year: number | null
+  month: number | null
+  day: number | null
+  isLunar: boolean
+  isRecurring: boolean
+  createdAt: string
+  updatedAt: string
+}

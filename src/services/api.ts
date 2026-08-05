@@ -1,4 +1,4 @@
-import type { GiaphaData, Person, AuthUser, EditorRequest, ManagedUser, MutationResult } from '../types/giapha'
+import type { GiaphaData, Person, AuthUser, EditorRequest, ManagedUser, MutationResult, ArticleCategory, Article, EventItem } from '../types/giapha'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, init)
@@ -7,6 +7,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(body?.error || `Request failed: ${res.status}`)
   }
   return res.json()
+}
+
+async function requestVoid(path: string, init?: RequestInit): Promise<void> {
+  const res = await fetch(path, init)
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(body?.error || `Request failed: ${res.status}`)
+  }
 }
 
 export function getTree(): Promise<GiaphaData> {
@@ -118,4 +126,122 @@ export function updateUser(id: string, input: Partial<{ username: string; role: 
 
 export function deleteUser(id: string): Promise<{ ok: true }> {
   return request<{ ok: true }>(`/api/users/${id}`, { method: 'DELETE' })
+}
+
+// ─── Articles & categories (landing page CMS) ───────────────────────────────
+
+export function listArticleCategories(): Promise<ArticleCategory[]> {
+  return request<ArticleCategory[]>('/api/article-categories')
+}
+
+export function createArticleCategory(input: { slug: string; name: string; displayOrder?: number }): Promise<ArticleCategory> {
+  return request<ArticleCategory>('/api/article-categories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function updateArticleCategory(id: string, input: Partial<{ slug: string; name: string; displayOrder: number }>): Promise<ArticleCategory> {
+  return request<ArticleCategory>(`/api/article-categories/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteArticleCategory(id: string): Promise<void> {
+  return requestVoid(`/api/article-categories/${id}`, { method: 'DELETE' })
+}
+
+export function listArticles(): Promise<Article[]> {
+  return request<Article[]>('/api/articles')
+}
+
+export function listAllArticles(): Promise<Article[]> {
+  return request<Article[]>('/api/articles/all')
+}
+
+export function createArticle(input: {
+  slug: string
+  categoryId: string
+  title: string
+  summary: string
+  body: string
+  status?: 'draft' | 'published'
+  displayOrder?: number
+}): Promise<Article> {
+  return request<Article>('/api/articles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function updateArticle(id: string, input: Partial<{
+  slug: string
+  categoryId: string
+  title: string
+  summary: string
+  body: string
+  status: 'draft' | 'published'
+  displayOrder: number
+}>): Promise<Article> {
+  return request<Article>(`/api/articles/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteArticle(id: string): Promise<void> {
+  return requestVoid(`/api/articles/${id}`, { method: 'DELETE' })
+}
+
+export function uploadArticleCover(id: string, file: File): Promise<Article> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request<Article>(`/api/articles/${id}/cover`, { method: 'POST', body: formData })
+}
+
+export function listEvents(): Promise<EventItem[]> {
+  return request<EventItem[]>('/api/events')
+}
+
+export function createEvent(input: {
+  title: string
+  description?: string
+  dateText?: string
+  year?: number
+  month?: number
+  day?: number
+  isLunar?: boolean
+  isRecurring?: boolean
+}): Promise<EventItem> {
+  return request<EventItem>('/api/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function updateEvent(id: string, input: Partial<{
+  title: string
+  description: string
+  dateText: string
+  year: number
+  month: number
+  day: number
+  isLunar: boolean
+  isRecurring: boolean
+}>): Promise<EventItem> {
+  return request<EventItem>(`/api/events/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteEvent(id: string): Promise<void> {
+  return requestVoid(`/api/events/${id}`, { method: 'DELETE' })
 }
