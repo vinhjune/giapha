@@ -62,27 +62,27 @@ function PersonRow({
       <div
         data-person-id={person.id}
         className={`flex items-center gap-2 py-1.5 px-2 cursor-pointer rounded transition-colors
-          ${isSelected ? 'bg-blue-100' : ''}
-          ${isHighlighted && !isSelected ? 'ring-2 ring-blue-400' : ''}
-          hover:bg-gray-50`}
+          ${isSelected ? 'bg-accent-soft' : ''}
+          ${isHighlighted && !isSelected ? 'ring-2 ring-highlight' : ''}
+          hover:bg-card-hover`}
         style={{ paddingLeft: `${depth * 20 + 8}px` }}
         onClick={() => onSelect(person.id)}
       >
-        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isClan ? 'bg-blue-500' : 'bg-gray-300'}`} />
+        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isClan ? 'bg-accent' : 'bg-card-border'}`} />
         {isSpouse && (
-          <span aria-label="Vợ/chồng" className="text-xs text-amber-500">💍</span>
+          <span aria-label="Vợ/chồng" className="text-xs text-highlight">💍</span>
         )}
         {person.pendingRequestId && user && (
-          <span aria-label="Đang chờ duyệt" title="Đang chờ duyệt" className="text-xs text-amber-600">⏳</span>
+          <span aria-label="Đang chờ duyệt" title="Đang chờ duyệt" className="text-xs text-highlight">⏳</span>
         )}
-        <span className={`text-sm ${isClan ? 'text-gray-900' : 'text-gray-400'}`}>
+        <span className={`text-sm ${isClan ? 'text-ink' : 'text-muted'}`}>
           {dinhDangTenNguoi(person, showGenerationOrder)}
         </span>
         {person.namSinh?.nam && (
-          <span className="text-xs text-gray-400">({person.namSinh.nam})</span>
+          <span className="text-xs text-muted">({person.namSinh.nam})</span>
         )}
         {person.namMat && (
-          <span className="text-xs text-gray-300 ml-auto">†</span>
+          <span className="text-xs text-muted ml-auto">†</span>
         )}
       </div>
       {!hideChildren && (
@@ -134,20 +134,20 @@ export default function ListView() {
     row?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [highlightedPersonId])
 
-  if (!data) return <div className="p-4 text-gray-400">Chưa có dữ liệu</div>
+  if (!data) return <div className="p-4 text-muted">Chưa có dữ liệu</div>
 
   const roots = Object.values(data.persons).filter(p => p.laThanhVienHo && (!p.boId || !data.persons[p.boId]))
   const sortedRoots = sapXepAnhChiEm(roots)
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-y-auto bg-white p-2 touch-pan-y">
+    <div ref={containerRef} className="flex-1 overflow-y-auto bg-canvas p-2 touch-pan-y">
       {sortedRoots.map(root => (
         <PersonRow key={root.id} person={root} depth={0}
           onSelect={selectPerson} selectedId={selectedPersonId} highlightId={highlightedPersonId}
           showGenerationOrder={hienThiThuTuDoi} />
       ))}
       {sortedRoots.length === 0 && (
-        <p className="text-center text-gray-400 py-8">Chưa có người nào. Hãy thêm người đầu tiên.</p>
+        <p className="text-center text-muted py-8">Chưa có người nào. Hãy thêm người đầu tiên.</p>
       )}
     </div>
   )

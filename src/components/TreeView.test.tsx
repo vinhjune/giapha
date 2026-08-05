@@ -190,8 +190,8 @@ describe('TreeView', () => {
     const svgLines = container.querySelectorAll('svg line')
 
     expect(svgLines.length).toBeGreaterThan(0)
-    expect(container.querySelector('svg line[stroke="#7C3AED"][stroke-width="3"]')).not.toBeNull()
-    expect(container.querySelector('svg line[stroke="#0F172A"][stroke-width="3"]')).not.toBeNull()
+    expect(container.querySelector('svg line[stroke="#8e342b"][stroke-width="3"]')).not.toBeNull()
+    expect(container.querySelector('svg line[stroke="#4a2c24"][stroke-width="3"]')).not.toBeNull()
     expect(container.querySelector('svg line[stroke="#CBD5E1"]')).toBeNull()
   })
 

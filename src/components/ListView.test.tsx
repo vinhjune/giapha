@@ -117,21 +117,21 @@ describe('ListView spouse rendering', () => {
 
     // 'Bà Thanh' (female, laThanhVienHo: false) — married-in wife, dimmed.
     const thanh = screen.getByText('Bà Thanh')
-    expect(thanh.className).toContain('text-gray-400')
+    expect(thanh.className).toContain('text-muted')
 
     // 'Khánh' (male, laThanhVienHo: false) — married-in husband, must dim the same way.
     const khanh = screen.getByText('Khánh')
-    expect(khanh.className).toContain('text-gray-400')
+    expect(khanh.className).toContain('text-muted')
 
     // 'Phúc' (male, laThanhVienHo: false, blood descendant through non-clan father) also dims.
     const phuc = screen.getByText('Phúc')
-    expect(phuc.className).toContain('text-gray-400')
+    expect(phuc.className).toContain('text-muted')
 
     // Actual clan members (regardless of gender) stay un-dimmed.
     const vinh = screen.getByText('Vinh')
-    expect(vinh.className).toContain('text-gray-900')
+    expect(vinh.className).toContain('text-ink')
     const nga = screen.getByText('Nga')
-    expect(nga.className).toContain('text-gray-900')
+    expect(nga.className).toContain('text-ink')
   })
 
   it('groups each spouse with only their own children, in marriage order', () => {

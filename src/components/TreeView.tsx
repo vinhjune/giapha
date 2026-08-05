@@ -21,8 +21,8 @@ const NAME_CHAR_WIDTH_ESTIMATE = 8
 const NAME_TEXT_STYLE = '600 12px sans-serif'
 const AVATAR_DIAMETER = 24  // reserved width for PersonCard's avatar circle
 const AVATAR_GAP = 8        // gap between avatar and name text
-const COUPLE_LINE_COLOR = '#7C3AED'
-const DESCENT_LINE_COLOR = '#0F172A'
+const COUPLE_LINE_COLOR = '#8e342b'
+const DESCENT_LINE_COLOR = '#4a2c24'
 const LINE_STROKE_WIDTH = 3
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -684,7 +684,7 @@ export default function TreeView() {
     pinchStateRef.current.pinching = false
   }, [])
 
-  if (!data) return <div className="flex-1 flex items-center justify-center text-gray-400">Chưa có dữ liệu</div>
+  if (!data) return <div className="flex-1 flex items-center justify-center text-muted">Chưa có dữ liệu</div>
 
   return (
     <div className="relative flex-1 overflow-hidden">
@@ -760,7 +760,7 @@ export default function TreeView() {
               aria-label={t.collapsed ? 'Mở rộng nhánh con' : 'Thu gọn nhánh con'}
               onClick={(e) => { e.stopPropagation(); toggleCollapse(t.personId) }}
               style={{ position: 'absolute', left: t.x - 12, top: t.y - 10, zIndex: 2 }}
-              className="h-5 min-w-5 px-1 rounded-full border border-card-border bg-card text-[10px] font-semibold text-muted leading-5 text-center shadow-sm hover:bg-slate-50"
+              className="h-5 min-w-5 px-1 rounded-full border border-card-border bg-card text-[10px] font-semibold text-muted leading-5 text-center shadow-sm hover:bg-card-hover"
             >
               {t.collapsed ? `+${t.hiddenCount}` : '−'}
             </button>
@@ -775,7 +775,7 @@ export default function TreeView() {
           onClick={zoomOut}
           disabled={zoom <= MIN_ZOOM}
           aria-label="Thu nhỏ cây"
-          className="h-11 w-11 sm:h-8 sm:w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
+          className="h-11 w-11 sm:h-8 sm:w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-card-hover disabled:opacity-50"
         >
           −
         </button>
@@ -783,7 +783,7 @@ export default function TreeView() {
           type="button"
           onClick={resetZoom}
           aria-label="Đặt lại mức thu phóng"
-          className="rounded border border-card-border text-muted px-2 py-1 text-xs font-medium hover:bg-slate-50"
+          className="rounded border border-card-border text-muted px-2 py-1 text-xs font-medium hover:bg-card-hover"
         >
           {Math.round(zoom * 100)}%
         </button>
@@ -792,7 +792,7 @@ export default function TreeView() {
           onClick={zoomIn}
           disabled={zoom >= MAX_ZOOM}
           aria-label="Phóng to cây"
-          className="h-11 w-11 sm:h-8 sm:w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-slate-50 disabled:opacity-50"
+          className="h-11 w-11 sm:h-8 sm:w-8 rounded border border-card-border text-muted text-lg leading-none hover:bg-card-hover disabled:opacity-50"
         >
           +
         </button>

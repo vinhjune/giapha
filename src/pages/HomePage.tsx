@@ -6,9 +6,11 @@ import PersonForm from '../components/PersonForm'
 import PersonDetailPanel from '../components/PersonDetailPanel'
 import CyclicRelationshipBanner from '../components/CyclicRelationshipBanner'
 import BottomTabBar from '../components/BottomTabBar'
+import ViewToggle from '../components/ViewToggle'
 import { useGiaphaStore } from '../store/useGiaphaStore'
 import { useAuthStore } from '../store/useAuthStore'
 import { useIsMobile } from '../utils/useIsMobile'
+import '../styles/gia-pha-theme.css'
 
 export default function HomePage() {
   const { viewMode, data, selectedPersonId, selectPerson } = useGiaphaStore()
@@ -35,9 +37,15 @@ export default function HomePage() {
   }
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden">
+    <div className="gp-shell h-dvh flex flex-col overflow-hidden">
       <Navbar />
       <CyclicRelationshipBanner />
+
+      {!isMobile && (
+        <div className="px-4 py-3">
+          <ViewToggle />
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {viewMode === 'tree' && <TreeView />}
@@ -49,7 +57,7 @@ export default function HomePage() {
       {canEdit && (
         <button
           onClick={openAdd}
-          className="hidden sm:flex fixed bottom-6 right-6 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 text-2xl items-center justify-center z-30"
+          className="hidden sm:flex fixed bottom-6 right-6 w-12 h-12 bg-[#e2b95e] text-[#4a2c24] rounded-full shadow-lg hover:bg-[#f0cb78] text-2xl items-center justify-center z-30"
           title="Thêm người mới"
         >
           +

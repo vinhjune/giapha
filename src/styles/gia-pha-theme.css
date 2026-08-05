@@ -1,0 +1,233 @@
+/*
+ * Shared warm/sepia "editorial" visual identity for the /gia-pha app shell,
+ * reusing the same palette and header look as the landing page
+ * (src/pages/LandingPage.css) so the whole product feels like one thing
+ * instead of two. Deliberately duplicated (not shared/imported) from
+ * LandingPage.css rather than refactored into a common file, to avoid any
+ * risk of regressing the already-shipped, well-tested landing page while
+ * both surfaces evolve independently.
+ */
+.gp-shell {
+  --cream: #f5efdf;
+  --paper: #fbf7ec;
+  --ink: #2e281f;
+  --muted: #756c5e;
+  --brown: #4a2c24;
+  --brick: #8e342b;
+  --amber: #c18b2c;
+  --line: rgba(68, 49, 36, 0.18);
+  --header: 64px;
+
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(74, 44, 36, 0.025) 1px, transparent 1px) 0 0 / 28px 28px,
+    var(--cream);
+  font-family: 'Be Vietnam Pro', sans-serif;
+}
+
+.gp-shell a {
+  color: inherit;
+}
+
+/* Header — mirrors .lp-header from the landing page. */
+.gp-header {
+  position: relative;
+  z-index: 40;
+  height: var(--header);
+  display: flex;
+  align-items: center;
+  color: #fff8e7;
+  background: rgba(74, 44, 36, 0.96);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+.gp-header-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 18px;
+  padding: 0 16px;
+  min-width: 0;
+}
+.gp-seal-button {
+  width: 40px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--amber);
+  color: #f5d797;
+  font: 600 1.1rem 'IBM Plex Serif', serif;
+  transform: rotate(-3deg);
+  flex-shrink: 0;
+  background: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.gp-seal-button:hover,
+.gp-seal-button[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.08);
+}
+.gp-brand {
+  display: block;
+  min-width: 0;
+  text-decoration: none;
+}
+.gp-brand strong {
+  display: block;
+  font: 600 0.95rem 'IBM Plex Serif', serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gp-login-link {
+  color: #f5d797;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: 500 0.78rem 'Be Vietnam Pro', sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  padding: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.gp-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 16px;
+  color: var(--brown);
+  background: #e2b95e;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: 0.2s;
+}
+.gp-home-link:hover {
+  background: #f0cb78;
+}
+.gp-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.gp-role-pill {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background: rgba(245, 215, 151, 0.18);
+  color: #f5d797;
+}
+
+/* Hamburger dropdown menu, opened from the seal. */
+.gp-dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+}
+.gp-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 16px;
+  margin-top: 8px;
+  z-index: 40;
+  width: 260px;
+  max-width: calc(100vw - 32px);
+  background: rgba(74, 44, 36, 0.98);
+  color: #f5efdf;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gp-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 4px;
+  border: none;
+  background: none;
+  color: #f5efdf;
+  font-size: 0.85rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.gp-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.gp-dropdown-divider {
+  height: 1px;
+  margin: 4px 2px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Search input — light-on-dark variant for use inside .gp-header. */
+.gp-search {
+  width: 100%;
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  color: #fff8e7;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+}
+.gp-search::placeholder {
+  color: #d5c9b6;
+}
+.gp-search:focus {
+  outline: none;
+  border-color: var(--amber);
+}
+.gp-search-row {
+  padding: 8px 16px;
+  background: rgba(74, 44, 36, 0.96);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+.gp-search-results {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+}
+.gp-search-results-item:hover {
+  background: #f1e6d0;
+}
+
+/* Cây gia phả / Danh sách pill-tab toggle, shown above the content area. */
+.gp-view-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.gp-view-toggle-btn {
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 999px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gp-view-toggle-btn.is-active {
+  background: var(--brick);
+  color: #fff8e7;
+}
