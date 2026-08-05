@@ -35,7 +35,7 @@ const sampleArticles = [
     title: 'Từ mái nhà chung',
     summary: 'Câu chuyện mở đầu của dòng họ.',
     body: 'Nội dung bài viết mở đầu.',
-    coverImageKey: null,
+    coverImageKey: 'article-covers/art-1.jpg',
     status: 'published' as const,
     displayOrder: 1,
     publishedAt: '2026-08-02T00:00:00.000Z',
@@ -131,6 +131,15 @@ describe('LandingPage', () => {
     expect(screen.getAllByText('1').length).toBeGreaterThan(0)
     expect(screen.getByText('Gia phả giấy còn lưu lại')).toBeInTheDocument()
     expect(screen.getByText('Ngày giỗ tổ năm nay')).toBeInTheDocument()
+  })
+
+  it('renders the featured article cover image when present', async () => {
+    await renderPage()
+
+    await waitFor(() => expect(screen.getByText('Từ mái nhà chung')).toBeInTheDocument())
+
+    const img = document.querySelector('img[src="/api/avatars/article-covers/art-1.jpg"]')
+    expect(img).not.toBeNull()
   })
 
   it('renders the xem gia phả link to /gia-pha', async () => {

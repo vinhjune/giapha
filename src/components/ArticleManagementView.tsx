@@ -172,6 +172,16 @@ export default function ArticleManagementView() {
     }
   }
 
+  async function handleUploadCover(id: string, file: File) {
+    setError(null)
+    try {
+      await api.uploadArticleCover(id, file)
+      await refresh()
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
   async function handleDeleteArticle(id: string) {
     setError(null)
     try {
@@ -431,12 +441,35 @@ export default function ArticleManagementView() {
               </form>
             ) : (
               <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{article.title}</p>
-                  <p className="text-xs text-gray-500">{getCategoryName(article.categoryId)}</p>
-                  <p className="text-xs text-gray-500">{getStatusLabel(article.status)}</p>
+                <div className="flex items-center gap-3">
+                  {article.coverImageKey && (
+                    <img
+                      src={`/api/avatars/${article.coverImageKey}`}
+                      alt=""
+                      className="w-12 h-12 object-cover rounded-md border border-gray-200 shrink-0"
+                    />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{article.title}</p>
+                    <p className="text-xs text-gray-500">{getCategoryName(article.categoryId)}</p>
+                    <p className="text-xs text-gray-500">{getStatusLabel(article.status)}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <label className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 cursor-pointer">
+                    Ảnh bìa
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      aria-label={`Tải ảnh bìa cho ${article.title}`}
+                      onChange={e => {
+                        const file = e.target.files?.[0]
+                        if (file) handleUploadCover(article.id, file)
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
                   <button
                     onClick={() => startEdit(article)}
                     className="px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"

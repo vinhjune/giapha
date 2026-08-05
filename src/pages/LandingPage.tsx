@@ -282,7 +282,15 @@ export default function LandingPage() {
 
                     {hasFeaturedArticle && featuredArticle && (
                       <article className="grid overflow-hidden rounded-3xl bg-ink text-white shadow-sm lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-                        <div className="min-h-64 bg-gradient-to-br from-accent via-slate-700 to-ink" />
+                        {featuredArticle.coverImageKey ? (
+                          <img
+                            src={`/api/avatars/${featuredArticle.coverImageKey}`}
+                            alt=""
+                            className="min-h-64 w-full object-cover"
+                          />
+                        ) : (
+                          <div className="min-h-64 bg-gradient-to-br from-accent via-slate-700 to-ink" />
+                        )}
                         <div className="flex flex-col justify-center p-6 sm:p-8">
                           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
                             {category.name} · Bài nổi bật
@@ -298,12 +306,21 @@ export default function LandingPage() {
                     {remainingArticles.length > 0 ? (
                       <div className="mt-6 divide-y divide-card-border rounded-3xl border border-card-border bg-card">
                         {remainingArticles.map(article => (
-                          <article key={article.id} className="px-5 py-5 sm:px-6">
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
-                              {category.name}
-                            </p>
-                            <h4 className="mt-2 text-2xl font-semibold text-ink">{article.title}</h4>
-                            <p className="mt-3 text-sm leading-7 text-muted">{article.summary}</p>
+                          <article key={article.id} className="flex gap-4 px-5 py-5 sm:px-6">
+                            {article.coverImageKey && (
+                              <img
+                                src={`/api/avatars/${article.coverImageKey}`}
+                                alt=""
+                                className="h-20 w-20 shrink-0 rounded-xl object-cover"
+                              />
+                            )}
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+                                {category.name}
+                              </p>
+                              <h4 className="mt-2 text-2xl font-semibold text-ink">{article.title}</h4>
+                              <p className="mt-3 text-sm leading-7 text-muted">{article.summary}</p>
+                            </div>
                           </article>
                         ))}
                       </div>

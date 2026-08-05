@@ -161,6 +161,19 @@ describe('ArticleManagementView', () => {
     await waitFor(() => expect(api.deleteArticle).toHaveBeenCalledWith('art-2'))
   })
 
+  it('uploads a cover image for an article', async () => {
+    const file = new File(['fake-image'], 'cover.jpg', { type: 'image/jpeg' })
+    vi.mocked(api.uploadArticleCover).mockResolvedValue({ ...sampleArticles[1], coverImageKey: 'article-covers/art-2.jpg' })
+
+    render(<ArticleManagementView />)
+    await waitFor(() => screen.getByText('Bản thảo mới'))
+
+    const input = screen.getByLabelText('Tải ảnh bìa cho Bản thảo mới')
+    fireEvent.change(input, { target: { files: [file] } })
+
+    await waitFor(() => expect(api.uploadArticleCover).toHaveBeenCalledWith('art-2', file))
+  })
+
   it('shows the backend error when deleting a category that still has articles', async () => {
     vi.mocked(api.deleteArticleCategory).mockRejectedValue(new Error('Chuyên mục vẫn còn bài viết'))
 
