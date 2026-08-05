@@ -6,8 +6,9 @@ import MemberManagementView from '../components/MemberManagementView'
 import PendingRequestsPanel from '../components/PendingRequestsPanel'
 import CsvPanel from '../components/CsvPanel'
 import UserManagementPanel from '../components/UserManagementPanel'
+import EventManagementView from '../components/EventManagementView'
 
-type Tab = 'members' | 'requests' | 'csv' | 'users'
+type Tab = 'members' | 'requests' | 'csv' | 'events' | 'users'
 
 export default function ControlPanelPage() {
   const { user } = useAuthStore()
@@ -19,7 +20,13 @@ export default function ControlPanelPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'members', label: 'Thành viên' },
     { key: 'requests', label: isAdmin ? 'Yêu cầu chờ duyệt' : 'Yêu cầu của tôi' },
-    ...(isAdmin ? [{ key: 'csv' as Tab, label: 'CSV' }, { key: 'users' as Tab, label: 'Quản lý User' }] : []),
+    ...(isAdmin
+      ? [
+          { key: 'csv' as Tab, label: 'CSV' },
+          { key: 'events' as Tab, label: 'Sự kiện' },
+          { key: 'users' as Tab, label: 'Quản lý User' },
+        ]
+      : []),
   ]
 
   return (
@@ -47,6 +54,7 @@ export default function ControlPanelPage() {
           <div className="flex-1 min-h-0 overflow-auto">
             {tab === 'requests' && <PendingRequestsPanel />}
             {tab === 'csv' && isAdmin && <CsvPanel />}
+            {tab === 'events' && isAdmin && <EventManagementView />}
             {tab === 'users' && isAdmin && <UserManagementPanel />}
           </div>
         )}
