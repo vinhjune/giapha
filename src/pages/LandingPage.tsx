@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listArticleCategories, listArticles, listEvents } from '../services/api'
 import type { Article, ArticleCategory, EventItem } from '../types/giapha'
+import { useAuthStore } from '../store/useAuthStore'
+import LoginModal from '../components/LoginModal'
 
 const SITE_NAME = 'Sử nhà dòng họ'
 const SITE_TAGLINE = 'Một kho ký ức chung của gia đình'
@@ -59,6 +61,8 @@ export default function LandingPage() {
   const [events, setEvents] = useState<EventItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [loginModalOpen, setLoginModalOpen] = useState(false)
+  const { user } = useAuthStore()
 
   useEffect(() => {
     let cancelled = false
@@ -158,14 +162,34 @@ export default function LandingPage() {
             <h1 className="truncate text-lg font-bold text-ink">{SITE_NAME}</h1>
           </div>
 
-          <Link
-            to="/gia-pha"
-            className="ml-auto inline-flex items-center rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-          >
-            Xem gia phả
-          </Link>
+          <div className="ml-auto flex items-center gap-2">
+            {user ? (
+              <Link
+                to="/control-panel"
+                className="inline-flex items-center rounded-full border border-card-border px-4 py-2 text-sm font-semibold text-ink transition hover:bg-slate-50"
+              >
+                Quản lý
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setLoginModalOpen(true)}
+                className="inline-flex items-center rounded-full border border-card-border px-4 py-2 text-sm font-semibold text-ink transition hover:bg-slate-50"
+              >
+                Đăng nhập
+              </button>
+            )}
+            <Link
+              to="/gia-pha"
+              className="inline-flex items-center rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+            >
+              Xem gia phả
+            </Link>
+          </div>
         </div>
       </header>
+
+      {loginModalOpen && <LoginModal onClose={() => setLoginModalOpen(false)} />}
 
       <section className="border-b border-card-border bg-card">
         <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-end lg:py-16">

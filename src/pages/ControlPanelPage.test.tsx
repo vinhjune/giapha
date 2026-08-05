@@ -23,13 +23,20 @@ function renderAt(path: string) {
 }
 
 beforeEach(() => {
-  useAuthStore.setState({ user: null, setupNeeded: false, loading: false, error: null })
+  useAuthStore.setState({ user: null, setupNeeded: false, loading: false, error: null, authChecked: true })
 })
 
 describe('ControlPanelPage', () => {
-  it('redirects to / when there is no logged-in user', () => {
+  it('redirects to / when the session check has resolved and there is no logged-in user', () => {
     renderAt('/control-panel')
     expect(screen.getByText('HomePage stub')).toBeInTheDocument()
+  })
+
+  it('shows a loading state instead of redirecting while the initial session check is still in flight', () => {
+    useAuthStore.setState({ authChecked: false })
+    renderAt('/control-panel')
+    expect(screen.queryByText('HomePage stub')).not.toBeInTheDocument()
+    expect(screen.getByText('Đang kiểm tra đăng nhập...')).toBeInTheDocument()
   })
 
   it('editor sees Thành viên, Yêu cầu của tôi, Bài viết and Sự kiện tabs but not CSV/Quản lý User', () => {

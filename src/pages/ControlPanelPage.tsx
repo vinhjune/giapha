@@ -12,8 +12,17 @@ import ArticleManagementView from '../components/ArticleManagementView'
 type Tab = 'members' | 'requests' | 'csv' | 'articles' | 'events' | 'users'
 
 export default function ControlPanelPage() {
-  const { user } = useAuthStore()
+  const { user, authChecked } = useAuthStore()
   const [tab, setTab] = useState<Tab>('members')
+
+  // Wait for the initial session check (fired once at app startup) to resolve before
+  // deciding to redirect — otherwise a fresh load/refresh of this route would bounce a
+  // logged-in user back to "/" before their session cookie has been verified.
+  if (!authChecked) {
+    return (
+      <div className="h-dvh flex items-center justify-center text-muted animate-pulse">Đang kiểm tra đăng nhập...</div>
+    )
+  }
 
   if (!user) return <Navigate to="/" replace />
 
