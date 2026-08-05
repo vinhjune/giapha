@@ -510,6 +510,45 @@
   font-size: 0.92rem;
   line-height: 1.9;
 }
+.landing-page .lp-article-body h2 {
+  margin: 32px 0 16px;
+  color: var(--ink);
+  font: 700 1.35rem/1.4 'IBM Plex Serif', serif;
+}
+.landing-page .lp-article-body h3 {
+  margin: 28px 0 14px;
+  color: var(--ink);
+  font: 700 1.15rem/1.4 'IBM Plex Serif', serif;
+}
+.landing-page .lp-article-body ul,
+.landing-page .lp-article-body ol {
+  margin: 0 0 20px;
+  padding-left: 1.4em;
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.9;
+}
+.landing-page .lp-article-body blockquote {
+  margin: 0 0 20px;
+  padding: 4px 0 4px 20px;
+  border-left: 3px solid var(--brick);
+  color: var(--ink-soft, var(--ink));
+  font-style: italic;
+}
+.landing-page .lp-article-body a {
+  color: var(--brick);
+  text-decoration: underline;
+}
+.landing-page .lp-article-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 24px 0;
+  border-radius: 5px;
+}
+.landing-page .lp-article-body strong {
+  font-weight: 700;
+}
 
 @media (max-width: 960px) {
   .landing-page {
