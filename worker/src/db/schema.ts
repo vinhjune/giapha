@@ -119,6 +119,35 @@ export const events = sqliteTable('events', {
   updatedAt:   text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 })
 
+// ─── Article Categories & Articles (landing page CMS) ───────────────────────
+export const articleCategories = sqliteTable('article_categories', {
+  id:           text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  slug:         text('slug').notNull().unique(),
+  name:         text('name').notNull(),
+  displayOrder: integer('display_order').notNull().default(0),
+  createdAt:    text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt:    text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+})
+
+export const articles = sqliteTable('articles', {
+  id:            text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  slug:          text('slug').notNull().unique(),
+  categoryId:    text('category_id').notNull().references(() => articleCategories.id, { onDelete: 'restrict' }),
+  title:         text('title').notNull(),
+  summary:       text('summary').notNull(),
+  body:          text('body').notNull(),
+  coverImageKey: text('cover_image_key'),
+  status:        text('status', { enum: ['draft', 'published'] }).notNull().default('draft'),
+  displayOrder:  integer('display_order').notNull().default(0),
+  publishedAt:   text('published_at'),
+  authorId:      text('author_id').notNull().references(() => users.id),
+  createdAt:     text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt:     text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index('idx_articles_category_id').on(t.categoryId),
+  index('idx_articles_status').on(t.status),
+])
+
 // ─── Settings (landing page content) ─────────────────────────────────────────
 export const settings = sqliteTable('settings', {
   key:       text('key').primaryKey(),
@@ -142,4 +171,13 @@ export const familiesRelations = relations(families, ({ one, many }) => ({
 export const familyMembersRelations = relations(familyMembers, ({ one }) => ({
   family: one(families, { fields: [familyMembers.familyId], references: [families.id] }),
   person: one(persons,  { fields: [familyMembers.personId],  references: [persons.id] }),
+}))
+
+export const articleCategoriesRelations = relations(articleCategories, ({ many }) => ({
+  articles: many(articles),
+}))
+
+export const articlesRelations = relations(articles, ({ one }) => ({
+  category: one(articleCategories, { fields: [articles.categoryId], references: [articleCategories.id] }),
+  author:   one(users, { fields: [articles.authorId], references: [users.id] }),
 }))
