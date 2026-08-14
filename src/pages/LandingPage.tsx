@@ -6,8 +6,8 @@ import { useAuthStore } from '../store/useAuthStore'
 import LoginModal from '../components/LoginModal'
 import './LandingPage.css'
 
-const SITE_NAME = 'Sử nhà dòng họ'
-const SITE_TAGLINE = 'Ghi chuyện cũ · Nối người nay'
+const SITE_NAME = 'Gia phả họ Hoàng'
+const SITE_TAGLINE = 'Làng Mỹ Lộc'
 
 const THUMB_CLASSES = ['lp-thumb-0', 'lp-thumb-1', 'lp-thumb-2', 'lp-thumb-3']
 
