@@ -16,6 +16,18 @@ interface RowProps {
   ancestorIds?: Set<string>
 }
 
+// Renders "namSinh-†namMat" (both known), "namSinh-†" (death year unknown),
+// "†namMat" (birth year unknown), or just "†" (neither year known but the
+// person is recorded as deceased). The dash only appears when a birth year
+// is shown, so the death mark never dangles after an empty "-".
+function formatNamSinhNamMat(person: Person): string {
+  const namSinh = person.namSinh?.nam
+  if (!person.namMat) return namSinh ? String(namSinh) : ''
+  const prefix = namSinh ? `${namSinh}-` : ''
+  const namMat = person.namMat.nam
+  return `${prefix}†${namMat ?? ''}`
+}
+
 function PersonRow({
   person,
   depth,
@@ -80,7 +92,7 @@ function PersonRow({
         </span>
         {(person.namSinh?.nam || person.namMat) && (
           <span className="text-xs text-muted">
-            ({person.namSinh?.nam}{person.namMat?.nam ? `-${person.namMat.nam}` : ''}{person.namMat ? '†' : ''})
+            ({formatNamSinhNamMat(person)})
           </span>
         )}
       </div>

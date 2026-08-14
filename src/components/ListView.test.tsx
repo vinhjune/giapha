@@ -155,14 +155,18 @@ describe('ListView spouse rendering', () => {
         '1': { ...data.persons['1'], namSinh: { nam: 1812 }, namMat: { nam: 1890 } },
         '3': { ...data.persons['3'], namSinh: { nam: 1840 }, namMat: {} }, // death known, year unknown
         '4': { ...data.persons['4'], namSinh: { nam: 1845 } }, // alive / no death recorded
+        '5': { ...data.persons['5'], namSinh: undefined, namMat: { nam: 1900 } }, // birth unknown
+        '6': { ...data.persons['6'], namSinh: undefined, namMat: {} }, // neither year known
       },
     }
     useGiaphaStore.setState({ data: withDates })
     render(<ListView />)
 
-    expect(screen.getByText('(1812-1890†)')).toBeInTheDocument()
-    expect(screen.getByText('(1840†)')).toBeInTheDocument()
+    expect(screen.getByText('(1812-†1890)')).toBeInTheDocument()
+    expect(screen.getByText('(1840-†)')).toBeInTheDocument()
     expect(screen.getByText('(1845)')).toBeInTheDocument()
+    expect(screen.getByText('(†1900)')).toBeInTheDocument()
+    expect(screen.getByText('(†)')).toBeInTheDocument()
   })
 
   it('groups each spouse with only their own children, in marriage order', () => {
