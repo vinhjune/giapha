@@ -39,3 +39,8 @@ export async function getSessionUser(db: DB, token: string): Promise<AuthUser | 
 export async function deleteSession(db: DB, token: string): Promise<void> {
   await db.delete(sessions).where(eq(sessions.token, token))
 }
+
+/** Invalidates all active sessions for a user, e.g. after a password reset. */
+export async function deleteAllSessionsForUser(db: DB, userId: string): Promise<void> {
+  await db.delete(sessions).where(eq(sessions.userId, userId))
+}

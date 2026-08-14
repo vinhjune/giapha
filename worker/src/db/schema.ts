@@ -14,6 +14,8 @@ export const users = sqliteTable('users', {
   isActive:     integer('is_active', { mode: 'boolean' }).notNull().default(true),
   personId:     text('person_id').unique().references(() => persons.id, { onDelete: 'set null' }),
   createdAt:    text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  // Timestamp of the last "forgot password" request, used to rate-limit repeated requests.
+  passwordResetRequestedAt: text('password_reset_requested_at'),
 })
 
 // ─── Sessions ─────────────────────────────────────────────────────────────────

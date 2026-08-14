@@ -52,7 +52,7 @@ export default function HomePage() {
         {viewMode === 'list' && <ListView />}
       </div>
 
-      {isMobile && <BottomTabBar onAddClick={openAdd} />}
+      {isMobile && <BottomTabBar onAddClick={openAdd} canAdd={canEdit} />}
 
       {canEdit && (
         <button

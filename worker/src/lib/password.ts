@@ -21,6 +21,14 @@ async function deriveHash(password: string, salt: Uint8Array, iterations: number
   )
 }
 
+const PASSWORD_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%'
+
+/** Generates a random 12-character password using a cryptographically secure RNG, for "forgot password" resets. */
+export function generateRandomPassword(length = 12): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(length))
+  return Array.from(bytes, b => PASSWORD_CHARSET[b % PASSWORD_CHARSET.length]).join('')
+}
+
 /** Hashes a plaintext password into the storable format `pbkdf2:<iterations>:<saltHex>:<hashHex>`. */
 export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16))

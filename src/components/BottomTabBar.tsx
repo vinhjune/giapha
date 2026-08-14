@@ -2,47 +2,48 @@ import { useGiaphaStore } from '../store/useGiaphaStore'
 
 interface Props {
   onAddClick: () => void
+  /** Whether the current user is allowed to add a person (logged in as
+   * admin/editor). When false, the "Thêm mới" tab is hidden so it never
+   * renders as a dead button that silently does nothing when tapped —
+   * mirrors the desktop floating "+" button, which is likewise hidden
+   * entirely for anonymous users. */
+  canAdd: boolean
 }
 
-export default function BottomTabBar({ onAddClick }: Props) {
+export default function BottomTabBar({ onAddClick, canAdd }: Props) {
   const { viewMode, setViewMode } = useGiaphaStore()
 
   return (
     <nav
       aria-label="Điều hướng chính"
-      className="flex border-t border-card-border bg-card"
+      className="gp-tabbar"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <button
         type="button"
         onClick={() => setViewMode('tree')}
         aria-current={viewMode === 'tree' ? 'page' : undefined}
-        className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs ${
-          viewMode === 'tree' ? 'text-accent font-semibold' : 'text-muted'
-        }`}
+        className={`gp-tabbar-btn ${viewMode === 'tree' ? 'is-active' : ''}`}
       >
-        <span aria-hidden="true">🌳</span>
         Cây
       </button>
       <button
         type="button"
         onClick={() => setViewMode('list')}
         aria-current={viewMode === 'list' ? 'page' : undefined}
-        className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-xs ${
-          viewMode === 'list' ? 'text-accent font-semibold' : 'text-muted'
-        }`}
+        className={`gp-tabbar-btn ${viewMode === 'list' ? 'is-active' : ''}`}
       >
-        <span aria-hidden="true">📋</span>
         Danh sách
       </button>
-      <button
-        type="button"
-        onClick={onAddClick}
-        className="flex-1 flex flex-col items-center gap-0.5 py-2 text-xs text-muted"
-      >
-        <span aria-hidden="true">➕</span>
-        Thêm mới
-      </button>
+      {canAdd && (
+        <button
+          type="button"
+          onClick={onAddClick}
+          className="gp-tabbar-btn"
+        >
+          Thêm mới
+        </button>
+      )}
     </nav>
   )
 }

@@ -4,7 +4,7 @@ import LoginModal from './LoginModal'
 import { useAuthStore } from '../store/useAuthStore'
 
 beforeEach(() => {
-  useAuthStore.setState({ user: null, setupNeeded: false, loading: false, error: null })
+  useAuthStore.setState({ user: null, setupNeeded: false, loading: false, error: null, forgotPasswordMessage: null })
 })
 
 describe('LoginModal', () => {
@@ -34,5 +34,28 @@ describe('LoginModal', () => {
     useAuthStore.setState({ error: 'Sai tên đăng nhập hoặc mật khẩu' })
     render(<LoginModal onClose={vi.fn()} />)
     expect(screen.getByText('Sai tên đăng nhập hoặc mật khẩu')).toBeInTheDocument()
+  })
+
+  it('switches to the forgot-password form and calls forgotPassword with the entered email', async () => {
+    const forgotPasswordSpy = vi.spyOn(useAuthStore.getState(), 'forgotPassword').mockImplementation(async () => {
+      useAuthStore.setState({ forgotPasswordMessage: 'Nếu email tồn tại trong hệ thống, mật khẩu mới đã được gửi tới email đó.' })
+    })
+    render(<LoginModal onClose={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quên mật khẩu?' }))
+    expect(screen.getByText('Quên mật khẩu')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Email đã đăng ký'), { target: { value: 'user@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Gửi mật khẩu mới' }))
+
+    await waitFor(() => expect(forgotPasswordSpy).toHaveBeenCalledWith('user@example.com'))
+    await waitFor(() => expect(screen.getByText(/mật khẩu mới đã được gửi/)).toBeInTheDocument())
+  })
+
+  it('lets the user go back to the login form from the forgot-password form', () => {
+    render(<LoginModal onClose={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Quên mật khẩu?' }))
+    fireEvent.click(screen.getByRole('button', { name: /Quay lại đăng nhập/ }))
+    expect(screen.getByRole('heading', { name: 'Đăng nhập' })).toBeInTheDocument()
   })
 })

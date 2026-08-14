@@ -6,6 +6,8 @@
 	"name": "giaphahohoang",
 	"main": "worker/src/index.ts",
 	"compatibility_date": "2026-07-01",
+	// Required by the "worker-mailer" package (forgot-password emails via Gmail SMTP).
+	"compatibility_flags": ["nodejs_compat"],
 	"assets": {
 		"directory": "dist",
 		"not_found_handling": "single-page-application"

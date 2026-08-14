@@ -33,7 +33,7 @@
 .gp-header {
   position: relative;
   z-index: 40;
-  height: var(--header);
+  min-height: var(--header);
   display: flex;
   align-items: center;
   color: #fff8e7;
@@ -191,6 +191,8 @@
   border-color: var(--amber);
 }
 .gp-search-row {
+  align-self: stretch;
+  width: 100%;
   padding: 8px 16px;
   background: rgba(74, 44, 36, 0.96);
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
@@ -228,6 +230,31 @@
   white-space: nowrap;
 }
 .gp-view-toggle-btn.is-active {
+  background: var(--brick);
+  color: #fff8e7;
+}
+
+/* Bottom tab bar (mobile only) — reuses the same pill/segmented-control
+   look as the desktop `.gp-view-toggle` (cream bar, brick-red active
+   pill, text-only) per the approved design, instead of a separate
+   dark-brown bar with icons. */
+.gp-tabbar {
+  display: flex;
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+}
+.gp-tabbar-btn {
+  flex: 1 1 0%;
+  padding: 10px 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: center;
+}
+.gp-tabbar-btn.is-active {
   background: var(--brick);
   color: #fff8e7;
 }

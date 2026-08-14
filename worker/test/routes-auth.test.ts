@@ -1,7 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
 import { env, SELF } from 'cloudflare:test'
 import { users } from '../src/db/schema'
+import { createAuthRoutes } from '../src/routes/auth'
+import type { HonoEnv } from '../src/types'
 
 function extractSessionCookie(res: Response): string {
   const setCookie = res.headers.get('set-cookie') ?? ''
@@ -112,5 +115,79 @@ describe('POST /api/auth/logout', () => {
     await SELF.fetch('http://example.com/api/auth/logout', { method: 'POST', headers: { Cookie: `giapha_session=${cookie}` } })
     const meAfter = await SELF.fetch('http://example.com/api/auth/me', { headers: { Cookie: `giapha_session=${cookie}` } })
     expect((await meAfter.json<{ user: unknown }>()).user).toBeNull()
+  })
+})
+
+describe('POST /api/auth/forgot-password', () => {
+  const sendMail = vi.fn().mockResolvedValue(undefined)
+  const app = new Hono<HonoEnv>()
+  app.route('/api', createAuthRoutes(sendMail))
+
+  async function setupAdmin() {
+    await SELF.fetch('http://example.com/api/auth/setup', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'admin', password: 'supersecret1', email: 'admin@example.com' }),
+    })
+  }
+
+  beforeEach(() => {
+    sendMail.mockClear()
+  })
+
+  it('generates a new password, emails it, and logs the user out everywhere for a known email', async () => {
+    await setupAdmin()
+    const loginRes = await SELF.fetch('http://example.com/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'admin', password: 'supersecret1' }),
+    })
+    const cookie = extractSessionCookie(loginRes)
+
+    const res = await app.request('/api/auth/forgot-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'admin@example.com' }),
+    }, env)
+    expect(res.status).toBe(200)
+    expect(sendMail).toHaveBeenCalledTimes(1)
+    const [, toAddress, , bodyText] = sendMail.mock.calls[0]
+    expect(toAddress).toBe('admin@example.com')
+    expect(bodyText).toMatch(/Mật khẩu mới của bạn là: /)
+
+    // Old session invalidated by the reset.
+    const meAfterReset = await SELF.fetch('http://example.com/api/auth/me', { headers: { Cookie: `giapha_session=${cookie}` } })
+    expect((await meAfterReset.json<{ user: unknown }>()).user).toBeNull()
+
+    // Old password no longer works.
+    const oldLoginRes = await SELF.fetch('http://example.com/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'admin', password: 'supersecret1' }),
+    })
+    expect(oldLoginRes.status).toBe(401)
+  })
+
+  it('returns the same generic response for an unknown email, without sending mail', async () => {
+    await setupAdmin()
+    const res = await app.request('/api/auth/forgot-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'no-such-user@example.com' }),
+    }, env)
+    expect(res.status).toBe(200)
+    const body = await res.json<{ ok: boolean }>()
+    expect(body.ok).toBe(true)
+    expect(sendMail).not.toHaveBeenCalled()
+  })
+
+  it('rate-limits a second request within the cooldown window', async () => {
+    await setupAdmin()
+    await app.request('/api/auth/forgot-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'admin@example.com' }),
+    }, env)
+    expect(sendMail).toHaveBeenCalledTimes(1)
+
+    await app.request('/api/auth/forgot-password', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'admin@example.com' }),
+    }, env)
+    expect(sendMail).toHaveBeenCalledTimes(1)
   })
 })

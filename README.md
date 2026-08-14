@@ -65,6 +65,19 @@ Khi lưu file CSV, hãy dùng encoding **UTF-8** để bảo toàn tiếng Việ
 
 Trên thanh điều hướng, chọn tab **Thành viên** để mở màn hình bảng quản lý thành viên. Màn hình này hiển thị đầy đủ các cột theo chuẩn CSV (kèm cột **Đời**), cho phép sửa trực tiếp nhiều dòng, thêm dòng mới và bấm **Áp dụng thay đổi** để cập nhật dữ liệu hàng loạt. Các ô đã sửa được đánh dấu bằng viền vàng, dòng mới được tô nền xanh — hãy bấm **Tự động cập nhật** để tính Đời và Thứ tự anh/chị tự động cho những thành viên cần, sau đó **Áp dụng thay đổi** để lưu (chỉ những dòng có thay đổi mới được gửi lên server).
 
+## Quên mật khẩu
+
+Người dùng bấm **Quên mật khẩu?** trên form đăng nhập, nhập email đã đăng ký — hệ thống sẽ tự sinh mật khẩu mới, vô hiệu hoá các phiên đăng nhập cũ, và gửi mật khẩu mới về email đó.
+
+Việc gửi email hiện dùng **Gmail SMTP với App Password** (giải pháp tạm thời cho tới khi có domain riêng để verify với một dịch vụ email chuyên dụng như Resend). Cần cấu hình 2 secret cho Worker:
+
+```bash
+wrangler secret put GMAIL_USER          # địa chỉ Gmail dùng để gửi, ví dụ admin@gmail.com
+wrangler secret put GMAIL_APP_PASSWORD  # App Password 16 ký tự (Google Account → Bảo mật → Mật khẩu ứng dụng, yêu cầu bật 2FA)
+```
+
+Lưu ý: Gmail giới hạn ~500 email/ngày và có thể tạm chặn nếu phát hiện gửi bất thường — phù hợp cho quy mô nhỏ hiện tại. Khi mua domain riêng, nên chuyển sang một dịch vụ email chuyên dụng (Resend, Postmark...) bằng cách thay `worker/src/lib/mailer.ts`.
+
 ---
 
 ## Cấu trúc dữ liệu

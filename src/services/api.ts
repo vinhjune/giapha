@@ -88,6 +88,14 @@ export function logout(): Promise<{ ok: true }> {
   return request<{ ok: true }>('/api/auth/logout', { method: 'POST' })
 }
 
+export function forgotPassword(email: string): Promise<{ ok: boolean; message: string }> {
+  return request<{ ok: boolean; message: string }>('/api/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
+}
+
 // ─── Editor requests ─────────────────────────────────────────────────────────
 
 export function listRequests(): Promise<{ requests: EditorRequest[] }> {

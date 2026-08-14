@@ -9,11 +9,14 @@ interface AuthState {
   /** True once the initial session check (checkAuth) has resolved at least once. Guards against premature "not logged in" redirects while the check is still in flight (e.g. on a fresh page load of /control-panel). */
   authChecked: boolean
   error: string | null
+  /** Set after a successful "forgot password" request, to show a confirmation message. */
+  forgotPasswordMessage: string | null
 
   checkAuth: () => Promise<void>
   login: (username: string, password: string) => Promise<void>
   setupFirstAdmin: (username: string, password: string, email: string) => Promise<void>
   logout: () => Promise<void>
+  forgotPassword: (email: string) => Promise<void>
   clearError: () => void
 }
 
@@ -23,6 +26,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   loading: false,
   authChecked: false,
   error: null,
+  forgotPasswordMessage: null,
 
   checkAuth: async () => {
     set({ loading: true })
@@ -57,6 +61,16 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     await api.logout()
     set({ user: null })
+  },
+
+  forgotPassword: async (email) => {
+    set({ loading: true, error: null, forgotPasswordMessage: null })
+    try {
+      const { message } = await api.forgotPassword(email)
+      set({ loading: false, forgotPasswordMessage: message })
+    } catch (e) {
+      set({ loading: false, error: (e as Error).message })
+    }
   },
 
   clearError: () => set({ error: null }),
