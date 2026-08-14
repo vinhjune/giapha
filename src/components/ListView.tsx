@@ -93,7 +93,7 @@ function PersonRow({
                 <PersonRow
                   key={`spouse-${person.id}-${group.spouse.id}`}
                   person={group.spouse}
-                  depth={depth + 1}
+                  depth={depth}
                   onSelect={onSelect}
                   selectedId={selectedId}
                   highlightId={highlightId}

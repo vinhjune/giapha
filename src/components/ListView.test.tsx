@@ -134,6 +134,19 @@ describe('ListView spouse rendering', () => {
     expect(nga.className).toContain('text-ink')
   })
 
+  it('indents a married-in spouse at the same level as their clan partner, not the children', () => {
+    render(<ListView />)
+
+    const nong = screen.getByText('Ông Nông').closest('[data-person-id]') as HTMLElement
+    const thanh = screen.getByText('Bà Thanh').closest('[data-person-id]') as HTMLElement
+    const vinh = screen.getByText('Vinh').closest('[data-person-id]') as HTMLElement
+
+    // Spouse row shares the same indentation (padding-left) as the clan partner...
+    expect(thanh.style.paddingLeft).toBe(nong.style.paddingLeft)
+    // ...while the children are indented one level further in.
+    expect(vinh.style.paddingLeft).not.toBe(nong.style.paddingLeft)
+  })
+
   it('groups each spouse with only their own children, in marriage order', () => {
     const multiSpouseData: GiaphaData = {
       metadata: { tenDongHo: 'Dòng họ mẫu' },
