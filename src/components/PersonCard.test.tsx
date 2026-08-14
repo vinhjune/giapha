@@ -97,11 +97,18 @@ describe('PersonCard', () => {
     expect(screen.queryByText('†')).not.toBeInTheDocument()
   })
 
-  it('shows the last name-part initial in the avatar', () => {
+  it('shows a plain color dot with no letter when there is no photo', () => {
     render(
       <PersonCard person={nguoiMau({ hoTen: 'Nguyễn Văn An' })} isSelected={false} onClick={() => {}} />
     )
-    expect(screen.getByTestId('person-avatar')).toHaveTextContent('A')
+    expect(screen.getByTestId('person-avatar')).toHaveTextContent('')
+  })
+
+  it('shows the real photo when anhDaiDien is set', () => {
+    render(
+      <PersonCard person={nguoiMau({ anhDaiDien: '/api/avatars/abc.jpg' })} isSelected={false} onClick={() => {}} />
+    )
+    expect(screen.getByTestId('person-avatar')).toHaveAttribute('src', '/api/avatars/abc.jpg')
   })
 
   it('shows ÂL next to a lunar birth date', () => {

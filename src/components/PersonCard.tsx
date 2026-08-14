@@ -12,11 +12,6 @@ interface Props {
 
 const AVATAR_COLOR_BY_GENDER = { nam: 'bg-nam', nu: 'bg-nu', khac: 'bg-nam' } as const
 
-function getInitial(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  return parts[parts.length - 1]?.[0]?.toUpperCase() ?? '?'
-}
-
 export default function PersonCard({ person, displayName, isSelected, isHighlighted = false, isSpouse = false, onClick }: Props) {
   // Mirrors ListView: the badge marks an actual married-in spouse (honNhan link),
   // not any non-clan blood descendant (e.g. a granddaughter through a daughter's line).
@@ -54,12 +49,25 @@ export default function PersonCard({ person, displayName, isSelected, isHighligh
         </span>
       )}
       <div className="flex items-center gap-2">
-        <div
-          data-testid="person-avatar"
-          className={`w-6 h-6 rounded-full flex-none flex items-center justify-center text-[10px] font-bold text-white ring-2 ring-card ${avatarColorClass}`}
-        >
-          {getInitial(name)}
-        </div>
+        {person.anhDaiDien ? (
+          <img
+            data-testid="person-avatar"
+            src={person.anhDaiDien}
+            alt=""
+            className={`w-6 h-6 rounded-full flex-none object-cover ring-2 ring-card ${avatarColorClass}`}
+          />
+        ) : (
+          // No photo yet: show a plain color dot (nam/nu) instead of a
+          // letter — an initial-letter badge was removed because it was
+          // computed from the display name (which can include a "(...)"
+          // note or a "(#N)" generation suffix), making it show a
+          // meaningless "(" for most people instead of a real initial.
+          <div
+            data-testid="person-avatar"
+            aria-hidden="true"
+            className={`w-6 h-6 rounded-full flex-none ring-2 ring-card ${avatarColorClass}`}
+          />
+        )}
         <div className="text-xs font-semibold leading-tight text-ink whitespace-nowrap">
           {name}
         </div>
