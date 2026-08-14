@@ -4,13 +4,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Node/card backgrounds (canvas, card, card-spouse, nam, nu, accent)
-        // are restored to the original bright/high-contrast palette so
-        // gender (nam/nu) and clan-membership (card vs card-spouse) stay
-        // easy to tell apart at a glance. Text colors (ink, muted) keep the
-        // warm sepia tone shared with the landing page header.
-        canvas: '#f8fafc',
-        card: '#ffffff',
+        // Only the node/card colors (card, card-spouse, nam, nu, accent) are
+        // restored to the original bright/high-contrast palette so gender
+        // (nam/nu) and clan-membership (card vs card-spouse) stay easy to
+        // tell apart. Canvas background, text colors (ink, muted), and font
+        // stay on the warm sepia theme shared with the landing page.
+        canvas: '#f3ead4',
+        // Slightly warm (not pure) white: keeps the bright/high-contrast
+        // node look, but avoids the ink text reading as near-black that
+        // pure #ffffff causes via simultaneous-contrast with the dark
+        // sepia ink color.
+        card: '#fefcf6',
         'card-hover': '#f8fafc',
         'card-border': '#e2e8f0',
         'card-spouse': '#f1f5f9',
