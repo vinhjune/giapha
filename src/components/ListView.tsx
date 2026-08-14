@@ -78,11 +78,10 @@ function PersonRow({
         <span className={`text-sm ${isClan ? 'text-ink' : 'text-muted'}`}>
           {dinhDangTenNguoi(person, showGenerationOrder)}
         </span>
-        {person.namSinh?.nam && (
-          <span className="text-xs text-muted">({person.namSinh.nam})</span>
-        )}
-        {person.namMat && (
-          <span className="text-xs text-muted ml-auto">†</span>
+        {(person.namSinh?.nam || person.namMat) && (
+          <span className="text-xs text-muted">
+            ({person.namSinh?.nam}{person.namMat?.nam ? `-${person.namMat.nam}` : ''}{person.namMat ? '†' : ''})
+          </span>
         )}
       </div>
       {!hideChildren && (
