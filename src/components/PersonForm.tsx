@@ -561,7 +561,7 @@ export default function PersonForm({ editPerson, defaultBoId, onClose }: Props) 
             )}
 
             <div>
-              <label className="text-sm font-medium text-gray-700">Quê quán</label>
+              <label className="text-sm font-medium text-gray-700">Quê quán/Nơi ở</label>
               <input value={form.queQuan} onChange={e => setForm(f => ({ ...f, queQuan: e.target.value }))}
                 className="mt-1 w-full px-3 py-1.5 text-base sm:text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </div>

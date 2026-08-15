@@ -29,7 +29,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
         {birth && <p className="text-sm text-gray-600">Sinh: {birth}</p>}
         {death && <p className="text-sm text-gray-600">Mất: {death}</p>}
-        {person.queQuan && <p className="text-sm text-gray-600">Quê quán: {person.queQuan}</p>}
+        {person.queQuan && <p className="text-sm text-gray-600">Quê quán/Nơi ở: {person.queQuan}</p>}
         {person.tieuSu && <p className="text-sm text-gray-700 whitespace-pre-wrap">{person.tieuSu}</p>}
 
         <div className="flex justify-end pt-2">
