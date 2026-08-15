@@ -142,7 +142,7 @@ export function listArticleCategories(): Promise<ArticleCategory[]> {
   return request<ArticleCategory[]>('/api/article-categories')
 }
 
-export function createArticleCategory(input: { slug: string; name: string; displayOrder?: number }): Promise<ArticleCategory> {
+export function createArticleCategory(input: { name: string; displayOrder?: number }): Promise<ArticleCategory> {
   return request<ArticleCategory>('/api/article-categories', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -150,11 +150,19 @@ export function createArticleCategory(input: { slug: string; name: string; displ
   })
 }
 
-export function updateArticleCategory(id: string, input: Partial<{ slug: string; name: string; displayOrder: number }>): Promise<ArticleCategory> {
+export function updateArticleCategory(id: string, input: Partial<{ name: string; displayOrder: number }>): Promise<ArticleCategory> {
   return request<ArticleCategory>(`/api/article-categories/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
+  })
+}
+
+export function reorderArticleCategories(order: Array<{ id: string; displayOrder: number }>): Promise<ArticleCategory[]> {
+  return request<ArticleCategory[]>('/api/article-categories/reorder', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order }),
   })
 }
 
@@ -208,6 +216,14 @@ export function updateArticle(id: string, input: Partial<{
 
 export function deleteArticle(id: string): Promise<void> {
   return requestVoid(`/api/articles/${id}`, { method: 'DELETE' })
+}
+
+export function reorderArticles(order: Array<{ id: string; displayOrder: number }>): Promise<Article[]> {
+  return request<Article[]>('/api/articles/reorder', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order }),
+  })
 }
 
 export function uploadArticleCover(id: string, file: File): Promise<Article> {

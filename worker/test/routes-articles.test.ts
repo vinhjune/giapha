@@ -381,6 +381,39 @@ describe('PUT /api/articles/:id', () => {
   })
 })
 
+describe('PUT /api/articles/reorder', () => {
+  it('updates displayOrder for multiple articles in one call', async () => {
+    const app = buildApp()
+    const { token } = await makeUser('admin')
+    const articleA = await createArticle(app, token, { slug: `reorder-a-${crypto.randomUUID()}`, displayOrder: 0 })
+    const articleB = await createArticle(app, token, { slug: `reorder-b-${crypto.randomUUID()}`, displayOrder: 1 })
+
+    const res = await app.request('/api/articles/reorder', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ order: [{ id: articleA.id, displayOrder: 1 }, { id: articleB.id, displayOrder: 0 }] }),
+    }, env)
+    expect(res.status).toBe(200)
+
+    const db = drizzle(env.giapha_db)
+    const updatedA = await db.select().from(articles).where(eq(articles.id, articleA.id)).get()
+    const updatedB = await db.select().from(articles).where(eq(articles.id, articleB.id)).get()
+    expect(updatedA?.displayOrder).toBe(1)
+    expect(updatedB?.displayOrder).toBe(0)
+  })
+
+  it('returns 400 when order list is missing', async () => {
+    const app = buildApp()
+    const { token } = await makeUser('admin')
+    const res = await app.request('/api/articles/reorder', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({}),
+    }, env)
+    expect(res.status).toBe(400)
+  })
+})
+
 describe('DELETE /api/articles/:id', () => {
   it('returns 404 when the article does not exist', async () => {
     const app = buildApp()

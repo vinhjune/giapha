@@ -151,13 +151,33 @@ describe('ArticleManagementView', () => {
     await waitFor(() => screen.getByText('Về nguồn'))
 
     fireEvent.click(screen.getByText('Quản lý chuyên mục'))
-    fireEvent.change(screen.getByLabelText('Slug chuyên mục'), { target: { value: 'tu-lieu' } })
+    expect(screen.queryByLabelText('Slug chuyên mục')).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Tên chuyên mục'), { target: { value: 'Tư liệu' } })
     fireEvent.click(screen.getByRole('button', { name: 'Thêm chuyên mục' }))
 
     await waitFor(() => expect(api.createArticleCategory).toHaveBeenCalledWith({
-      slug: 'tu-lieu',
       name: 'Tư liệu',
+    }))
+  })
+
+  it('renames a category via inline edit', async () => {
+    vi.mocked(api.updateArticleCategory).mockResolvedValue({
+      ...sampleCategories[0],
+      name: 'Giới thiệu dòng họ mới',
+    })
+
+    render(<ArticleManagementView />)
+    await waitFor(() => screen.getByText('Về nguồn'))
+
+    fireEvent.click(screen.getByText('Quản lý chuyên mục'))
+    fireEvent.click(screen.getAllByText('Sửa')[0])
+    fireEvent.change(screen.getByLabelText('Sửa tên chuyên mục Giới thiệu dòng họ'), {
+      target: { value: 'Giới thiệu dòng họ mới' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Lưu' }))
+
+    await waitFor(() => expect(api.updateArticleCategory).toHaveBeenCalledWith('cat-1', {
+      name: 'Giới thiệu dòng họ mới',
     }))
   })
 
@@ -203,7 +223,9 @@ describe('ArticleManagementView', () => {
 
     render(<ArticleManagementView />)
 
-    expect(screen.getByRole('status')).toHaveTextContent('Đang tải…')
+    // dnd-kit's DndContext also renders its own aria-live status region for drag
+    // announcements, so scope the query to the loading message specifically.
+    expect(screen.getByText('Đang tải…')).toHaveAttribute('role', 'status')
   })
 
   it('falls back to the first remaining category after deleting the selected one in the create form', async () => {

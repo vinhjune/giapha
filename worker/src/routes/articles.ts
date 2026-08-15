@@ -90,6 +90,24 @@ articleRoutes.post('/articles', requireRole('admin', 'editor'), async (c) => {
   return c.json(row!, 201)
 })
 
+articleRoutes.put('/articles/reorder', requireRole('admin', 'editor'), async (c) => {
+  const db = drizzle(c.env.giapha_db) as DB
+  const body = await c.req.json<{ order?: Array<{ id: string; displayOrder: number }> }>()
+  const order = body.order
+
+  if (!Array.isArray(order) || order.length === 0) {
+    return c.json({ error: 'Thiếu danh sách thứ tự bài viết' }, 400)
+  }
+
+  const now = new Date().toISOString()
+  await Promise.all(order.map(({ id, displayOrder }) =>
+    db.update(articles).set({ displayOrder, updatedAt: now }).where(eq(articles.id, id))
+  ))
+
+  const rows = await db.select().from(articles).orderBy(asc(articles.displayOrder)).all()
+  return c.json(rows)
+})
+
 articleRoutes.put('/articles/:id', requireRole('admin', 'editor'), async (c) => {
   const db = drizzle(c.env.giapha_db) as DB
   const id = c.req.param('id')

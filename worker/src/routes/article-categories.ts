@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { drizzle } from 'drizzle-orm/d1'
-import { asc, count, eq, and, ne } from 'drizzle-orm'
+import { asc, count, eq } from 'drizzle-orm'
 import { articleCategories, articles } from '../db/schema'
 import { requireRole } from '../middleware/auth'
 import type { HonoEnv } from '../types'
@@ -28,19 +28,17 @@ articleCategoryRoutes.get('/article-categories', async (c) => {
 
 articleCategoryRoutes.post('/article-categories', requireRole('admin', 'editor'), async (c) => {
   const db = drizzle(c.env.giapha_db) as DB
-  const body = await c.req.json<{ slug: string; name: string; displayOrder?: number }>()
-  const slug = body.slug?.trim()
+  const body = await c.req.json<{ name: string; displayOrder?: number }>()
   const name = body.name?.trim()
 
-  if (!slug || !name) return c.json({ error: 'Thiếu slug hoặc tên chuyên mục' }, 400)
-
-  const existing = await db.select({ id: articleCategories.id }).from(articleCategories).where(eq(articleCategories.slug, slug)).get()
-  if (existing) return c.json({ error: 'Slug chuyên mục đã tồn tại' }, 409)
+  if (!name) return c.json({ error: 'Thiếu tên chuyên mục' }, 400)
 
   const id = crypto.randomUUID()
+  // slug is no longer user-facing; auto-generate an internal value from the id to satisfy the
+  // NOT NULL UNIQUE constraint without requiring a schema migration.
   await db.insert(articleCategories).values({
     id,
-    slug,
+    slug: `category-${id}`,
     name,
     displayOrder: body.displayOrder ?? 0,
   })
@@ -49,25 +47,32 @@ articleCategoryRoutes.post('/article-categories', requireRole('admin', 'editor')
   return c.json(row!, 201)
 })
 
+articleCategoryRoutes.put('/article-categories/reorder', requireRole('admin', 'editor'), async (c) => {
+  const db = drizzle(c.env.giapha_db) as DB
+  const body = await c.req.json<{ order?: Array<{ id: string; displayOrder: number }> }>()
+  const order = body.order
+
+  if (!Array.isArray(order) || order.length === 0) {
+    return c.json({ error: 'Thiếu danh sách thứ tự chuyên mục' }, 400)
+  }
+
+  const now = new Date().toISOString()
+  await Promise.all(order.map(({ id, displayOrder }) =>
+    db.update(articleCategories).set({ displayOrder, updatedAt: now }).where(eq(articleCategories.id, id))
+  ))
+
+  const rows = await db.select().from(articleCategories).orderBy(asc(articleCategories.displayOrder)).all()
+  return c.json(rows)
+})
+
 articleCategoryRoutes.put('/article-categories/:id', requireRole('admin', 'editor'), async (c) => {
   const db = drizzle(c.env.giapha_db) as DB
   const id = c.req.param('id')
   const target = await db.select().from(articleCategories).where(eq(articleCategories.id, id)).get()
   if (!target) return c.json({ error: 'Không tìm thấy chuyên mục bài viết' }, 404)
 
-  const body = await c.req.json<{ slug?: string; name?: string; displayOrder?: number }>()
+  const body = await c.req.json<{ name?: string; displayOrder?: number }>()
   const updates: Partial<typeof articleCategories.$inferInsert> = {}
-
-  if (body.slug !== undefined) {
-    const slug = body.slug.trim()
-    if (!slug) return c.json({ error: 'Slug không được để trống' }, 400)
-    if (slug !== target.slug) {
-      const existing = await db.select({ id: articleCategories.id }).from(articleCategories)
-        .where(and(eq(articleCategories.slug, slug), ne(articleCategories.id, id))).get()
-      if (existing) return c.json({ error: 'Slug chuyên mục đã tồn tại' }, 409)
-    }
-    updates.slug = slug
-  }
 
   if (body.name !== undefined) {
     const name = body.name.trim()

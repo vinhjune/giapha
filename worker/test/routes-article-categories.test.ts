@@ -78,7 +78,7 @@ describe('POST /api/article-categories', () => {
     const res = await app.request('/api/article-categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: 'khong-auth', name: 'Không auth' }),
+      body: JSON.stringify({ name: 'Không auth' }),
     }, env)
     expect(res.status).toBe(401)
   })
@@ -89,39 +89,39 @@ describe('POST /api/article-categories', () => {
     const res = await app.request('/api/article-categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
-      body: JSON.stringify({ slug: 'viewer-bi-chan', name: 'Viewer bị chặn' }),
+      body: JSON.stringify({ name: 'Viewer bị chặn' }),
     }, env)
     expect(res.status).toBe(403)
   })
 
-  it('creates a category successfully as admin', async () => {
+  it('creates a category successfully as admin without requiring a slug', async () => {
     const app = buildApp()
     const { token } = await makeUser('admin')
-    const slug = `cat-moi-${crypto.randomUUID()}`
     const res = await app.request('/api/article-categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
-      body: JSON.stringify({ slug, name: 'Chuyên mục mới', displayOrder: 12 }),
+      body: JSON.stringify({ name: 'Chuyên mục mới', displayOrder: 12 }),
     }, env)
     expect(res.status).toBe(201)
-    const body = await res.json<{ slug: string; name: string; displayOrder: number }>()
-    expect(body).toMatchObject({ slug, name: 'Chuyên mục mới', displayOrder: 12 })
+    const body = await res.json<{ id: string; slug: string; name: string; displayOrder: number }>()
+    expect(body).toMatchObject({ name: 'Chuyên mục mới', displayOrder: 12 })
+    expect(body.slug).toBeTruthy()
   })
 
-  it('returns 409 for a duplicate slug', async () => {
+  it('returns 400 when name is missing', async () => {
     const app = buildApp()
     const { token } = await makeUser('admin')
     const res = await app.request('/api/article-categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
-      body: JSON.stringify({ slug: 'gioi-thieu-dong-ho', name: 'Trùng slug' }),
+      body: JSON.stringify({}),
     }, env)
-    expect(res.status).toBe(409)
+    expect(res.status).toBe(400)
   })
 })
 
 describe('PUT /api/article-categories/:id', () => {
-  it('updates a category as editor', async () => {
+  it('updates a category name as editor', async () => {
     const app = buildApp()
     const db = drizzle(env.giapha_db)
     const id = crypto.randomUUID()
@@ -136,11 +136,48 @@ describe('PUT /api/article-categories/:id', () => {
     const res = await app.request(`/api/article-categories/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
-      body: JSON.stringify({ slug: `cat-da-cap-nhat-${id}`, name: 'Tên mới', displayOrder: 8 }),
+      body: JSON.stringify({ name: 'Tên mới', displayOrder: 8 }),
     }, env)
     expect(res.status).toBe(200)
     const body = await res.json<{ slug: string; name: string; displayOrder: number }>()
-    expect(body).toMatchObject({ slug: `cat-da-cap-nhat-${id}`, name: 'Tên mới', displayOrder: 8 })
+    expect(body).toMatchObject({ slug: `cat-cap-nhat-${id}`, name: 'Tên mới', displayOrder: 8 })
+  })
+})
+
+describe('PUT /api/article-categories/reorder', () => {
+  it('updates displayOrder for multiple categories in one call', async () => {
+    const app = buildApp()
+    const db = drizzle(env.giapha_db)
+    const idA = crypto.randomUUID()
+    const idB = crypto.randomUUID()
+    await db.insert(articleCategories).values([
+      { id: idA, slug: `cat-a-${idA}`, name: 'A', displayOrder: 0 },
+      { id: idB, slug: `cat-b-${idB}`, name: 'B', displayOrder: 1 },
+    ])
+
+    const { token } = await makeUser('admin')
+    const res = await app.request('/api/article-categories/reorder', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({ order: [{ id: idA, displayOrder: 1 }, { id: idB, displayOrder: 0 }] }),
+    }, env)
+    expect(res.status).toBe(200)
+
+    const updatedA = await db.select().from(articleCategories).where(eq(articleCategories.id, idA)).get()
+    const updatedB = await db.select().from(articleCategories).where(eq(articleCategories.id, idB)).get()
+    expect(updatedA?.displayOrder).toBe(1)
+    expect(updatedB?.displayOrder).toBe(0)
+  })
+
+  it('returns 400 when order list is missing', async () => {
+    const app = buildApp()
+    const { token } = await makeUser('admin')
+    const res = await app.request('/api/article-categories/reorder', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE_NAME}=${token}` },
+      body: JSON.stringify({}),
+    }, env)
+    expect(res.status).toBe(400)
   })
 })
 
