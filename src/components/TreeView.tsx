@@ -66,8 +66,9 @@ interface ToggleMarker {
   personId: string
   x: number
   y: number
-  hiddenCount: number
-  collapsed: boolean
+  // true when this node is the currently focused subtree root → renders '+' to restore
+  // the full tree. false → renders '−' to isolate this node's subtree.
+  isFocusRoot: boolean
 }
 
 function taoChiMucCon(persons: Record<string, Person>): Record<string, string[]> {
@@ -176,27 +177,27 @@ function cW(childNodes: TreeNode[]): number {
   return childNodes.reduce((s, c, i) => s + c.subtreeWidth + (i > 0 ? H_GAP : 0), 0)
 }
 
-function countDescendants(node: TreeNode): number {
-  let count = 0
-  for (const m of node.marriages) {
-    count += m.childNodes.length
-    for (const c of m.childNodes) count += countDescendants(c)
+// Finds the TreeNode owned by personId anywhere within the forest (searches every
+// marriage's childNodes recursively). Used to isolate a single subtree when the '−'
+// (focus) button is pressed — the found node becomes the sole rendered root, which
+// naturally hides its ancestors, sibling branches, and any other disconnected trees.
+function findNodeById(trees: TreeNode[], personId: string): TreeNode | null {
+  for (const tree of trees) {
+    const found = findNodeInSubtree(tree, personId)
+    if (found) return found
   }
-  return count
+  return null
 }
 
-// Maps every person appearing in the tree (node persons AND spouses) to the list of
-// collapsible ancestor node IDs above them (root-first, excluding the person itself).
-// Built from the full tree structure (independent of collapsedIds) so a search/select
-// jump can un-collapse exactly the ancestors hiding the target, regardless of which
-// parent (bo/me) ended up as the TreeNode owner vs. the spouse for each generation.
-function buildAncestorMap(node: TreeNode, ancestors: string[], map: Record<string, string[]>): void {
-  map[node.person.id] = ancestors
-  const childAncestors = [...ancestors, node.person.id]
+function findNodeInSubtree(node: TreeNode, personId: string): TreeNode | null {
+  if (node.person.id === personId) return node
   for (const m of node.marriages) {
-    if (m.spouse) map[m.spouse.id] = ancestors
-    for (const c of m.childNodes) buildAncestorMap(c, childAncestors, map)
+    for (const c of m.childNodes) {
+      const found = findNodeInSubtree(c, personId)
+      if (found) return found
+    }
   }
+  return null
 }
 
 function estimateNameWidth(name: string): number {
@@ -234,11 +235,9 @@ function buildWidthByPersonId(persons: Record<string, Person>, displayNameById: 
   )
 }
 
-function calcSubtreeWidth(node: TreeNode, collapsedIds: Set<string>): void {
+function calcSubtreeWidth(node: TreeNode): void {
   for (const m of node.marriages)
-    for (const c of m.childNodes) calcSubtreeWidth(c, collapsedIds)
-
-  const collapsed = collapsedIds.has(node.person.id)
+    for (const c of m.childNodes) calcSubtreeWidth(c)
 
   if (node.marriages.length === 0) {
     node.subtreeWidth = node.width
@@ -247,7 +246,7 @@ function calcSubtreeWidth(node: TreeNode, collapsedIds: Set<string>): void {
 
   // Single no-spouse group → symmetric (children centered under person)
   if (node.marriages.length === 1 && !node.marriages[0].spouse) {
-    const childrenW = collapsed ? 0 : cW(node.marriages[0].childNodes)
+    const childrenW = cW(node.marriages[0].childNodes)
     node.subtreeWidth = Math.max(node.width, childrenW)
     return
   }
@@ -257,7 +256,7 @@ function calcSubtreeWidth(node: TreeNode, collapsedIds: Set<string>): void {
   for (let k = 0; k < node.marriages.length; k++) {
     const marriage = node.marriages[k]
     const zoneBasisWidth = marriage.spouse ? marriage.spouseWidth : node.width
-    const childrenW = collapsed ? 0 : cW(marriage.childNodes)
+    const childrenW = cW(marriage.childNodes)
     const zoneW = Math.max(zoneBasisWidth, childrenW)
     zonesW += zoneW + (k > 0 ? SPOUSE_SEP : 0)
   }
@@ -266,9 +265,8 @@ function calcSubtreeWidth(node: TreeNode, collapsedIds: Set<string>): void {
 
 // ─── Top-down: assign positions ───────────────────────────────────────────────
 
-function assignPositions(node: TreeNode, startX: number, depth: number, collapsedIds: Set<string>): void {
+function assignPositions(node: TreeNode, startX: number, depth: number): void {
   node.y = depth * (NODE_H + V_GAP)
-  const collapsed = collapsedIds.has(node.person.id)
 
   // Leaf
   if (node.marriages.length === 0) {
@@ -279,15 +277,15 @@ function assignPositions(node: TreeNode, startX: number, depth: number, collapse
   // Single no-spouse group → symmetric centered layout
   if (node.marriages.length === 1 && !node.marriages[0].spouse) {
     const m = node.marriages[0]
-    const childrenW = collapsed ? 0 : cW(m.childNodes)
+    const childrenW = cW(m.childNodes)
     const midX = startX + node.subtreeWidth / 2
     node.x = midX - node.width / 2
     m.spouseX = -1
     m.descentX = midX
-    if (!collapsed && m.childNodes.length > 0) {
+    if (m.childNodes.length > 0) {
       let cx = midX - childrenW / 2
       for (const child of m.childNodes) {
-        assignPositions(child, cx, depth + 1, collapsedIds)
+        assignPositions(child, cx, depth + 1)
         cx += child.subtreeWidth + H_GAP
       }
     }
@@ -302,7 +300,7 @@ function assignPositions(node: TreeNode, startX: number, depth: number, collapse
     const m = node.marriages[k]
     if (k > 0) rightOff += SPOUSE_SEP
 
-    const childrenW = collapsed ? 0 : cW(m.childNodes)
+    const childrenW = cW(m.childNodes)
     const zoneBasisWidth = m.spouse ? m.spouseWidth : node.width
     const zoneW = Math.max(zoneBasisWidth, childrenW)
 
@@ -317,10 +315,10 @@ function assignPositions(node: TreeNode, startX: number, depth: number, collapse
     }
 
     // Children centered under descentX
-    if (!collapsed && m.childNodes.length > 0) {
+    if (m.childNodes.length > 0) {
       let cx = m.descentX - childrenW / 2
       for (const child of m.childNodes) {
-        assignPositions(child, cx, depth + 1, collapsedIds)
+        assignPositions(child, cx, depth + 1)
         cx += child.subtreeWidth + H_GAP
       }
     }
@@ -340,7 +338,7 @@ function assignPositions(node: TreeNode, startX: number, depth: number, collapse
 //   ── horizontal child connector
 //   ↓ stems to each child
 
-function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[], toggles: ToggleMarker[], collapsedIds: Set<string>): void {
+function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[], toggles: ToggleMarker[], focusedRootId: string | null): void {
   cards.push({ person: node.person, x: node.x, y: node.y, width: node.width, isSpouse: false })
 
   // Y positions for spouse row (sits below the person card)
@@ -372,7 +370,6 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[], toggles:
     }
   }
 
-  const collapsed = collapsedIds.has(node.person.id)
   const hasChildren = node.marriages.some(m => m.childNodes.length > 0)
 
   if (hasChildren) {
@@ -380,14 +377,12 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[], toggles:
       personId: node.person.id,
       x: personCenterX,
       y: spouseMarriages.length > 0 ? spouseBotY : node.y + NODE_H,
-      hiddenCount: collapsed ? countDescendants(node) : 0,
-      collapsed,
+      isFocusRoot: node.person.id === focusedRootId,
     })
   }
 
   for (const m of node.marriages) {
     if (m.childNodes.length === 0) continue
-    if (collapsed) continue
 
     // Connector sits halfway between spouse/person bottom and children top
     const descentStartY = (m.spouse && m.spouseX >= 0) ? spouseBotY : node.y + NODE_H
@@ -414,7 +409,7 @@ function collect(node: TreeNode, cards: RenderCard[], lines: SvgLine[], toggles:
     for (const child of m.childNodes) {
       const cx = child.x + child.width / 2
       lines.push({ x1: cx, y1: connY, x2: cx, y2: child.y, isCouple: false })
-      collect(child, cards, lines, toggles, collapsedIds)
+      collect(child, cards, lines, toggles, focusedRootId)
     }
   }
 }
@@ -438,26 +433,13 @@ export default function TreeView() {
   })
   const [isDragging, setIsDragging] = useState(false)
   const [zoom, setZoom] = useState(1)
-  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set())
+  // Set when a node's '−' button is pressed: only that node's own subtree is rendered,
+  // hiding its ancestors, sibling branches, and any other disconnected forest trees.
+  // null = show the full tree. Cleared by the '+' button (only shown on the focused root).
+  const [focusedRootId, setFocusedRootId] = useState<string | null>(null)
   const childrenIndex = useMemo(() => (data ? taoChiMucCon(data.persons) : {}), [data])
-  const toggleCollapse = useCallback((personId: string) => {
-    setCollapsedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(personId)) {
-        // Expanding: reveal only this node's direct children. Any of those children that
-        // themselves have children are re-collapsed, so the branch unfolds one level at a
-        // time instead of dumping every descendant open at once.
-        next.delete(personId)
-        for (const childId of childrenIndex[personId] ?? []) {
-          if ((childrenIndex[childId]?.length ?? 0) > 0) next.add(childId)
-        }
-      } else {
-        // Collapsing: unchanged — just hide this node's entire subtree.
-        next.add(personId)
-      }
-      return next
-    })
-  }, [childrenIndex])
+  const focusNode = useCallback((personId: string) => setFocusedRootId(personId), [])
+  const clearFocus = useCallback(() => setFocusedRootId(null), [])
   const highlightedPersonId = focusedPersonId ?? selectedPersonId
   const showGenerationOrder = useGiaphaStore(s => s.hienThiThuTuDoi)
   const displayNameById = useMemo(() => {
@@ -513,37 +495,41 @@ export default function TreeView() {
 
     if (trees.length === 0) return { cards: [], lines: [], toggles: [], width: 0, height: 0 }
 
-    // Ancestors hiding the currently highlighted (selected/searched) person are shown as
-    // expanded for this render, without mutating the user's actual collapse choices — so
-    // a search/select jump can always reach its target, and reverts once selection moves on.
-    let effectiveCollapsedIds = collapsedIds
-    if (highlightedPersonId) {
-      const ancestorNodeIdsByPersonId: Record<string, string[]> = {}
-      for (const tree of trees) buildAncestorMap(tree, [], ancestorNodeIdsByPersonId)
-      const ancestors = ancestorNodeIdsByPersonId[highlightedPersonId]
-      if (ancestors?.some(id => collapsedIds.has(id))) {
-        effectiveCollapsedIds = new Set(collapsedIds)
-        for (const id of ancestors) effectiveCollapsedIds.delete(id)
-      }
+    // If focused, isolate that node's own subtree as the sole rendered root — this
+    // naturally hides ancestors, sibling branches, and any other forest tree (including
+    // the edge case where corrupted data produces more than one disconnected tree).
+    let renderRoots = trees
+    if (focusedRootId) {
+      const focusedNode = findNodeById(trees, focusedRootId)
+      if (focusedNode) renderRoots = [focusedNode]
     }
 
     let startX = 20
-    for (const tree of trees) {
-      calcSubtreeWidth(tree, effectiveCollapsedIds)
-      assignPositions(tree, startX, 0, effectiveCollapsedIds)
+    for (const tree of renderRoots) {
+      calcSubtreeWidth(tree)
+      assignPositions(tree, startX, 0)
       startX += tree.subtreeWidth + FOREST_GAP
     }
 
     const cards: RenderCard[] = []
     const lines: SvgLine[] = []
     const toggles: ToggleMarker[] = []
-    for (const tree of trees) collect(tree, cards, lines, toggles, effectiveCollapsedIds)
+    for (const tree of renderRoots) collect(tree, cards, lines, toggles, focusedRootId)
 
     const maxX = Math.max(...cards.map(c => c.x + c.width)) + 40
     const maxY = Math.max(...cards.map(c => c.y)) + NODE_H + 40
 
     return { cards, lines, toggles, width: maxX, height: maxY }
-  }, [data, displayNameById, collapsedIds, highlightedPersonId, childrenIndex])
+  }, [data, displayNameById, focusedRootId, childrenIndex])
+
+  // The searched/selected person must never stay hidden: if focusing on a subtree
+  // makes them disappear (they're outside the isolated branch), drop back to the full
+  // tree view so they remain reachable.
+  useEffect(() => {
+    if (!focusedRootId || !highlightedPersonId) return
+    const stillVisible = cards.some(c => c.person.id === highlightedPersonId)
+    if (!stillVisible) setFocusedRootId(null)
+  }, [focusedRootId, highlightedPersonId, cards])
 
   useEffect(() => {
     if (!highlightedPersonId || !containerRef.current) return
@@ -757,12 +743,12 @@ export default function TreeView() {
               key={`toggle-${t.personId}`}
               type="button"
               data-testid={`tree-toggle-${t.personId}`}
-              aria-label={t.collapsed ? 'Mở rộng nhánh con' : 'Thu gọn nhánh con'}
-              onClick={(e) => { e.stopPropagation(); toggleCollapse(t.personId) }}
+              aria-label={t.isFocusRoot ? 'Xem toàn bộ cây' : 'Chỉ xem nhánh này'}
+              onClick={(e) => { e.stopPropagation(); t.isFocusRoot ? clearFocus() : focusNode(t.personId) }}
               style={{ position: 'absolute', left: t.x - 12, top: t.y - 10, zIndex: 2 }}
               className="h-5 min-w-5 px-1 rounded-full border border-card-border bg-card text-[10px] font-semibold text-muted leading-5 text-center shadow-sm hover:bg-card-hover"
             >
-              {t.collapsed ? `+${t.hiddenCount}` : '−'}
+              {t.isFocusRoot ? '+' : '−'}
             </button>
           ))}
         </div>

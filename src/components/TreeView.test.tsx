@@ -302,121 +302,84 @@ describe('TreeView', () => {
     expect(parseFloat((eldestCard as HTMLDivElement).style.left)).toBeLessThan(parseFloat((youngerCard as HTMLDivElement).style.left))
   })
 
-  it('does not render a collapse toggle on a leaf node', () => {
+  it('does not render a focus toggle on a leaf node', () => {
     render(<TreeView />)
     expect(screen.queryByTestId('tree-toggle-7')).toBeNull()
   })
 
-  it('renders a collapse toggle on every node that has children', () => {
+  it('renders a focus toggle ("−") on every node that has children', () => {
     render(<TreeView />)
-    expect(screen.getByTestId('tree-toggle-1')).toBeInTheDocument()
-    expect(screen.getByTestId('tree-toggle-3')).toBeInTheDocument()
-    expect(screen.getByTestId('tree-toggle-5')).toBeInTheDocument()
-  })
-
-  it('collapsing a node hides its descendant cards, keeps its own spouse visible, and shows the hidden count', () => {
-    render(<TreeView />)
-    expect(screen.getByText('Cháu gái')).toBeInTheDocument()
-    expect(screen.getByText('Chắt')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByTestId('tree-toggle-3'))
-
-    expect(screen.queryByText('Cháu gái')).toBeNull()
-    expect(screen.queryByText('Chồng cháu gái')).toBeNull()
-    expect(screen.queryByText('Chắt')).toBeNull()
-    expect(screen.getByText('Con gái')).toBeInTheDocument()
-    expect(screen.getByText('Con rể')).toBeInTheDocument() // node's own spouse stays visible
-    expect(screen.getByTestId('tree-toggle-3')).toHaveTextContent('+2')
-  })
-
-  it('re-expanding a collapsed node restores the exact original card positions', () => {
-    render(<TreeView />)
-    const chauGaiBefore = screen.getByText('Cháu gái').closest('div[style*="position: absolute"]') as HTMLDivElement
-    const chauGaiLeftBefore = chauGaiBefore.style.left
-    const chauGaiTopBefore = chauGaiBefore.style.top
-    const chatBefore = screen.getByText('Chắt').closest('div[style*="position: absolute"]') as HTMLDivElement
-    const chatLeftBefore = chatBefore.style.left
-    const chatTopBefore = chatBefore.style.top
-
-    fireEvent.click(screen.getByTestId('tree-toggle-3')) // collapse
-    expect(screen.queryByText('Cháu gái')).toBeNull()
-
-    fireEvent.click(screen.getByTestId('tree-toggle-3')) // expand (only 1 level below reappears)
-    const chauGaiAfter = screen.getByText('Cháu gái').closest('div[style*="position: absolute"]') as HTMLDivElement
-    expect(chauGaiAfter.style.left).toBe(chauGaiLeftBefore)
-    expect(chauGaiAfter.style.top).toBe(chauGaiTopBefore)
-
-    fireEvent.click(screen.getByTestId('tree-toggle-5')) // expand the next level down
-    const chatAfter = screen.getByText('Chắt').closest('div[style*="position: absolute"]') as HTMLDivElement
-    expect(chatAfter.style.left).toBe(chatLeftBefore)
-    expect(chatAfter.style.top).toBe(chatTopBefore)
-  })
-
-  it('expanding a collapsed node reveals only one level below, keeping deeper descendants collapsed', () => {
-    render(<TreeView />)
-
-    fireEvent.click(screen.getByTestId('tree-toggle-3')) // collapse 'Con gái' branch
-    expect(screen.queryByText('Cháu gái')).toBeNull()
-
-    fireEvent.click(screen.getByTestId('tree-toggle-3')) // expand: 1 level only
-    expect(screen.getByText('Cháu gái')).toBeInTheDocument()
-    expect(screen.queryByText('Chắt')).toBeNull()
-    expect(screen.getByTestId('tree-toggle-5')).toHaveTextContent('+1')
-
-    fireEvent.click(screen.getByTestId('tree-toggle-5')) // expand the next level
-    expect(screen.getByText('Chắt')).toBeInTheDocument()
-  })
-
-  it('clicking a collapse toggle does not select the person', () => {
-    render(<TreeView />)
-    fireEvent.click(screen.getByTestId('tree-toggle-3'))
-    expect(useGiaphaStore.getState().selectedPersonId).toBeNull()
-  })
-
-  it('collapsing a deep sibling subtree pulls the next sibling closer (reflow)', () => {
-    const siblingData: GiaphaData = {
-      ...data,
-      persons: {
-        ...data.persons,
-        '1': { ...data.persons['1'], conCaiIds: ['3', '8'] },
-        '2': { ...data.persons['2'], conCaiIds: ['3', '8'] },
-        '8': { id: '8', hoTen: 'Con trai út', gioiTinh: 'nam', laThanhVienHo: true, boId: '1', meId: '2', honNhan: [], conCaiIds: [] },
-      },
-    }
-    useGiaphaStore.setState({ data: siblingData })
-
-    render(<TreeView />)
-    const siblingBefore = screen.getByText('Con trai út').closest('div[style*="position: absolute"]') as HTMLDivElement
-    const leftBefore = parseFloat(siblingBefore.style.left)
-
-    fireEvent.click(screen.getByTestId('tree-toggle-3'))
-
-    const siblingAfter = screen.getByText('Con trai út').closest('div[style*="position: absolute"]') as HTMLDivElement
-    const leftAfter = parseFloat(siblingAfter.style.left)
-
-    expect(leftAfter).toBeLessThan(leftBefore)
-  })
-
-  it('auto-expands collapsed ancestors when the highlighted person is hidden inside them', () => {
-    // jsdom doesn't implement Element.scrollTo; the existing scroll-to-highlighted effect calls it.
-    Element.prototype.scrollTo = vi.fn()
-
-    render(<TreeView />)
-
-    fireEvent.click(screen.getByTestId('tree-toggle-1')) // collapses everyone below 'Tổ'
-    expect(screen.queryByText('Chắt')).toBeNull()
-
-    act(() => {
-      useGiaphaStore.setState({ selectedPersonId: '7', focusedPersonId: '7' }) // 'Chắt'
-    })
-
-    expect(screen.getByText('Chắt')).toBeInTheDocument()
     expect(screen.getByTestId('tree-toggle-1')).toHaveTextContent('−')
     expect(screen.getByTestId('tree-toggle-3')).toHaveTextContent('−')
     expect(screen.getByTestId('tree-toggle-5')).toHaveTextContent('−')
   })
 
-  it('collapsing a node with multiple marriages hides children from every marriage zone', () => {
+  it('pressing "−" on a node isolates its own subtree and hides ancestors and other branches', () => {
+    render(<TreeView />)
+    expect(screen.getByText('Tổ')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('tree-toggle-3')) // focus 'Con gái' subtree
+
+    // Ancestor above the focused node is hidden.
+    expect(screen.queryByText('Tổ')).toBeNull()
+    expect(screen.queryByText('Bà')).toBeNull()
+    // The focused node itself and all of its descendants remain visible.
+    expect(screen.getByText('Con gái')).toBeInTheDocument()
+    expect(screen.getByText('Con rể')).toBeInTheDocument()
+    expect(screen.getByText('Cháu gái')).toBeInTheDocument()
+    expect(screen.getByText('Chắt')).toBeInTheDocument()
+  })
+
+  it('shows a "+" button only on the focused root, which restores the full tree when clicked', () => {
+    render(<TreeView />)
+    expect(screen.queryByTestId('tree-toggle-3')).toHaveTextContent('−')
+
+    fireEvent.click(screen.getByTestId('tree-toggle-3'))
+    expect(screen.getByTestId('tree-toggle-3')).toHaveTextContent('+')
+    // Descendant nodes stay as '−' so the user can drill down further.
+    expect(screen.getByTestId('tree-toggle-5')).toHaveTextContent('−')
+
+    fireEvent.click(screen.getByTestId('tree-toggle-3')) // '+' restores the full tree
+    expect(screen.getByText('Tổ')).toBeInTheDocument()
+    expect(screen.queryByTestId('tree-toggle-3')).toHaveTextContent('−')
+  })
+
+  it('pressing "−" on a node inside an already-focused subtree narrows the focus further', () => {
+    render(<TreeView />)
+    fireEvent.click(screen.getByTestId('tree-toggle-3')) // focus 'Con gái'
+    expect(screen.getByText('Chắt')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('tree-toggle-5')) // narrow focus to 'Cháu gái'
+    expect(screen.queryByText('Con gái')).toBeNull()
+    expect(screen.getByText('Cháu gái')).toBeInTheDocument()
+    expect(screen.getByText('Chắt')).toBeInTheDocument()
+    expect(screen.getByTestId('tree-toggle-5')).toHaveTextContent('+')
+  })
+
+  it('clicking a focus toggle does not select the person', () => {
+    render(<TreeView />)
+    fireEvent.click(screen.getByTestId('tree-toggle-3'))
+    expect(useGiaphaStore.getState().selectedPersonId).toBeNull()
+  })
+
+  it('clears focus automatically when the highlighted person is outside the isolated subtree', () => {
+    // jsdom doesn't implement Element.scrollTo; the existing scroll-to-highlighted effect calls it.
+    Element.prototype.scrollTo = vi.fn()
+
+    render(<TreeView />)
+
+    fireEvent.click(screen.getByTestId('tree-toggle-3')) // focus 'Con gái' subtree; 'Tổ' hidden
+    expect(screen.queryByText('Tổ')).toBeNull()
+
+    act(() => {
+      useGiaphaStore.setState({ selectedPersonId: '1', focusedPersonId: '1' }) // 'Tổ', outside focus
+    })
+
+    // Focus was cleared so the selected/searched person becomes reachable again.
+    expect(screen.getByText('Tổ')).toBeInTheDocument()
+  })
+
+  it('focusing a node with multiple marriages keeps children from every marriage zone visible', () => {
     const multiMarriageData: GiaphaData = {
       metadata: { tenDongHo: 'Dòng họ mẫu' },
       persons: {
@@ -430,16 +393,38 @@ describe('TreeView', () => {
     useGiaphaStore.setState({ data: multiMarriageData })
 
     render(<TreeView />)
-    expect(screen.getByText('Con vợ cả')).toBeInTheDocument()
-    expect(screen.getByText('Con vợ hai')).toBeInTheDocument()
-
     fireEvent.click(screen.getByTestId('tree-toggle-9'))
 
-    expect(screen.queryByText('Con vợ cả')).toBeNull()
-    expect(screen.queryByText('Con vợ hai')).toBeNull()
+    expect(screen.getByText('Con vợ cả')).toBeInTheDocument()
+    expect(screen.getByText('Con vợ hai')).toBeInTheDocument()
     expect(screen.getByText('Vợ cả')).toBeInTheDocument()
     expect(screen.getByText('Vợ hai')).toBeInTheDocument()
-    expect(screen.getByTestId('tree-toggle-9')).toHaveTextContent('+2')
+    expect(screen.getByTestId('tree-toggle-9')).toHaveTextContent('+')
+  })
+
+  it('edge case: focusing a node hides every other disconnected tree in a broken (multi-root) forest', () => {
+    const brokenForestData: GiaphaData = {
+      metadata: { tenDongHo: 'Dòng họ mẫu' },
+      persons: {
+        ...data.persons,
+        a: { id: 'a', hoTen: 'Tổ nhánh lạc', gioiTinh: 'nam', laThanhVienHo: true, honNhan: [], conCaiIds: ['b'] },
+        b: { id: 'b', hoTen: 'Con nhánh lạc', gioiTinh: 'nam', laThanhVienHo: true, boId: 'a', honNhan: [], conCaiIds: [] },
+      },
+    }
+    useGiaphaStore.setState({ data: brokenForestData })
+
+    render(<TreeView />)
+    // Both disconnected trees are present before focusing.
+    expect(screen.getByText('Tổ')).toBeInTheDocument()
+    expect(screen.getByText('Tổ nhánh lạc')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('tree-toggle-1')) // focus the 'Tổ' tree
+
+    expect(screen.getByText('Tổ')).toBeInTheDocument()
+    expect(screen.getByText('Con gái')).toBeInTheDocument()
+    // The unrelated disconnected tree is hidden entirely, not just its ancestors.
+    expect(screen.queryByText('Tổ nhánh lạc')).toBeNull()
+    expect(screen.queryByText('Con nhánh lạc')).toBeNull()
   })
 
   it('expands node width for long names and keeps name on a single line', () => {
